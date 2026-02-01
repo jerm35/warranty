@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CTL Warranty Analysis Dashboard - 2026</title>
-    <meta name="robots" content="noindex, nofollow">
+    <title>CTL Warranty Analysis Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -21,8 +20,8 @@
             padding: 20px;
         }
         
-        /* Password Screen */
-        .password-screen {
+        /* Password Overlay */
+        .password-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -37,8 +36,8 @@
         
         .password-box {
             background: linear-gradient(145deg, #1e3a5f, #1a2d47);
-            border-radius: 16px;
             padding: 40px;
+            border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
             border: 1px solid rgba(79, 195, 247, 0.2);
             text-align: center;
@@ -60,31 +59,32 @@
         
         .password-box input {
             width: 100%;
-            padding: 12px 15px;
+            padding: 14px 18px;
             border: 1px solid rgba(79, 195, 247, 0.3);
             border-radius: 8px;
             background: rgba(0,0,0,0.3);
             color: #e4e4e4;
             font-size: 1rem;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.3s;
         }
         
         .password-box input:focus {
-            outline: none;
             border-color: #4fc3f7;
         }
         
         .password-box button {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             background: linear-gradient(145deg, #4fc3f7, #29b6f6);
             border: none;
             border-radius: 8px;
             color: #1a1a2e;
             font-size: 1rem;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         
         .password-box button:hover {
@@ -94,15 +94,18 @@
         
         .password-error {
             color: #e57373;
-            margin-top: 10px;
             font-size: 0.85rem;
+            margin-top: 15px;
             display: none;
+        }
+        
+        .hidden {
+            display: none !important;
         }
         
         .dashboard {
             max-width: 1400px;
             margin: 0 auto;
-            display: none;
         }
         
         h1 {
@@ -122,15 +125,15 @@
         /* KPI Cards */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
             margin-bottom: 30px;
         }
         
         .kpi-card {
             background: linear-gradient(145deg, #1e3a5f, #1a2d47);
             border-radius: 12px;
-            padding: 18px;
+            padding: 20px;
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             border: 1px solid rgba(79, 195, 247, 0.2);
@@ -153,11 +156,11 @@
         
         .kpi-card.purple {
             border-color: rgba(186, 104, 200, 0.4);
-            background: linear-gradient(145deg, #2d1e3d, #251a2d);
+            background: linear-gradient(145deg, #2d1f3d, #251833);
         }
         
         .kpi-value {
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: bold;
             color: #4fc3f7;
         }
@@ -168,7 +171,7 @@
         .kpi-card.purple .kpi-value { color: #ba68c8; }
         
         .kpi-label {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: #90a4ae;
             margin-top: 5px;
         }
@@ -176,7 +179,7 @@
         /* Chart Grid */
         .chart-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
             gap: 25px;
             margin-bottom: 30px;
         }
@@ -342,92 +345,85 @@
             display: block;
         }
         
-        @media (max-width: 900px) {
+        /* Footer */
+        .footer {
+            text-align: center;
+            color: #546e7a;
+            font-size: 0.8rem;
+            margin-top: 30px;
+            padding: 20px;
+        }
+        
+        @media (max-width: 768px) {
             .chart-grid {
                 grid-template-columns: 1fr;
             }
             
-            .kpi-grid {
-                grid-template-columns: repeat(2, 1fr);
+            h1 {
+                font-size: 1.5rem;
             }
-        }
-        
-        @media (max-width: 500px) {
-            .kpi-grid {
-                grid-template-columns: 1fr;
+            
+            .kpi-value {
+                font-size: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Password Screen -->
-    <div class="password-screen" id="passwordScreen">
+    <!-- Password Overlay -->
+    <div class="password-overlay" id="passwordOverlay">
         <div class="password-box">
-            <h2>🔒 CTL Warranty Dashboard</h2>
-            <p>Please enter the password to access this data.</p>
-            <input type="password" id="passwordInput" placeholder="Enter password" onkeypress="if(event.key==='Enter') checkPassword()">
+            <h2>🔐 CTL Warranty Dashboard</h2>
+            <p>Enter the password to access the warranty analysis data</p>
+            <input type="password" id="passwordInput" placeholder="Enter password..." onkeypress="if(event.key==='Enter')checkPassword()">
             <button onclick="checkPassword()">Access Dashboard</button>
             <p class="password-error" id="passwordError">Incorrect password. Please try again.</p>
         </div>
     </div>
 
     <!-- Dashboard Content -->
-    <div class="dashboard" id="dashboard">
+    <div class="dashboard hidden" id="dashboard">
         <h1>📊 CTL Warranty Analysis Dashboard</h1>
-        <p class="subtitle">Comprehensive repair and warranty data analysis (Excludes NL71 & NL81 models) • Data as of January 2026</p>
+        <p class="subtitle">Repair Data 2023-2025 for over 1000 units sold - NL72 / PX11E Devices and Newer</p>
         
         <!-- KPI Cards -->
         <div class="kpi-grid">
             <div class="kpi-card">
-                <div class="kpi-value" id="totalSold">-</div>
+                <div class="kpi-value" id="kpiUnitsSold">-</div>
                 <div class="kpi-label">Total Units Sold</div>
             </div>
             <div class="kpi-card warning">
-                <div class="kpi-value" id="totalRepairs">-</div>
+                <div class="kpi-value" id="kpiTotalRepairs">-</div>
                 <div class="kpi-label">Total Repairs</div>
             </div>
             <div class="kpi-card danger">
-                <div class="kpi-value" id="repairRate">-</div>
+                <div class="kpi-value" id="kpiRepairRate">-</div>
                 <div class="kpi-label">Overall Repair Rate</div>
             </div>
+            <div class="kpi-card warning">
+                <div class="kpi-value" id="kpiTotalCost">-</div>
+                <div class="kpi-label">Est. Total Repair Cost</div>
+            </div>
             <div class="kpi-card purple">
-                <div class="kpi-value" id="accidentalPct">-</div>
+                <div class="kpi-value" id="kpiAccidental">-</div>
                 <div class="kpi-label">Accidental Damage %</div>
             </div>
             <div class="kpi-card success">
-                <div class="kpi-value" id="inWarrantyPct">-</div>
+                <div class="kpi-value" id="kpiInWarranty">-</div>
                 <div class="kpi-label">In Warranty %</div>
             </div>
-            <div class="kpi-card warning">
-                <div class="kpi-value" id="outWarrantyPct">-</div>
-                <div class="kpi-label">Out of Warranty %</div>
-            </div>
-            <div class="kpi-card danger">
-                <div class="kpi-value" id="totalCost">-</div>
-                <div class="kpi-label">Est. Total Repair Cost</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-value" id="modelCount">-</div>
-                <div class="kpi-label">Models Analyzed</div>
-            </div>
-        </div>
-        
-        <!-- Key Insights -->
-        <div class="insights">
-            <h3>📈 Key Insights & Analysis</h3>
-            <div id="insightsList"></div>
         </div>
         
         <!-- Charts Row 1 -->
         <div class="chart-grid">
             <div class="chart-container">
-                <h3>🔧 Repair Rate by Model (Top 10 Highest)</h3>
+                <h3>📈 Repair Rate by Model (Highest to Lowest)</h3>
                 <div class="chart-wrapper tall">
                     <canvas id="repairRateChart"></canvas>
                 </div>
             </div>
             <div class="chart-container">
-                <h3>💰 Total Repair Cost by Model (Top 10)</h3>
+                <h3>💰 Estimated Repair Cost by Model (Top 15)</h3>
                 <div class="chart-wrapper tall">
                     <canvas id="costByModelChart"></canvas>
                 </div>
@@ -437,15 +433,15 @@
         <!-- Charts Row 2 -->
         <div class="chart-grid">
             <div class="chart-container">
-                <h3>⚠️ Accidental vs Non-Accidental Damage</h3>
+                <h3>🔧 Repair Type Distribution</h3>
                 <div class="chart-wrapper">
-                    <canvas id="accidentalChart"></canvas>
+                    <canvas id="repairTypeChart"></canvas>
                 </div>
             </div>
             <div class="chart-container">
-                <h3>📋 Warranty Status Distribution</h3>
+                <h3>💵 Cost Breakdown by Repair Type</h3>
                 <div class="chart-wrapper">
-                    <canvas id="warrantyStatusChart"></canvas>
+                    <canvas id="costChart"></canvas>
                 </div>
             </div>
         </div>
@@ -453,48 +449,38 @@
         <!-- Charts Row 3 -->
         <div class="chart-grid">
             <div class="chart-container">
-                <h3>🛠️ Repair Type Breakdown</h3>
-                <div class="chart-wrapper">
-                    <canvas id="repairTypeChart"></canvas>
+                <h3>⚠️ Accidental Damage Rate by Model</h3>
+                <div class="chart-wrapper tall">
+                    <canvas id="accidentalChart"></canvas>
                 </div>
             </div>
             <div class="chart-container">
-                <h3>💵 Cost Distribution by Repair Type</h3>
+                <h3>📋 Warranty Status Distribution</h3>
                 <div class="chart-wrapper">
-                    <canvas id="costDistChart"></canvas>
+                    <canvas id="warrantyChart"></canvas>
                 </div>
             </div>
         </div>
         
-        <!-- Charts Row 4 -->
-        <div class="chart-grid">
-            <div class="chart-container">
-                <h3>💥 Accidental Damage % by Model (Top 10)</h3>
-                <div class="chart-wrapper tall">
-                    <canvas id="accidentalByModelChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-container">
-                <h3>✅ Most Reliable Models (Lowest Repair Rate)</h3>
-                <div class="chart-wrapper tall">
-                    <canvas id="reliableChart"></canvas>
-                </div>
-            </div>
+        <!-- Insights Section -->
+        <div class="insights">
+            <h3>🔍 Key Insights & Analysis</h3>
+            <div id="insightsList"></div>
         </div>
         
-        <!-- Data Tables with Tabs -->
+        <!-- Data Tables -->
         <div class="table-container">
+            <h3>📊 Model Analysis Tables</h3>
             <div class="tab-buttons">
-                <button class="tab-btn active" onclick="showTab('worstTab', this)">⚠️ Highest Repair Rates</button>
-                <button class="tab-btn" onclick="showTab('bestTab', this)">✅ Most Reliable</button>
-                <button class="tab-btn" onclick="showTab('costTab', this)">💰 Highest Cost</button>
-                <button class="tab-btn" onclick="showTab('accidentalTab', this)">💥 Accidental Damage</button>
-                <button class="tab-btn" onclick="showTab('warrantyTab', this)">📋 Warranty Analysis</button>
-                <button class="tab-btn" onclick="showTab('allTab', this)">📊 All Models</button>
+                <button class="tab-btn active" onclick="showTab('worstTab')">⚠️ Highest Repair Rate</button>
+                <button class="tab-btn" onclick="showTab('bestTab')">✅ Most Reliable</button>
+                <button class="tab-btn" onclick="showTab('costTab')">💰 Highest Cost</button>
+                <button class="tab-btn" onclick="showTab('accidentalTab')">💥 Accidental Damage</button>
+                <button class="tab-btn" onclick="showTab('warrantyTab')">📋 Warranty Status</button>
+                <button class="tab-btn" onclick="showTab('allTab')">📄 All Models</button>
             </div>
             
             <div id="worstTab" class="tab-content active">
-                <h3>Models with Highest Repair Rates</h3>
                 <table>
                     <thead>
                         <tr>
@@ -511,7 +497,6 @@
             </div>
             
             <div id="bestTab" class="tab-content">
-                <h3>Most Reliable Models (Lowest Repair Rates)</h3>
                 <table>
                     <thead>
                         <tr>
@@ -528,7 +513,6 @@
             </div>
             
             <div id="costTab" class="tab-content">
-                <h3>Models by Total Repair Cost</h3>
                 <table>
                     <thead>
                         <tr>
@@ -544,7 +528,6 @@
             </div>
             
             <div id="accidentalTab" class="tab-content">
-                <h3>Accidental Damage by Model</h3>
                 <table>
                     <thead>
                         <tr>
@@ -559,7 +542,6 @@
             </div>
             
             <div id="warrantyTab" class="tab-content">
-                <h3>Warranty Status Analysis by Model</h3>
                 <table>
                     <thead>
                         <tr>
@@ -575,205 +557,154 @@
             </div>
             
             <div id="allTab" class="tab-content">
-                <h3>Complete Model Data</h3>
                 <table>
                     <thead>
                         <tr>
                             <th>Model</th>
                             <th>Item #</th>
-                            <th>Sold</th>
+                            <th>Units Sold</th>
                             <th>Major</th>
                             <th>Minor</th>
-                            <th>NPU</th>
+                            <th>NPU/NPF</th>
                             <th>Accidental</th>
                             <th>Total</th>
-                            <th>Rate</th>
-                            <th>Cost</th>
+                            <th>Repair Rate</th>
+                            <th>Est. Cost</th>
                         </tr>
                     </thead>
                     <tbody id="allTable"></tbody>
                 </table>
             </div>
         </div>
+        
+        <div class="footer">
+            CTL Warranty Analysis Dashboard | Data: 2023-2025 | Generated February 2026<br>
+            Filtered: Models with >1000 units sold | Excluded: NL71 and NL81 models
+        </div>
     </div>
 
     <script>
-        // Password check
+        // Password check function
         function checkPassword() {
-            const input = document.getElementById('passwordInput').value;
-            const correctPassword = 'CTLdata87!2903123';
+            const password = document.getElementById('passwordInput').value;
+            const correctPassword = 'CTLdata20232026';
             
-            if (input === correctPassword) {
-                document.getElementById('passwordScreen').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
+            if (password === correctPassword) {
+                document.getElementById('passwordOverlay').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
                 initDashboard();
             } else {
                 document.getElementById('passwordError').style.display = 'block';
                 document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
             }
         }
         
-        function showTab(tabId, btn) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            btn.classList.add('active');
-        }
-        
         function initDashboard() {
-            // Warranty Data (excluding NL71 and NL81 models)
+            // Model data - filtered for >1000 units, excluding NL71/NL81
             const warrantyData = [
-                {"item":"CBUS1100026","model":"CTL Chromebook NL73CT N100 8/6","sold":13093,"major":134,"minor":179,"total":335,"npu":22,"accidental":162,"outWarranty":33,"inWarranty":336,"repairRate":2.56,"totalCost":22790,"accidentalPct":48.4,"inWarrantyPct":91.1,"outWarrantyPct":8.9},
-                {"item":"CBUS1100022","model":"CTL Chromebook PX11E 4/64","sold":20981,"major":448,"minor":407,"total":978,"npu":123,"accidental":456,"outWarranty":50,"inWarranty":976,"repairRate":4.66,"totalCost":67610,"accidentalPct":46.6,"inWarrantyPct":95.1,"outWarrantyPct":4.9},
-                {"item":"CBUS1100034","model":"CTL Chromebook PX111E 8/64","sold":5509,"major":95,"minor":60,"total":179,"npu":24,"accidental":84,"outWarranty":7,"inWarranty":216,"repairRate":3.25,"totalCost":12980,"accidentalPct":46.9,"inWarrantyPct":96.9,"outWarrantyPct":3.1},
-                {"item":"CBUS1100011","model":"CTL Chromebook NL72TW/8/64","sold":35388,"major":1183,"minor":2479,"total":4344,"npu":682,"accidental":1801,"outWarranty":348,"inWarranty":4306,"repairRate":12.28,"totalCost":255890,"accidentalPct":41.5,"inWarrantyPct":92.5,"outWarrantyPct":7.5},
-                {"item":"CBUS1100020","model":"CTL Chromebook NL72CT-L 4/64","sold":56259,"major":1608,"minor":1554,"total":3359,"npu":197,"accidental":1790,"outWarranty":139,"inWarranty":3435,"repairRate":5.97,"totalCost":242440,"accidentalPct":53.3,"inWarrantyPct":96.1,"outWarrantyPct":3.9},
-                {"item":"CBUS1100016","model":"CTL Chromebook NL72 4/64","sold":22714,"major":221,"minor":495,"total":823,"npu":107,"accidental":380,"outWarranty":196,"inWarranty":707,"repairRate":3.62,"totalCost":48990,"accidentalPct":46.2,"inWarrantyPct":78.3,"outWarrantyPct":21.7},
-                {"item":"CBUS1100013","model":"CTL Chromebook NL72-L LTE","sold":1679,"major":83,"minor":235,"total":351,"npu":33,"accidental":194,"outWarranty":77,"inWarranty":310,"repairRate":20.91,"totalCost":20710,"accidentalPct":55.3,"inWarrantyPct":80.1,"outWarrantyPct":19.9},
-                {"item":"CBUS1100024","model":"CTL Chromebook NL73/8 N100","sold":24195,"major":231,"minor":255,"total":538,"npu":52,"accidental":284,"outWarranty":126,"inWarranty":458,"repairRate":2.22,"totalCost":36890,"accidentalPct":52.8,"inWarrantyPct":78.4,"outWarrantyPct":21.6},
-                {"item":"CBUS1100027","model":"CTL Chromebook NL73T N100 360","sold":3481,"major":28,"minor":59,"total":104,"npu":17,"accidental":39,"outWarranty":7,"inWarranty":104,"repairRate":2.99,"totalCost":6090,"accidentalPct":37.5,"inWarrantyPct":93.7,"outWarrantyPct":6.3},
-                {"item":"CBUS1100025","model":"CTL Chromebook NL73TW N100 360","sold":35933,"major":273,"minor":538,"total":954,"npu":143,"accidental":484,"outWarranty":43,"inWarranty":979,"repairRate":2.65,"totalCost":57060,"accidentalPct":50.7,"inWarrantyPct":95.8,"outWarrantyPct":4.2},
-                {"item":"CBUS1100035","model":"CTL NL73TW GEN2","sold":3346,"major":2,"minor":9,"total":14,"npu":3,"accidental":6,"outWarranty":0,"inWarranty":17,"repairRate":0.42,"totalCost":710,"accidentalPct":42.9,"inWarrantyPct":100.0,"outWarrantyPct":0.0},
-                {"item":"CBUS1100030","model":"CTL Chromebook NL73TWB N200","sold":649,"major":46,"minor":59,"total":125,"npu":20,"accidental":68,"outWarranty":4,"inWarranty":157,"repairRate":19.26,"totalCost":7950,"accidentalPct":54.4,"inWarrantyPct":97.5,"outWarrantyPct":2.5},
-                {"item":"CBUS1100017","model":"CTL Chromebook NL72T N4500","sold":37181,"major":1185,"minor":2405,"total":4061,"npu":471,"accidental":2086,"outWarranty":322,"inWarranty":3684,"repairRate":10.92,"totalCost":248170,"accidentalPct":51.4,"inWarrantyPct":92.0,"outWarrantyPct":8.0},
-                {"item":"CBUS1100033","model":"CTL Chromebook PX111E 4/64","sold":12330,"major":129,"minor":47,"total":192,"npu":16,"accidental":73,"outWarranty":10,"inWarranty":202,"repairRate":1.56,"totalCost":15570,"accidentalPct":38.0,"inWarrantyPct":95.3,"outWarrantyPct":4.7},
-                {"item":"CBUS1400005","model":"CTL Chromebook PX14EXT 14\" Touch","sold":2475,"major":150,"minor":102,"total":294,"npu":42,"accidental":164,"outWarranty":8,"inWarranty":296,"repairRate":11.88,"totalCost":20940,"accidentalPct":55.8,"inWarrantyPct":97.4,"outWarrantyPct":2.6},
-                {"item":"CBUS1100028","model":"CTL Chromebook NL73 N100 4/64","sold":11992,"major":52,"minor":65,"total":124,"npu":7,"accidental":43,"outWarranty":36,"inWarranty":114,"repairRate":1.03,"totalCost":8590,"accidentalPct":34.7,"inWarrantyPct":76.0,"outWarrantyPct":24.0},
-                {"item":"CBUS1100021","model":"CTL Chromebook NL72CT","sold":2994,"major":185,"minor":159,"total":389,"npu":45,"accidental":248,"outWarranty":62,"inWarranty":391,"repairRate":12.99,"totalCost":27350,"accidentalPct":63.8,"inWarrantyPct":86.3,"outWarrantyPct":13.7},
-                {"item":"CBXUS190020","model":"CTL Meet Compute System GQE20C","sold":6152,"major":33,"minor":33,"total":72,"npu":6,"accidental":0,"outWarranty":0,"inWarranty":101,"repairRate":1.17,"totalCost":5070,"accidentalPct":0.0,"inWarrantyPct":100.0,"outWarrantyPct":0.0},
-                {"item":"CBUS1100014","model":"CTL Chromebook PX11E 4/32","sold":13940,"major":215,"minor":783,"total":1071,"npu":73,"accidental":681,"outWarranty":510,"inWarranty":583,"repairRate":7.68,"totalCost":62110,"accidentalPct":63.6,"inWarrantyPct":53.3,"outWarrantyPct":46.7},
-                {"item":"CBUS1400011","model":"CTL Chromebook PX141E N100","sold":10859,"major":101,"minor":33,"total":147,"npu":13,"accidental":73,"outWarranty":21,"inWarranty":164,"repairRate":1.35,"totalCost":12010,"accidentalPct":49.7,"inWarrantyPct":88.6,"outWarrantyPct":11.4},
-                {"item":"CBUS1100015","model":"CTL Chromebook NL72 N5100 8/64","sold":23614,"major":499,"minor":1677,"total":2351,"npu":175,"accidental":929,"outWarranty":921,"inWarranty":1446,"repairRate":9.96,"totalCost":137250,"accidentalPct":39.5,"inWarrantyPct":61.1,"outWarrantyPct":38.9},
-                {"item":"CBUS1100037","model":"CTL NL73 GEN2","sold":3632,"major":8,"minor":2,"total":11,"npu":1,"accidental":8,"outWarranty":0,"inWarranty":12,"repairRate":0.3,"totalCost":920,"accidentalPct":72.7,"inWarrantyPct":100.0,"outWarrantyPct":0.0},
-                {"item":"CBUS1400003","model":"CTL Chromebook PX14E 14\" HD","sold":6573,"major":650,"minor":438,"total":1162,"npu":74,"accidental":697,"outWarranty":165,"inWarranty":1108,"repairRate":17.68,"totalCost":88380,"accidentalPct":60.0,"inWarrantyPct":87.0,"outWarrantyPct":13.0},
-                {"item":"CBUS1400009","model":"CTL PX14EXT 14\" TS 8/128","sold":1055,"major":20,"minor":13,"total":47,"npu":14,"accidental":22,"outWarranty":3,"inWarranty":49,"repairRate":4.45,"totalCost":2930,"accidentalPct":46.8,"inWarrantyPct":94.2,"outWarrantyPct":5.8},
-                {"item":"CBUS1400004","model":"CTL Chromebook PX14EX 14\" FHD","sold":3511,"major":70,"minor":69,"total":173,"npu":34,"accidental":66,"outWarranty":25,"inWarranty":157,"repairRate":4.93,"totalCost":11130,"accidentalPct":38.2,"inWarrantyPct":86.3,"outWarrantyPct":13.7},
-                {"item":"CBUS1100014A","model":"CTL Chromebook PX11E 4/32-180","sold":1983,"major":154,"minor":195,"total":370,"npu":21,"accidental":227,"outWarranty":56,"inWarranty":318,"repairRate":18.66,"totalCost":25570,"accidentalPct":61.4,"inWarrantyPct":85.0,"outWarrantyPct":15.0},
-                {"item":"CBUS1100004","model":"CTL Chromebook VX11 4/32","sold":15831,"major":48,"minor":252,"total":320,"npu":20,"accidental":215,"outWarranty":420,"inWarranty":37,"repairRate":2.02,"totalCost":17800,"accidentalPct":67.2,"inWarrantyPct":8.1,"outWarrantyPct":91.9},
-                {"item":"RFNL72TW","model":"REFURB NL72TW","sold":182,"major":25,"minor":92,"total":125,"npu":8,"accidental":53,"outWarranty":25,"inWarranty":103,"repairRate":68.68,"totalCost":7260,"accidentalPct":42.4,"inWarrantyPct":80.5,"outWarrantyPct":19.5},
-                {"item":"CBUS1400015","model":"CTL Chromebook PX141GXT","sold":3062,"major":14,"minor":5,"total":26,"npu":7,"accidental":7,"outWarranty":1,"inWarranty":28,"repairRate":0.85,"totalCost":1790,"accidentalPct":26.9,"inWarrantyPct":96.6,"outWarrantyPct":3.4},
-                {"item":"CBUS1400012","model":"CTL Chromebook PX141EXT","sold":5009,"major":16,"minor":11,"total":29,"npu":2,"accidental":8,"outWarranty":1,"inWarranty":39,"repairRate":0.58,"totalCost":2190,"accidentalPct":27.6,"inWarrantyPct":97.5,"outWarrantyPct":2.5},
-                {"item":"CBUS1400007","model":"CTL PX14EXT 14\" TS 8/64","sold":1495,"major":14,"minor":9,"total":31,"npu":8,"accidental":10,"outWarranty":1,"inWarranty":38,"repairRate":2.07,"totalCost":2010,"accidentalPct":32.3,"inWarrantyPct":97.4,"outWarrantyPct":2.6},
-                {"item":"CBUS1400013","model":"CTL Chromebook PX141GX","sold":1530,"major":6,"minor":2,"total":9,"npu":1,"accidental":5,"outWarranty":1,"inWarranty":11,"repairRate":0.59,"totalCost":720,"accidentalPct":55.6,"inWarrantyPct":91.7,"outWarrantyPct":8.3},
-                {"item":"RFNL7T","model":"REFURB NL7T","sold":37,"major":0,"minor":7,"total":14,"npu":7,"accidental":2,"outWarranty":0,"inWarranty":7,"repairRate":37.84,"totalCost":490,"accidentalPct":14.3,"inWarrantyPct":100.0,"outWarrantyPct":0.0},
-                {"item":"CBUS1100019","model":"CTL Chromebook NL72-L LTE 4/64","sold":7883,"major":1,"minor":16,"total":17,"npu":0,"accidental":0,"outWarranty":1,"inWarranty":13,"repairRate":0.22,"totalCost":900,"accidentalPct":0.0,"inWarrantyPct":92.9,"outWarrantyPct":7.1},
-                {"item":"CBUS1100023","model":"CTL Chromebook NL72T N5100 4/6","sold":873,"major":1,"minor":3,"total":5,"npu":1,"accidental":1,"outWarranty":0,"inWarranty":5,"repairRate":0.57,"totalCost":270,"accidentalPct":20.0,"inWarrantyPct":100.0,"outWarrantyPct":0.0},
-                {"item":"NBCTX1","model":"CTL Chrome Tablet Tx1 4/32","sold":4257,"major":11,"minor":2,"total":19,"npu":6,"accidental":8,"outWarranty":12,"inWarranty":8,"repairRate":0.45,"totalCost":1320,"accidentalPct":42.1,"inWarrantyPct":40.0,"outWarrantyPct":60.0},
-                {"item":"CBXUS190005","model":"CTL Google Meet GQE15C","sold":13042,"major":51,"minor":88,"total":145,"npu":6,"accidental":0,"outWarranty":0,"inWarranty":157,"repairRate":1.11,"totalCost":9620,"accidentalPct":0.0,"inWarrantyPct":100.0,"outWarrantyPct":0.0},
-                {"item":"CBXUS190010","model":"CTL Chromebox CBx3 Cel 7305","sold":7369,"major":10,"minor":21,"total":33,"npu":2,"accidental":0,"outWarranty":0,"inWarranty":31,"repairRate":0.45,"totalCost":2090,"accidentalPct":0.0,"inWarrantyPct":100.0,"outWarrantyPct":0.0},
-                {"item":"CBXUS190011","model":"CTL Chromebox CBx3-7 i7","sold":1016,"major":4,"minor":5,"total":11,"npu":2,"accidental":0,"outWarranty":0,"inWarranty":11,"repairRate":1.08,"totalCost":690,"accidentalPct":0.0,"inWarrantyPct":100.0,"outWarrantyPct":0.0},
-                {"item":"RFNL7TC","model":"Refurb NL7T C grade","sold":40,"major":0,"minor":1,"total":3,"npu":2,"accidental":0,"outWarranty":1,"inWarranty":4,"repairRate":7.5,"totalCost":90,"accidentalPct":0.0,"inWarrantyPct":80.0,"outWarrantyPct":20.0},
-                {"item":"CBXUS190004","model":"CTL Chromebox CBx2-7 8/128","sold":1420,"major":4,"minor":2,"total":7,"npu":1,"accidental":0,"outWarranty":2,"inWarranty":5,"repairRate":0.49,"totalCost":520,"accidentalPct":0.0,"inWarrantyPct":71.4,"outWarrantyPct":28.6},
-                {"item":"CBXUS190003","model":"CTL Chromebox CBx2 4/64","sold":15709,"major":13,"minor":10,"total":25,"npu":2,"accidental":0,"outWarranty":0,"inWarranty":21,"repairRate":0.16,"totalCost":1840,"accidentalPct":0.0,"inWarrantyPct":100.0,"outWarrantyPct":0.0},
-                {"item":"RFNL7","model":"REFURB NL7","sold":155,"major":0,"minor":1,"total":2,"npu":1,"accidental":0,"outWarranty":0,"inWarranty":2,"repairRate":1.29,"totalCost":70,"accidentalPct":0.0,"inWarrantyPct":100.0,"outWarrantyPct":0.0}
+                { model: "CTL Chromebook VX11 4/32", item: "CBUS1100004", sold: 15831, major: 94, minor: 204, npu: 22, accidental: 215, total: 320, inWarranty: 27, outWarranty: 306 },
+                { model: "CTL Chromebook NL72TW/8/64 CBU", item: "CBUS1100011", sold: 35388, major: 1183, minor: 2479, npu: 682, accidental: 1801, total: 4344, inWarranty: 4306, outWarranty: 348 },
+                { model: "CTL Chromebook NL72-L 4/64 LTE", item: "CBUS1100013", sold: 1679, major: 83, minor: 235, npu: 33, accidental: 194, total: 351, inWarranty: 310, outWarranty: 77 },
+                { model: "CTL Chromebook PX11E 4/32", item: "CBUS1100014", sold: 13940, major: 312, minor: 580, npu: 179, accidental: 681, total: 1071, inWarranty: 571, outWarranty: 500 },
+                { model: "CTL Chromebook PX11E 4/32-180", item: "CBUS1100014A", sold: 1983, major: 160, minor: 167, npu: 43, accidental: 227, total: 370, inWarranty: 319, outWarranty: 56 },
+                { model: "CTL Chromebook NL72 N5100 8/64", item: "CBUS1100015", sold: 23614, major: 699, minor: 1283, npu: 369, accidental: 929, total: 2351, inWarranty: 1563, outWarranty: 998 },
+                { model: "CTL Chromebook NL72 4/64", item: "CBUS1100016", sold: 22714, major: 221, minor: 495, npu: 107, accidental: 380, total: 823, inWarranty: 707, outWarranty: 196 },
+                { model: "CTL Chromebook NL72T N4500 4/64", item: "CBUS1100017", sold: 37181, major: 1334, minor: 2045, npu: 682, accidental: 2086, total: 4061, inWarranty: 3921, outWarranty: 343 },
+                { model: "CTL Chromebook NL72-L 4/64 LTE", item: "CBUS1100019", sold: 7883, major: 2, minor: 14, npu: 1, accidental: 0, total: 17, inWarranty: 13, outWarranty: 1 },
+                { model: "CTL Chromebook NL72CT-L 4/64 LTE", item: "CBUS1100020", sold: 56259, major: 1608, minor: 1554, npu: 197, accidental: 1790, total: 3359, inWarranty: 3435, outWarranty: 139 },
+                { model: "CTL Chromebook NL72CT", item: "CBUS1100021", sold: 2994, major: 155, minor: 181, npu: 53, accidental: 248, total: 389, inWarranty: 365, outWarranty: 58 },
+                { model: "CTL Chromebook PX11E 4/64", item: "CBUS1100022", sold: 20981, major: 448, minor: 407, npu: 123, accidental: 456, total: 978, inWarranty: 976, outWarranty: 50 },
+                { model: "CTL Chromebook NL73/8 N100 8/64", item: "CBUS1100024", sold: 24195, major: 231, minor: 255, npu: 52, accidental: 284, total: 538, inWarranty: 458, outWarranty: 126 },
+                { model: "CTL Chromebook NL73TW N100 360", item: "CBUS1100025", sold: 35933, major: 273, minor: 538, npu: 143, accidental: 484, total: 954, inWarranty: 979, outWarranty: 43 },
+                { model: "CTL Chromebook NL73CT N100 8/64", item: "CBUS1100026", sold: 13093, major: 134, minor: 179, npu: 22, accidental: 162, total: 335, inWarranty: 336, outWarranty: 33 },
+                { model: "CTL Chromebook NL73T N100 360", item: "CBUS1100027", sold: 3481, major: 28, minor: 59, npu: 17, accidental: 39, total: 104, inWarranty: 104, outWarranty: 7 },
+                { model: "CTL Chromebook NL73 N100 4/64", item: "CBUS1100028", sold: 11992, major: 51, minor: 55, npu: 18, accidental: 43, total: 124, inWarranty: 114, outWarranty: 36 },
+                { model: "CTL Chromebook PX111E 4/64", item: "CBUS1100033", sold: 12330, major: 110, minor: 56, npu: 26, accidental: 73, total: 192, inWarranty: 202, outWarranty: 10 },
+                { model: "CTL Chromebook PX111E 8/64", item: "CBUS1100034", sold: 5509, major: 95, minor: 60, npu: 24, accidental: 84, total: 179, inWarranty: 216, outWarranty: 7 },
+                { model: "CTL NL73TW Chromebook Gen2", item: "CBUS1100035", sold: 3346, major: 3, minor: 8, npu: 3, accidental: 6, total: 14, inWarranty: 18, outWarranty: 0 },
+                { model: "CTL NL73 Chromebook Gen2", item: "CBUS1100037", sold: 3632, major: 6, minor: 4, npu: 1, accidental: 8, total: 11, inWarranty: 13, outWarranty: 0 },
+                { model: "CTL Chromebook PX14E 14\" HD", item: "CBUS1400003", sold: 6573, major: 597, minor: 401, npu: 164, accidental: 697, total: 1162, inWarranty: 1122, outWarranty: 167 },
+                { model: "CTL Chromebook PX14EX 14\" FHD", item: "CBUS1400004", sold: 3511, major: 57, minor: 93, npu: 23, accidental: 66, total: 173, inWarranty: 169, outWarranty: 27 },
+                { model: "CTL Chromebook PX14EXT 14\" Touch", item: "CBUS1400005", sold: 2475, major: 149, minor: 104, npu: 41, accidental: 164, total: 294, inWarranty: 296, outWarranty: 8 },
+                { model: "CTL PX14EXT 14\" TS 8/64-N6000", item: "CBUS1400007", sold: 1495, major: 13, minor: 13, npu: 5, accidental: 10, total: 31, inWarranty: 38, outWarranty: 1 },
+                { model: "CTL PX14EXT 14\" TS 8/128-N6000", item: "CBUS1400009", sold: 1055, major: 21, minor: 19, npu: 7, accidental: 22, total: 47, inWarranty: 49, outWarranty: 3 },
+                { model: "CTL Chromebook PX141E N100 8/64", item: "CBUS1400011", sold: 10859, major: 89, minor: 35, npu: 23, accidental: 73, total: 147, inWarranty: 141, outWarranty: 18 },
+                { model: "CTL Chromebook PX141EXT", item: "CBUS1400012", sold: 5009, major: 15, minor: 9, npu: 5, accidental: 8, total: 29, inWarranty: 39, outWarranty: 1 },
+                { model: "CTL Chromebook PX141GX", item: "CBUS1400013", sold: 1530, major: 5, minor: 3, npu: 1, accidental: 5, total: 9, inWarranty: 11, outWarranty: 1 },
+                { model: "CTL Chromebook PX141GXT", item: "CBUS1400015", sold: 3062, major: 11, minor: 12, npu: 3, accidental: 7, total: 26, inWarranty: 28, outWarranty: 1 },
+                { model: "CTL Chromebox CBx2 4/64 5205U", item: "CBXUS190003", sold: 15709, major: 12, minor: 10, npu: 3, accidental: 0, total: 25, inWarranty: 27, outWarranty: 0 },
+                { model: "CTL Chromebox CBx2-7 8/128", item: "CBXUS190004", sold: 1420, major: 4, minor: 2, npu: 1, accidental: 0, total: 7, inWarranty: 5, outWarranty: 2 },
+                { model: "CTL Google Meet GQE15C System", item: "CBXUS190005", sold: 13042, major: 51, minor: 88, npu: 6, accidental: 0, total: 145, inWarranty: 157, outWarranty: 0 },
+                { model: "CTL Chromebox CBx3 Cel 7305", item: "CBXUS190010", sold: 7369, major: 11, minor: 17, npu: 5, accidental: 0, total: 33, inWarranty: 35, outWarranty: 0 },
+                { model: "CTL Chromebox CBx3-7 i7-1355U", item: "CBXUS190011", sold: 1016, major: 4, minor: 5, npu: 2, accidental: 0, total: 11, inWarranty: 12, outWarranty: 0 },
+                { model: "CTL Meet Compute System (GQE20C)", item: "CBXUS190020", sold: 6152, major: 30, minor: 33, npu: 9, accidental: 0, total: 72, inWarranty: 80, outWarranty: 0 },
+                { model: "CTL Chrome Tablet Tx1 4GB/32", item: "NBCTX1", sold: 4257, major: 10, minor: 5, npu: 4, accidental: 8, total: 19, inWarranty: 8, outWarranty: 12 }
             ];
             
-            // Summary stats
-            const summary = {
-                totalSold: 440428,
-                totalRepairs: 23389,
-                totalMajor: 8021,
-                totalMinor: 12877,
-                totalNPU: 2491,
-                totalAccidental: 11374,
-                totalInWarranty: 21146,
-                totalOutWarranty: 3634,
-                totalCost: 1495770,
-                overallRepairRate: 5.31,
-                overallAccidentalPct: 48.6,
-                overallInWarrantyPct: 85.3,
-                modelCount: 43
-            };
+            // Calculate derived metrics
+            warrantyData.forEach(d => {
+                d.repairRate = ((d.total / d.sold) * 100).toFixed(2);
+                d.totalCost = (d.major * 100) + (d.minor * 50) + (d.npu * 20);
+                d.accidentalPct = d.total > 0 ? ((d.accidental / d.total) * 100).toFixed(2) : 0;
+                d.inWarrantyPct = (d.inWarranty + d.outWarranty) > 0 ? 
+                    ((d.inWarranty / (d.inWarranty + d.outWarranty)) * 100).toFixed(2) : 0;
+                d.outWarrantyPct = (d.inWarranty + d.outWarranty) > 0 ? 
+                    ((d.outWarranty / (d.inWarranty + d.outWarranty)) * 100).toFixed(2) : 0;
+                d.shortName = d.model.replace('CTL Chromebook ', '').replace('CTL ', '').substring(0, 20);
+            });
             
-            // Update KPI cards
-            document.getElementById('totalSold').textContent = summary.totalSold.toLocaleString();
-            document.getElementById('totalRepairs').textContent = summary.totalRepairs.toLocaleString();
-            document.getElementById('repairRate').textContent = summary.overallRepairRate + '%';
-            document.getElementById('accidentalPct').textContent = summary.overallAccidentalPct + '%';
-            document.getElementById('inWarrantyPct').textContent = summary.overallInWarrantyPct + '%';
-            document.getElementById('outWarrantyPct').textContent = (100 - summary.overallInWarrantyPct).toFixed(1) + '%';
-            document.getElementById('totalCost').textContent = '$' + summary.totalCost.toLocaleString();
-            document.getElementById('modelCount').textContent = summary.modelCount;
+            // Calculate totals
+            const totalSold = warrantyData.reduce((sum, d) => sum + d.sold, 0);
+            const totalRepairs = warrantyData.reduce((sum, d) => sum + d.total, 0);
+            const totalMajor = warrantyData.reduce((sum, d) => sum + d.major, 0);
+            const totalMinor = warrantyData.reduce((sum, d) => sum + d.minor, 0);
+            const totalNPU = warrantyData.reduce((sum, d) => sum + d.npu, 0);
+            const totalAccidental = warrantyData.reduce((sum, d) => sum + d.accidental, 0);
+            const totalInWarranty = warrantyData.reduce((sum, d) => sum + d.inWarranty, 0);
+            const totalOutWarranty = warrantyData.reduce((sum, d) => sum + d.outWarranty, 0);
+            const totalCost = warrantyData.reduce((sum, d) => sum + d.totalCost, 0);
             
-            // Sort data for various views
-            const byRepairRate = [...warrantyData].sort((a, b) => b.repairRate - a.repairRate);
-            const byReliable = [...warrantyData].filter(d => d.sold >= 500).sort((a, b) => a.repairRate - b.repairRate);
+            // Update KPIs
+            document.getElementById('kpiUnitsSold').textContent = totalSold.toLocaleString();
+            document.getElementById('kpiTotalRepairs').textContent = totalRepairs.toLocaleString();
+            document.getElementById('kpiRepairRate').textContent = ((totalRepairs / totalSold) * 100).toFixed(2) + '%';
+            document.getElementById('kpiTotalCost').textContent = '$' + totalCost.toLocaleString();
+            document.getElementById('kpiAccidental').textContent = ((totalAccidental / totalRepairs) * 100).toFixed(1) + '%';
+            document.getElementById('kpiInWarranty').textContent = ((totalInWarranty / (totalInWarranty + totalOutWarranty)) * 100).toFixed(1) + '%';
+            
+            // Sort data for different views
+            const byRepairRate = [...warrantyData].sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate));
+            const byReliable = [...warrantyData].sort((a, b) => parseFloat(a.repairRate) - parseFloat(b.repairRate));
             const byCost = [...warrantyData].sort((a, b) => b.totalCost - a.totalCost);
-            const byAccidental = [...warrantyData].filter(d => d.total >= 10).sort((a, b) => b.accidentalPct - a.accidentalPct);
-            
-            // Generate insights
-            const worstModel = byRepairRate[0];
-            const bestModel = byReliable[0];
-            const highestCost = byCost[0];
-            const highAccidental = byAccidental[0];
-            
-            const insights = [
-                {
-                    icon: '⚠️',
-                    title: 'Highest Repair Rate',
-                    text: `${worstModel.model} has the highest repair rate at ${worstModel.repairRate}% (${worstModel.total} repairs out of ${worstModel.sold.toLocaleString()} units sold). Consider investigating quality control or design issues.`
-                },
-                {
-                    icon: '✅',
-                    title: 'Most Reliable Model',
-                    text: `${bestModel.model} leads reliability with only ${bestModel.repairRate}% repair rate (${bestModel.total} repairs out of ${bestModel.sold.toLocaleString()} units). This model could serve as a benchmark for quality standards.`
-                },
-                {
-                    icon: '💰',
-                    title: 'Highest Repair Cost',
-                    text: `${highestCost.model} has accumulated the highest total repair costs at $${highestCost.totalCost.toLocaleString()} with ${highestCost.total.toLocaleString()} repairs. High volume (${highestCost.sold.toLocaleString()} sold) contributes to this.`
-                },
-                {
-                    icon: '💥',
-                    title: 'Accidental Damage Analysis',
-                    text: `Overall, ${summary.overallAccidentalPct}% of all repairs are due to accidental damage. ${highAccidental.model} has the highest accidental damage rate at ${highAccidental.accidentalPct}%, suggesting it may need better durability features or protective accessories.`
-                },
-                {
-                    icon: '📋',
-                    title: 'Warranty Coverage',
-                    text: `${summary.overallInWarrantyPct}% of repairs occurred while devices were in warranty. ${(100 - summary.overallInWarrantyPct).toFixed(1)}% were out of warranty, representing potential revenue from extended warranty programs.`
-                },
-                {
-                    icon: '🔧',
-                    title: 'Repair Type Breakdown',
-                    text: `Major repairs account for ${((summary.totalMajor / summary.totalRepairs) * 100).toFixed(1)}% of all repairs ($100/repair), minor repairs ${((summary.totalMinor / summary.totalRepairs) * 100).toFixed(1)}% ($50/repair), and NPU/NPF ${((summary.totalNPU / summary.totalRepairs) * 100).toFixed(1)}% ($20/repair).`
-                }
-            ];
-            
-            document.getElementById('insightsList').innerHTML = insights.map(i => `
-                <div class="insight-item">
-                    <span class="insight-icon">${i.icon}</span>
-                    <div class="insight-text">
-                        <h4>${i.title}</h4>
-                        <p>${i.text}</p>
-                    </div>
-                </div>
-            `).join('');
+            const byAccidental = [...warrantyData].filter(d => d.total > 0).sort((a, b) => parseFloat(b.accidentalPct) - parseFloat(a.accidentalPct));
             
             // Chart colors
-            const blueGradient = byRepairRate.slice(0, 10).map((_, i) => 
-                `rgba(79, 195, 247, ${1 - i * 0.07})`
-            );
-            const orangeGradient = byCost.slice(0, 10).map((_, i) => 
-                `rgba(255, 183, 77, ${1 - i * 0.07})`
-            );
-            const purpleGradient = byAccidental.slice(0, 10).map((_, i) => 
-                `rgba(186, 104, 200, ${1 - i * 0.07})`
-            );
-            const greenGradient = byReliable.slice(0, 10).map((_, i) => 
-                `rgba(129, 199, 132, ${1 - i * 0.07})`
-            );
+            const redGradient = byRepairRate.map((_, i) => {
+                const ratio = i / byRepairRate.length;
+                return `rgba(${229 - ratio * 80}, ${115 + ratio * 80}, ${115 + ratio * 80}, 0.8)`;
+            });
+            
+            const greenGradient = byReliable.slice(0, 15).map((_, i) => {
+                const ratio = i / 15;
+                return `rgba(${129 + ratio * 50}, ${199 - ratio * 50}, ${132 + ratio * 50}, 0.8)`;
+            });
+            
+            const purpleGradient = byAccidental.slice(0, 15).map((_, i) => {
+                const ratio = i / 15;
+                return `rgba(${186 - ratio * 40}, ${104 + ratio * 40}, ${200 - ratio * 40}, 0.8)`;
+            });
             
             // Repair Rate Chart
             new Chart(document.getElementById('repairRateChart'), {
                 type: 'bar',
                 data: {
-                    labels: byRepairRate.slice(0, 10).map(d => d.model.length > 25 ? d.model.substring(0, 25) + '...' : d.model),
+                    labels: byRepairRate.slice(0, 15).map(d => d.shortName),
                     datasets: [{
                         label: 'Repair Rate %',
-                        data: byRepairRate.slice(0, 10).map(d => d.repairRate),
-                        backgroundColor: blueGradient,
-                        borderColor: blueGradient,
+                        data: byRepairRate.slice(0, 15).map(d => parseFloat(d.repairRate)),
+                        backgroundColor: redGradient.slice(0, 15),
+                        borderColor: redGradient.slice(0, 15),
                         borderWidth: 1
                     }]
                 },
@@ -782,7 +713,15 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    const d = byRepairRate[context.dataIndex];
+                                    return `Sold: ${d.sold.toLocaleString()} | Repairs: ${d.total.toLocaleString()}`;
+                                }
+                            }
+                        }
                     },
                     scales: {
                         x: {
@@ -791,7 +730,7 @@
                             grid: { color: 'rgba(79, 195, 247, 0.1)' }
                         },
                         y: {
-                            ticks: { color: '#e4e4e4', font: { size: 10 } },
+                            ticks: { color: '#e4e4e4', font: { size: 11 } },
                             grid: { display: false }
                         }
                     }
@@ -802,11 +741,11 @@
             new Chart(document.getElementById('costByModelChart'), {
                 type: 'bar',
                 data: {
-                    labels: byCost.slice(0, 10).map(d => d.model.length > 25 ? d.model.substring(0, 25) + '...' : d.model),
+                    labels: byCost.slice(0, 15).map(d => d.shortName),
                     datasets: [{
                         label: 'Total Cost ($)',
-                        data: byCost.slice(0, 10).map(d => d.totalCost),
-                        backgroundColor: orangeGradient,
+                        data: byCost.slice(0, 15).map(d => d.totalCost),
+                        backgroundColor: '#ffb74d',
                         borderColor: '#ff9800',
                         borderWidth: 1
                     }]
@@ -816,7 +755,14 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Cost: $' + context.raw.toLocaleString();
+                                }
+                            }
+                        }
                     },
                     scales: {
                         x: {
@@ -828,21 +774,20 @@
                             grid: { color: 'rgba(79, 195, 247, 0.1)' }
                         },
                         y: {
-                            ticks: { color: '#e4e4e4', font: { size: 10 } },
+                            ticks: { color: '#e4e4e4', font: { size: 11 } },
                             grid: { display: false }
                         }
                     }
                 }
             });
             
-            // Accidental vs Non-Accidental Chart
-            const totalNonAccidental = summary.totalRepairs - summary.totalAccidental;
-            new Chart(document.getElementById('accidentalChart'), {
+            // Repair Type Distribution
+            new Chart(document.getElementById('repairTypeChart'), {
                 type: 'doughnut',
                 data: {
                     labels: ['Accidental Damage', 'Non-Accidental'],
                     datasets: [{
-                        data: [summary.totalAccidental, totalNonAccidental],
+                        data: [totalAccidental, totalRepairs - totalAccidental],
                         backgroundColor: ['#ba68c8', '#4fc3f7'],
                         borderColor: '#1a2d47',
                         borderWidth: 2
@@ -860,7 +805,7 @@
                             callbacks: {
                                 label: function(context) {
                                     const value = context.raw;
-                                    const percentage = ((value / summary.totalRepairs) * 100).toFixed(1);
+                                    const percentage = ((value / totalRepairs) * 100).toFixed(1);
                                     return `${context.label}: ${value.toLocaleString()} (${percentage}%)`;
                                 }
                             }
@@ -869,73 +814,15 @@
                 }
             });
             
-            // Warranty Status Chart
-            new Chart(document.getElementById('warrantyStatusChart'), {
+            // Cost Distribution
+            const majorCost = totalMajor * 100;
+            const minorCost = totalMinor * 50;
+            const npuCost = totalNPU * 20;
+            
+            new Chart(document.getElementById('costChart'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['In Warranty', 'Out of Warranty'],
-                    datasets: [{
-                        data: [summary.totalInWarranty, summary.totalOutWarranty],
-                        backgroundColor: ['#81c784', '#ffb74d'],
-                        borderColor: '#1a2d47',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: { color: '#e4e4e4', padding: 15 }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.raw;
-                                    const total = summary.totalInWarranty + summary.totalOutWarranty;
-                                    const percentage = ((value / total) * 100).toFixed(1);
-                                    return `${context.label}: ${value.toLocaleString()} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Repair Type Breakdown
-            new Chart(document.getElementById('repairTypeChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Major Repairs', 'Minor Repairs', 'NPU/NPF'],
-                    datasets: [{
-                        data: [summary.totalMajor, summary.totalMinor, summary.totalNPU],
-                        backgroundColor: ['#e57373', '#ffb74d', '#4fc3f7'],
-                        borderColor: '#1a2d47',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: { color: '#e4e4e4', padding: 15 }
-                        }
-                    }
-                }
-            });
-            
-            // Cost Distribution Chart
-            const majorCost = summary.totalMajor * 100;
-            const minorCost = summary.totalMinor * 50;
-            const npuCost = summary.totalNPU * 20;
-            
-            new Chart(document.getElementById('costDistChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Major ($100/ea)', 'Minor ($50/ea)', 'NPU/NPF ($20/ea)'],
+                    labels: ['Major ($100)', 'Minor ($50)', 'NPU/NPF ($20)'],
                     datasets: [{
                         data: [majorCost, minorCost, npuCost],
                         backgroundColor: ['#e57373', '#ffb74d', '#4fc3f7'],
@@ -954,7 +841,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `${context.label}: $${context.raw.toLocaleString()}`;
+                                    return context.label + ': $' + context.raw.toLocaleString();
                                 }
                             }
                         }
@@ -962,14 +849,14 @@
                 }
             });
             
-            // Accidental by Model Chart
-            new Chart(document.getElementById('accidentalByModelChart'), {
+            // Accidental Damage Chart
+            new Chart(document.getElementById('accidentalChart'), {
                 type: 'bar',
                 data: {
-                    labels: byAccidental.slice(0, 10).map(d => d.model.length > 25 ? d.model.substring(0, 25) + '...' : d.model),
+                    labels: byAccidental.slice(0, 15).map(d => d.shortName),
                     datasets: [{
                         label: 'Accidental %',
-                        data: byAccidental.slice(0, 10).map(d => d.accidentalPct),
+                        data: byAccidental.slice(0, 15).map(d => parseFloat(d.accidentalPct)),
                         backgroundColor: purpleGradient,
                         borderColor: purpleGradient,
                         borderWidth: 1
@@ -989,46 +876,95 @@
                             grid: { color: 'rgba(79, 195, 247, 0.1)' }
                         },
                         y: {
-                            ticks: { color: '#e4e4e4', font: { size: 10 } },
+                            ticks: { color: '#e4e4e4', font: { size: 11 } },
                             grid: { display: false }
                         }
                     }
                 }
             });
             
-            // Reliable Models Chart
-            new Chart(document.getElementById('reliableChart'), {
-                type: 'bar',
+            // Warranty Status Chart
+            new Chart(document.getElementById('warrantyChart'), {
+                type: 'doughnut',
                 data: {
-                    labels: byReliable.slice(0, 10).map(d => d.model.length > 25 ? d.model.substring(0, 25) + '...' : d.model),
+                    labels: ['In Warranty', 'Out of Warranty'],
                     datasets: [{
-                        label: 'Repair Rate %',
-                        data: byReliable.slice(0, 10).map(d => d.repairRate),
-                        backgroundColor: greenGradient,
-                        borderColor: greenGradient,
-                        borderWidth: 1
+                        data: [totalInWarranty, totalOutWarranty],
+                        backgroundColor: ['#81c784', '#e57373'],
+                        borderColor: '#1a2d47',
+                        borderWidth: 2
                     }]
                 },
                 options: {
-                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        x: {
-                            title: { display: true, text: 'Repair Rate (%)', color: '#90a4ae' },
-                            ticks: { color: '#90a4ae' },
-                            grid: { color: 'rgba(79, 195, 247, 0.1)' }
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#e4e4e4', padding: 15 }
                         },
-                        y: {
-                            ticks: { color: '#e4e4e4', font: { size: 10 } },
-                            grid: { display: false }
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = totalInWarranty + totalOutWarranty;
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${context.label}: ${value.toLocaleString()} (${percentage}%)`;
+                                }
+                            }
                         }
                     }
                 }
             });
+            
+            // Generate Insights
+            const insights = [
+                {
+                    icon: '⚠️',
+                    title: `Highest Repair Rate: ${byRepairRate[0].model}`,
+                    text: `At ${byRepairRate[0].repairRate}% repair rate with ${byRepairRate[0].total.toLocaleString()} repairs from ${byRepairRate[0].sold.toLocaleString()} units sold. This model requires attention for quality improvement.`
+                },
+                {
+                    icon: '✅',
+                    title: `Most Reliable: ${byReliable[0].model}`,
+                    text: `Only ${byReliable[0].repairRate}% repair rate with just ${byReliable[0].total.toLocaleString()} repairs from ${byReliable[0].sold.toLocaleString()} units sold. Excellent reliability performance.`
+                },
+                {
+                    icon: '💰',
+                    title: `Highest Repair Cost: ${byCost[0].model}`,
+                    text: `Estimated total repair cost of $${byCost[0].totalCost.toLocaleString()} with ${byCost[0].major.toLocaleString()} major, ${byCost[0].minor.toLocaleString()} minor, and ${byCost[0].npu.toLocaleString()} NPU/NPF repairs.`
+                },
+                {
+                    icon: '💥',
+                    title: `Accidental Damage Analysis`,
+                    text: `${((totalAccidental / totalRepairs) * 100).toFixed(1)}% of all repairs are classified as accidental damage (${totalAccidental.toLocaleString()} of ${totalRepairs.toLocaleString()} total repairs). VX11 has highest at ${byAccidental[0].accidentalPct}%.`
+                },
+                {
+                    icon: '📋',
+                    title: `Warranty Status Overview`,
+                    text: `${((totalInWarranty / (totalInWarranty + totalOutWarranty)) * 100).toFixed(1)}% of repairs occur while devices are still in warranty (${totalInWarranty.toLocaleString()} in warranty vs ${totalOutWarranty.toLocaleString()} out of warranty).`
+                },
+                {
+                    icon: '📊',
+                    title: `Cost Breakdown Summary`,
+                    text: `Major repairs: $${majorCost.toLocaleString()} (${((majorCost / totalCost) * 100).toFixed(1)}%), Minor repairs: $${minorCost.toLocaleString()} (${((minorCost / totalCost) * 100).toFixed(1)}%), NPU/NPF: $${npuCost.toLocaleString()} (${((npuCost / totalCost) * 100).toFixed(1)}%).`
+                },
+                {
+                    icon: '🏆',
+                    title: `Gen2 Models Performing Well`,
+                    text: `The newer NL73TW Gen2 and NL73 Gen2 models show excellent reliability with repair rates under 0.5%. Early indicators suggest improved build quality.`
+                }
+            ];
+            
+            document.getElementById('insightsList').innerHTML = insights.map(i => `
+                <div class="insight-item">
+                    <div class="insight-icon">${i.icon}</div>
+                    <div class="insight-text">
+                        <h4>${i.title}</h4>
+                        <p>${i.text}</p>
+                    </div>
+                </div>
+            `).join('');
             
             // Populate Tables
             function getRateBadge(rate) {
@@ -1042,7 +978,7 @@
                 return '$' + val.toLocaleString();
             }
             
-            // Worst table
+            // Worst table (highest repair rate)
             document.getElementById('worstTable').innerHTML = byRepairRate.slice(0, 15).map(d => `
                 <tr>
                     <td>${d.model}</td>
@@ -1054,7 +990,7 @@
                 </tr>
             `).join('');
             
-            // Best table
+            // Best table (lowest repair rate)
             document.getElementById('bestTable').innerHTML = byReliable.slice(0, 15).map(d => `
                 <tr>
                     <td>${d.model}</td>
@@ -1088,14 +1024,15 @@
             `).join('');
             
             // Warranty table
-            const byWarranty = [...warrantyData].filter(d => (d.inWarranty + d.outWarranty) > 10).sort((a, b) => b.outWarrantyPct - a.outWarrantyPct);
+            const byWarranty = [...warrantyData].filter(d => (d.inWarranty + d.outWarranty) > 0)
+                .sort((a, b) => parseFloat(b.outWarrantyPct) - parseFloat(a.outWarrantyPct));
             document.getElementById('warrantyTable').innerHTML = byWarranty.slice(0, 15).map(d => `
                 <tr>
                     <td>${d.model}</td>
                     <td>${d.inWarranty.toLocaleString()}</td>
                     <td>${d.outWarranty.toLocaleString()}</td>
-                    <td><span class="badge badge-success">${d.inWarrantyPct}%</span></td>
-                    <td><span class="badge badge-warning">${d.outWarrantyPct}%</span></td>
+                    <td>${d.inWarrantyPct}%</td>
+                    <td>${d.outWarrantyPct}%</td>
                 </tr>
             `).join('');
             
@@ -1115,6 +1052,19 @@
                 </tr>
             `).join('');
         }
+        
+        // Tab functionality
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // Focus password input on load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('passwordInput').focus();
+        });
     </script>
 </body>
 </html>
