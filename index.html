@@ -700,6 +700,16 @@
                     <span id="modalRepairRatePct">This Model: 0%</span>
                 </div>
             </div>
+            
+            <div class="modal-section">
+                <h4>🔩 Top 10 Repair Categories</h4>
+                <table class="pie-modal-table">
+                    <thead>
+                        <tr><th>Repair Type</th><th>Count</th><th>% of Model</th></tr>
+                    </thead>
+                    <tbody id="modalRepairCategoriesTable"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -727,6 +737,16 @@
                     <tbody id="pieModalTableBody">
                         <!-- Data populated by JS -->
                     </tbody>
+                </table>
+            </div>
+            
+            <div class="modal-section">
+                <h4>🔩 Top 10 Repair Categories</h4>
+                <table class="pie-modal-table">
+                    <thead>
+                        <tr><th>Repair Type</th><th>Count</th><th>% of Category</th></tr>
+                    </thead>
+                    <tbody id="pieModalRepairCategories"></tbody>
                 </table>
             </div>
         </div>
@@ -945,6 +965,19 @@
         let warrantyData = [];
         let dataByItem = {};
         
+        // Repair categories by model and category
+        const repairCategories = {
+            modelRepairs: {"CBUS1100004": [["Keyboard", 161], ["Keyboard Keys", 62], ["Panel", 42], ["Declined", 12], ["NPU", 11], ["Tear Down", 10], ["NPF", 9], ["Mainboard", 4], ["Daughterboard", 3], ["Battery", 2]], "CBUS1100011": [["Keyboard", 998], ["Panel", 628], ["NPU", 479], ["Keyboard Keys", 399], ["Mainboard", 380], ["Daughterboard", 278], ["NPF", 203], ["Plastics", 193], ["Hinge", 139], ["Other", 137]], "CBUS1100013": [["Keyboard", 76], ["Panel", 68], ["Keyboard Keys", 67], ["Camera", 41], ["NPU", 20], ["NPF", 13], ["Other", 12], ["Mainboard", 11], ["LVDS", 9], ["Plastics", 7]], "CBUS1100014": [["Hinge", 535], ["Panel", 152], ["Keyboard", 135], ["Keyboard Keys", 67], ["Mainboard", 48], ["NPU", 42], ["NPF", 31], ["Other", 17], ["Replacement", 9], ["Declined", 7]], "CBUS1100014A": [["Panel", 123], ["Keyboard", 93], ["Keyboard Keys", 45], ["Hinge", 17], ["Mainboard", 16], ["NPU", 13], ["Replacement", 10], ["Other", 9], ["NPF", 8], ["Touchpad", 8]], "CBUS1100015": [["Keyboard", 708], ["Panel", 389], ["Camera", 355], ["Plastics", 159], ["Hinge", 136], ["Other", 110], ["NPU", 98], ["Keyboard Keys", 93], ["Mainboard", 80], ["NPF", 77]], "CBUS1100016": [["Keyboard", 180], ["Panel", 153], ["Keyboard Keys", 79], ["NPU", 75], ["Hinge", 68], ["Mainboard", 54], ["Other", 39], ["NPF", 32], ["Camera", 30], ["Plastics", 29]], "CBUS1100017": [["Keyboard", 831], ["Panel", 735], ["Keyboard Keys", 603], ["Mainboard", 362], ["NPU", 307], ["Plastics", 243], ["Daughterboard", 231], ["NPF", 164], ["Other", 118], ["Hinge", 102]], "CBUS1100019": [["LTE Module", 11], ["Other", 4], ["LVDS", 1], ["Mainboard", 1]], "CBUS1100020": [["Panel", 1414], ["Hinge", 679], ["Keyboard", 313], ["Keyboard Keys", 154], ["Mainboard", 145], ["NPF", 102], ["LTE Module", 96], ["NPU", 95], ["Plastics", 66], ["Other", 46]], "CBUS1100021": [["Panel", 166], ["Keyboard Keys", 40], ["NPU", 38], ["Hinge", 37], ["Keyboard", 36], ["Mainboard", 15], ["Plastics", 15], ["Other", 8], ["NPF", 7], ["Camera", 6]], "CBUS1100022": [["Panel", 306], ["Keyboard", 134], ["Keyboard Keys", 127], ["NPU", 69], ["Mainboard", 64], ["Replacement", 62], ["NPF", 54], ["Other", 33], ["Plastics", 32], ["Touchpad", 24]], "CBUS1100024": [["Panel", 160], ["Keyboard Keys", 80], ["Keyboard", 73], ["Mainboard", 63], ["NPU", 37], ["Camera", 19], ["Plastics", 19], ["NPF", 15], ["LVDS", 13], ["OS Issue", 13]], "CBUS1100025": [["Keyboard Keys", 209], ["Panel", 146], ["Daughterboard", 116], ["Keyboard", 112], ["Mainboard", 108], ["NPU", 79], ["NPF", 64], ["Plastics", 29], ["Hinge", 19], ["Other", 13]], "CBUS1100026": [["Keyboard Keys", 81], ["Panel", 81], ["Mainboard", 45], ["Hinge", 29], ["Keyboard", 25], ["NPU", 13], ["Camera", 12], ["NPF", 9], ["Other", 7], ["Plastics", 7]], "CBUS1100027": [["Daughterboard", 19], ["Keyboard", 17], ["Panel", 15], ["NPF", 11], ["Mainboard", 8], ["Camera", 6], ["Keyboard Keys", 6], ["NPU", 6], ["Declined", 3], ["Hinge", 3]], "CBUS1100028": [["Panel", 31], ["Mainboard", 18], ["Declined", 13], ["Keyboard Keys", 11], ["Other", 11], ["Keyboard", 8], ["LVDS", 5], ["Camera", 4], ["Hinge", 4], ["NPF", 4]], "CBUS1100033": [["Replacement", 87], ["Panel", 28], ["Keyboard Keys", 16], ["Keyboard", 15], ["Mainboard", 12], ["NPF", 8], ["NPU", 8], ["Hinge", 3], ["Other", 3], ["Battery", 2]], "CBUS1100034": [["Panel", 47], ["Hinge", 24], ["Replacement", 23], ["Mainboard", 20], ["NPU", 16], ["Keyboard", 13], ["Keyboard Keys", 10], ["NPF", 8], ["Battery", 3], ["LVDS", 3]], "CBUS1100035": [["Keyboard Keys", 3], ["NPF", 2], ["Plastics", 2], ["Camera", 1], ["Headphone Port", 1], ["Keyboard", 1], ["LVDS", 1], ["NPU", 1], ["Panel", 1], ["Replacement", 1]], "CBUS1100037": [["Panel", 5], ["Replacement", 3], ["Keyboard", 2], ["NPF", 1]], "CBUS1400003": [["Panel", 552], ["Keyboard", 225], ["Keyboard Keys", 124], ["Mainboard", 82], ["NPU", 47], ["NPF", 27], ["Declined", 24], ["Plastics", 15], ["Touchpad", 13], ["Other", 11]], "CBUS1400004": [["Panel", 35], ["Mainboard", 29], ["Keyboard Keys", 22], ["NPF", 21], ["Keyboard", 17], ["NPU", 13], ["Touchpad", 8], ["Daughterboard", 4], ["Declined", 4], ["Other", 4]], "CBUS1400005": [["Panel", 100], ["Keyboard", 36], ["NPF", 29], ["Other", 22], ["Mainboard", 21], ["Replacement", 17], ["Keyboard Keys", 15], ["NPU", 13], ["Plastics", 8], ["Touchpad", 8]], "CBUS1400007": [["NPF", 7], ["Panel", 7], ["Mainboard", 5], ["Other", 2], ["Plastics", 2], ["Battery", 1], ["Daughterboard", 1], ["Declined", 1], ["Keyboard", 1], ["LVDS", 1]], "CBUS1400009": [["Panel", 15], ["NPF", 10], ["Keyboard", 5], ["Keyboard Keys", 4], ["Mainboard", 4], ["NPU", 4], ["Battery", 1], ["Daughterboard", 1], ["LVDS", 1], ["Plastics", 1]], "CBUS1400011": [["Panel", 83], ["Replacement", 16], ["Keyboard", 8], ["NPF", 8], ["Keyboard Keys", 7], ["NPU", 5], ["Daughterboard", 4], ["Other", 4], ["Touchpad", 4], ["Hinge", 2]], "CBUS1400012": [["Replacement", 8], ["Panel", 7], ["Keyboard Keys", 4], ["Touchpad", 3], ["Other", 2], ["Battery", 1], ["Declined", 1], ["NPU", 1], ["Keyboard", 1], ["NPF", 1]], "CBUS1400013": [["Replacement", 3], ["Panel", 2], ["Keyboard Keys", 1], ["Battery", 1], ["NPU", 1], ["Tear Down", 1]], "CBUS1400015": [["Replacement", 7], ["Panel", 6], ["NPF", 5], ["Other", 3], ["NPU", 2], ["Keyboard", 1], ["Battery", 1], ["OS Issue", 1]], "CBXUS190003": [["Mainboard", 13], ["Other", 5], ["OS Issue", 3], ["NPF", 2], ["LVDS", 1], ["Wifi Module", 1]], "CBXUS190004": [["Mainboard", 3], ["Other", 2], ["NPF", 1], ["Replacement", 1]], "CBXUS190005": [["Other", 60], ["Mainboard", 51], ["Tear Down", 15], ["OS Issue", 12], ["NPF", 6], ["Wifi Module", 1]], "CBXUS190010": [["Other", 17], ["Replacement", 5], ["Mainboard", 4], ["OS Issue", 3], ["NPF", 2], ["Camera", 1], ["Storage", 1]], "CBXUS190011": [["Other", 4], ["NPF", 2], ["Replacement", 2], ["Storage", 2], ["OS Issue", 1]], "CBXUS190020": [["Mainboard", 27], ["Other", 18], ["Tear Down", 9], ["NPF", 6], ["OS Issue", 6], ["Storage", 6]], "NBCTX1": [["Panel", 10], ["NPU", 3], ["NPF", 3], ["Other", 2], ["Mainboard", 1]]},
+            overallTop10: [["Panel", 5507], ["Keyboard", 4225], ["Keyboard Keys", 2329], ["Hinge", 1814], ["Mainboard", 1695], ["NPU", 1500], ["NPF", 952], ["Plastics", 848], ["Daughterboard", 761], ["Other", 733]],
+            accidentalTop10: [["Panel", 3824], ["Keyboard", 2542], ["Keyboard Keys", 1615], ["Hinge", 1093], ["Plastics", 615], ["Mainboard", 446], ["NPU", 340], ["Daughterboard", 285], ["Camera", 215], ["Other", 189]],
+            nonAccidentalTop10: [["Keyboard", 1683], ["Panel", 1683], ["Mainboard", 1249], ["NPU", 1160], ["NPF", 944], ["Hinge", 721], ["Keyboard Keys", 714], ["Other", 544], ["Daughterboard", 476], ["Camera", 470]],
+            inWarrantyTop10: [["Panel", 5196], ["Keyboard", 2981], ["Keyboard Keys", 2013], ["Mainboard", 1608], ["NPU", 1374], ["Hinge", 1310], ["NPF", 883], ["Daughterboard", 711], ["Plastics", 619], ["Other", 594]],
+            outWarrantyTop10: [["Keyboard", 1081], ["Hinge", 500], ["Keyboard Keys", 304], ["Panel", 274], ["Camera", 211], ["Plastics", 128], ["Declined", 124], ["NPU", 117], ["Other", 76], ["Mainboard", 75]],
+            majorTop10: [["Panel", 5507], ["Mainboard", 1695], ["Replacement", 393], ["Battery", 275], ["Accidental", 70], ["Storage", 9]],
+            minorTop10: [["Keyboard", 4225], ["Keyboard Keys", 2329], ["Hinge", 1814], ["Plastics", 848], ["Daughterboard", 761], ["Other", 733], ["Camera", 685], ["Touchpad", 262], ["LVDS", 189], ["LTE Module", 113]],
+            npuTop10: [["NPU", 1500], ["NPF", 952]]
+        };
+        
         // Password check function
         function checkPassword() {
             const password = document.getElementById('passwordInput').value;
@@ -1030,6 +1063,14 @@
             document.getElementById('modalRepairRateBar').style.width = repairRateScaled + '%';
             document.getElementById('modalRepairRatePct').textContent = `This Model: ${data.repairRate}%`;
             
+            // Repair categories table
+            const modelRepairData = repairCategories.modelRepairs[itemNumber] || [];
+            const totalModelRepairs = modelRepairData.reduce((sum, r) => sum + r[1], 0);
+            document.getElementById('modalRepairCategoriesTable').innerHTML = modelRepairData.map(r => {
+                const pct = totalModelRepairs > 0 ? ((r[1] / totalModelRepairs) * 100).toFixed(1) : 0;
+                return `<tr><td>${r[0]}</td><td>${r[1].toLocaleString()}</td><td>${pct}%</td></tr>`;
+            }).join('');
+            
             document.getElementById('modelModal').classList.add('active');
         }
         
@@ -1052,13 +1093,16 @@
         
         // Pie Chart Modal functions
         function openPieModal(type, index) {
-            let title, subtitle, summaryHTML, tableHeadHTML, tableBodyHTML;
+            let title, subtitle, summaryHTML, tableHeadHTML, tableBodyHTML, repairCategoriesData;
             
             if (type === 'repairType') {
                 // Accidental vs Non-Accidental
                 const isAccidental = index === 0;
                 title = isAccidental ? '💥 Accidental Damage Repairs' : '🔧 Non-Accidental Repairs';
                 subtitle = isAccidental ? 'Breakdown by model for accidental damage repairs' : 'Breakdown by model for non-accidental repairs';
+                
+                // Get repair categories for this segment
+                repairCategoriesData = isAccidental ? repairCategories.accidentalTop10 : repairCategories.nonAccidentalTop10;
                 
                 const sorted = [...warrantyData].sort((a, b) => {
                     const aVal = isAccidental ? a.accidental : (a.total - a.accidental);
@@ -1107,6 +1151,9 @@
                 title = ['🔴 ' + labels[0], '🟠 ' + labels[1], '🔵 ' + labels[2]][index];
                 subtitle = 'Breakdown by model for this repair category';
                 
+                // Get repair categories for this segment
+                repairCategoriesData = [repairCategories.majorTop10, repairCategories.minorTop10, repairCategories.npuTop10][index];
+                
                 const field = fields[index];
                 const costPer = costs[index];
                 const sorted = [...warrantyData].sort((a, b) => b[field] - a[field]);
@@ -1150,6 +1197,9 @@
                 title = isInWarranty ? '✅ In Warranty Repairs' : '❌ Out of Warranty Repairs';
                 subtitle = isInWarranty ? 'Repairs performed while device was under warranty' : 'Repairs performed after warranty expired';
                 
+                // Get repair categories for this segment
+                repairCategoriesData = isInWarranty ? repairCategories.inWarrantyTop10 : repairCategories.outWarrantyTop10;
+                
                 const field = isInWarranty ? 'inWarranty' : 'outWarranty';
                 const sorted = [...warrantyData].sort((a, b) => b[field] - a[field]);
                 
@@ -1190,6 +1240,13 @@
             document.getElementById('pieModalSummary').innerHTML = summaryHTML;
             document.getElementById('pieModalTableHead').innerHTML = tableHeadHTML;
             document.getElementById('pieModalTableBody').innerHTML = tableBodyHTML;
+            
+            // Populate repair categories table
+            const totalRepairCatCount = repairCategoriesData.reduce((sum, r) => sum + r[1], 0);
+            document.getElementById('pieModalRepairCategories').innerHTML = repairCategoriesData.map(r => {
+                const pct = totalRepairCatCount > 0 ? ((r[1] / totalRepairCatCount) * 100).toFixed(1) : 0;
+                return `<tr><td>${r[0]}</td><td>${r[1].toLocaleString()}</td><td>${pct}%</td></tr>`;
+            }).join('');
             
             document.getElementById('pieModal').classList.add('active');
         }
