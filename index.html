@@ -282,6 +282,63 @@
         .modal-comparison span:first-child { color: #81c784; }
         .modal-comparison span:last-child { color: #e57373; }
         
+        /* Pie Chart Detail Modal */
+        .pie-modal-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+        
+        .pie-modal-table th,
+        .pie-modal-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(79, 195, 247, 0.1);
+        }
+        
+        .pie-modal-table th {
+            background: rgba(79, 195, 247, 0.1);
+            color: #4fc3f7;
+            font-weight: 600;
+        }
+        
+        .pie-modal-table tr:hover {
+            background: rgba(79, 195, 247, 0.05);
+            cursor: pointer;
+        }
+        
+        .pie-modal-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .pie-summary-stat {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .pie-summary-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+        
+        .pie-summary-value.purple { color: #ba68c8; }
+        .pie-summary-value.green { color: #81c784; }
+        .pie-summary-value.red { color: #e57373; }
+        .pie-summary-value.orange { color: #ffb74d; }
+        
+        .pie-summary-label {
+            font-size: 0.8rem;
+            color: #90a4ae;
+            margin-top: 5px;
+        }
+        
         .click-hint {
             text-align: center;
             color: #546e7a;
@@ -646,6 +703,35 @@
         </div>
     </div>
 
+    <!-- Pie Chart Detail Modal -->
+    <div class="modal-overlay" id="pieModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 id="pieModalTitle">Category Breakdown</h2>
+                    <div class="item-number" id="pieModalSubtitle">Details</div>
+                </div>
+                <button class="modal-close" onclick="closePieModal()">&times;</button>
+            </div>
+            
+            <div class="pie-modal-summary" id="pieModalSummary">
+                <!-- Summary stats populated by JS -->
+            </div>
+            
+            <div class="modal-section">
+                <h4 id="pieModalTableTitle">📊 Model Breakdown</h4>
+                <table class="pie-modal-table">
+                    <thead id="pieModalTableHead">
+                        <!-- Headers populated by JS -->
+                    </thead>
+                    <tbody id="pieModalTableBody">
+                        <!-- Data populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Dashboard Content -->
     <div class="dashboard hidden" id="dashboard">
         <h1>📊 CTL Warranty Analysis Dashboard</h1>
@@ -704,12 +790,14 @@
                 <div class="chart-wrapper">
                     <canvas id="repairTypeChart"></canvas>
                 </div>
+                <p class="click-hint">💡 Click on any segment to view model breakdown</p>
             </div>
             <div class="chart-container">
                 <h3>💵 Cost Breakdown by Repair Type</h3>
                 <div class="chart-wrapper">
                     <canvas id="costChart"></canvas>
                 </div>
+                <p class="click-hint">💡 Click on any segment to view model breakdown</p>
             </div>
         </div>
         
@@ -727,6 +815,7 @@
                 <div class="chart-wrapper">
                     <canvas id="warrantyChart"></canvas>
                 </div>
+                <p class="click-hint">💡 Click on any segment to view model breakdown</p>
             </div>
         </div>
         
@@ -955,7 +1044,163 @@
         
         // Close modal on Escape key
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Escape') {
+                closeModal();
+                closePieModal();
+            }
+        });
+        
+        // Pie Chart Modal functions
+        function openPieModal(type, index) {
+            let title, subtitle, summaryHTML, tableHeadHTML, tableBodyHTML;
+            
+            if (type === 'repairType') {
+                // Accidental vs Non-Accidental
+                const isAccidental = index === 0;
+                title = isAccidental ? '💥 Accidental Damage Repairs' : '🔧 Non-Accidental Repairs';
+                subtitle = isAccidental ? 'Breakdown by model for accidental damage repairs' : 'Breakdown by model for non-accidental repairs';
+                
+                const sorted = [...warrantyData].sort((a, b) => {
+                    const aVal = isAccidental ? a.accidental : (a.total - a.accidental);
+                    const bVal = isAccidental ? b.accidental : (b.total - b.accidental);
+                    return bVal - aVal;
+                });
+                
+                const totalValue = sorted.reduce((sum, d) => sum + (isAccidental ? d.accidental : (d.total - d.accidental)), 0);
+                const totalRepairsAll = sorted.reduce((sum, d) => sum + d.total, 0);
+                const pctOfTotal = ((totalValue / totalRepairsAll) * 100).toFixed(1);
+                
+                summaryHTML = `
+                    <div class="pie-summary-stat">
+                        <div class="pie-summary-value ${isAccidental ? 'purple' : ''}">${totalValue.toLocaleString()}</div>
+                        <div class="pie-summary-label">${isAccidental ? 'Accidental' : 'Non-Accidental'} Repairs</div>
+                    </div>
+                    <div class="pie-summary-stat">
+                        <div class="pie-summary-value">${pctOfTotal}%</div>
+                        <div class="pie-summary-label">of All Repairs</div>
+                    </div>
+                    <div class="pie-summary-stat">
+                        <div class="pie-summary-value">${sorted.filter(d => (isAccidental ? d.accidental : (d.total - d.accidental)) > 0).length}</div>
+                        <div class="pie-summary-label">Models Affected</div>
+                    </div>
+                `;
+                
+                tableHeadHTML = `<tr><th>Model</th><th>${isAccidental ? 'Accidental' : 'Non-Accidental'}</th><th>Total Repairs</th><th>% of Category</th></tr>`;
+                tableBodyHTML = sorted.slice(0, 15).map(d => {
+                    const value = isAccidental ? d.accidental : (d.total - d.accidental);
+                    const pct = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : 0;
+                    return `<tr onclick="closePieModal(); openModal('${d.item}')">
+                        <td>${d.shortName}</td>
+                        <td>${value.toLocaleString()}</td>
+                        <td>${d.total.toLocaleString()}</td>
+                        <td>${pct}%</td>
+                    </tr>`;
+                }).join('');
+                
+            } else if (type === 'costBreakdown') {
+                // Major, Minor, NPU/NPF
+                const labels = ['Major Repairs ($100 each)', 'Minor Repairs ($50 each)', 'NPU/NPF ($20 each)'];
+                const colors = ['red', 'orange', ''];
+                const fields = ['major', 'minor', 'npu'];
+                const costs = [100, 50, 20];
+                
+                title = ['🔴 ' + labels[0], '🟠 ' + labels[1], '🔵 ' + labels[2]][index];
+                subtitle = 'Breakdown by model for this repair category';
+                
+                const field = fields[index];
+                const costPer = costs[index];
+                const sorted = [...warrantyData].sort((a, b) => b[field] - a[field]);
+                
+                const totalCount = sorted.reduce((sum, d) => sum + d[field], 0);
+                const totalCostCat = totalCount * costPer;
+                const totalCostAll = sorted.reduce((sum, d) => sum + d.totalCost, 0);
+                const pctOfCost = ((totalCostCat / totalCostAll) * 100).toFixed(1);
+                
+                summaryHTML = `
+                    <div class="pie-summary-stat">
+                        <div class="pie-summary-value ${colors[index]}">${totalCount.toLocaleString()}</div>
+                        <div class="pie-summary-label">Total ${['Major', 'Minor', 'NPU/NPF'][index]} Repairs</div>
+                    </div>
+                    <div class="pie-summary-stat">
+                        <div class="pie-summary-value orange">$${totalCostCat.toLocaleString()}</div>
+                        <div class="pie-summary-label">Total Cost</div>
+                    </div>
+                    <div class="pie-summary-stat">
+                        <div class="pie-summary-value">${pctOfCost}%</div>
+                        <div class="pie-summary-label">of All Repair Costs</div>
+                    </div>
+                `;
+                
+                tableHeadHTML = `<tr><th>Model</th><th>Count</th><th>Cost</th><th>% of Category</th></tr>`;
+                tableBodyHTML = sorted.slice(0, 15).map(d => {
+                    const value = d[field];
+                    const cost = value * costPer;
+                    const pct = totalCount > 0 ? ((value / totalCount) * 100).toFixed(1) : 0;
+                    return `<tr onclick="closePieModal(); openModal('${d.item}')">
+                        <td>${d.shortName}</td>
+                        <td>${value.toLocaleString()}</td>
+                        <td>$${cost.toLocaleString()}</td>
+                        <td>${pct}%</td>
+                    </tr>`;
+                }).join('');
+                
+            } else if (type === 'warrantyStatus') {
+                // In Warranty vs Out of Warranty
+                const isInWarranty = index === 0;
+                title = isInWarranty ? '✅ In Warranty Repairs' : '❌ Out of Warranty Repairs';
+                subtitle = isInWarranty ? 'Repairs performed while device was under warranty' : 'Repairs performed after warranty expired';
+                
+                const field = isInWarranty ? 'inWarranty' : 'outWarranty';
+                const sorted = [...warrantyData].sort((a, b) => b[field] - a[field]);
+                
+                const totalValue = sorted.reduce((sum, d) => sum + d[field], 0);
+                const totalBoth = sorted.reduce((sum, d) => sum + d.inWarranty + d.outWarranty, 0);
+                const pctOfTotal = ((totalValue / totalBoth) * 100).toFixed(1);
+                
+                summaryHTML = `
+                    <div class="pie-summary-stat">
+                        <div class="pie-summary-value ${isInWarranty ? 'green' : 'red'}">${totalValue.toLocaleString()}</div>
+                        <div class="pie-summary-label">${isInWarranty ? 'In' : 'Out of'} Warranty Repairs</div>
+                    </div>
+                    <div class="pie-summary-stat">
+                        <div class="pie-summary-value">${pctOfTotal}%</div>
+                        <div class="pie-summary-label">of All Repairs</div>
+                    </div>
+                    <div class="pie-summary-stat">
+                        <div class="pie-summary-value">${sorted.filter(d => d[field] > 0).length}</div>
+                        <div class="pie-summary-label">Models with ${isInWarranty ? 'In' : 'Out of'} Warranty</div>
+                    </div>
+                `;
+                
+                tableHeadHTML = `<tr><th>Model</th><th>${isInWarranty ? 'In Warranty' : 'Out of Warranty'}</th><th>Total W/ Status</th><th>% of Category</th></tr>`;
+                tableBodyHTML = sorted.slice(0, 15).map(d => {
+                    const value = d[field];
+                    const pct = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : 0;
+                    return `<tr onclick="closePieModal(); openModal('${d.item}')">
+                        <td>${d.shortName}</td>
+                        <td>${value.toLocaleString()}</td>
+                        <td>${(d.inWarranty + d.outWarranty).toLocaleString()}</td>
+                        <td>${pct}%</td>
+                    </tr>`;
+                }).join('');
+            }
+            
+            document.getElementById('pieModalTitle').textContent = title;
+            document.getElementById('pieModalSubtitle').textContent = subtitle;
+            document.getElementById('pieModalSummary').innerHTML = summaryHTML;
+            document.getElementById('pieModalTableHead').innerHTML = tableHeadHTML;
+            document.getElementById('pieModalTableBody').innerHTML = tableBodyHTML;
+            
+            document.getElementById('pieModal').classList.add('active');
+        }
+        
+        function closePieModal() {
+            document.getElementById('pieModal').classList.remove('active');
+        }
+        
+        // Close pie modal on overlay click
+        document.getElementById('pieModal').addEventListener('click', function(e) {
+            if (e.target === this) closePieModal();
         });
         
         function initDashboard() {
@@ -1166,6 +1411,11 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: function(event, elements) {
+                        if (elements.length > 0) {
+                            openPieModal('repairType', elements[0].index);
+                        }
+                    },
                     plugins: {
                         legend: {
                             position: 'right',
@@ -1177,6 +1427,9 @@
                                     const value = context.raw;
                                     const percentage = ((value / totalRepairs) * 100).toFixed(1);
                                     return `${context.label}: ${value.toLocaleString()} (${percentage}%)`;
+                                },
+                                afterLabel: function() {
+                                    return 'Click for model breakdown';
                                 }
                             }
                         }
@@ -1203,6 +1456,11 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: function(event, elements) {
+                        if (elements.length > 0) {
+                            openPieModal('costBreakdown', elements[0].index);
+                        }
+                    },
                     plugins: {
                         legend: {
                             position: 'right',
@@ -1212,6 +1470,9 @@
                             callbacks: {
                                 label: function(context) {
                                     return context.label + ': $' + context.raw.toLocaleString();
+                                },
+                                afterLabel: function() {
+                                    return 'Click for model breakdown';
                                 }
                             }
                         }
@@ -1276,6 +1537,11 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: function(event, elements) {
+                        if (elements.length > 0) {
+                            openPieModal('warrantyStatus', elements[0].index);
+                        }
+                    },
                     plugins: {
                         legend: {
                             position: 'right',
@@ -1288,6 +1554,9 @@
                                     const total = totalInWarranty + totalOutWarranty;
                                     const percentage = ((value / total) * 100).toFixed(1);
                                     return `${context.label}: ${value.toLocaleString()} (${percentage}%)`;
+                                },
+                                afterLabel: function() {
+                                    return 'Click for model breakdown';
                                 }
                             }
                         }
