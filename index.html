@@ -103,6 +103,197 @@
             display: none !important;
         }
         
+        /* Model Detail Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: linear-gradient(145deg, #1e3a5f, #1a2d47);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(79, 195, 247, 0.2);
+        }
+        
+        .modal-header h2 {
+            color: #4fc3f7;
+            font-size: 1.3rem;
+            flex: 1;
+        }
+        
+        .modal-header .item-number {
+            color: #90a4ae;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: #90a4ae;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        
+        .modal-close:hover {
+            color: #e57373;
+        }
+        
+        .modal-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .modal-stat {
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .modal-stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+        
+        .modal-stat-value.warning { color: #ffb74d; }
+        .modal-stat-value.danger { color: #e57373; }
+        .modal-stat-value.success { color: #81c784; }
+        .modal-stat-value.purple { color: #ba68c8; }
+        
+        .modal-stat-label {
+            font-size: 0.8rem;
+            color: #90a4ae;
+            margin-top: 5px;
+        }
+        
+        .modal-section {
+            margin-bottom: 20px;
+        }
+        
+        .modal-section h4 {
+            color: #4fc3f7;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .modal-breakdown {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .breakdown-item {
+            background: rgba(0,0,0,0.15);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .breakdown-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #e4e4e4;
+        }
+        
+        .breakdown-label {
+            font-size: 0.75rem;
+            color: #90a4ae;
+            margin-top: 3px;
+        }
+        
+        .breakdown-cost {
+            font-size: 0.8rem;
+            color: #ffb74d;
+            margin-top: 5px;
+        }
+        
+        .modal-bar {
+            height: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .modal-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .modal-bar-fill.accidental { background: linear-gradient(90deg, #ba68c8, #9c27b0); }
+        .modal-bar-fill.warranty { background: linear-gradient(90deg, #81c784, #4caf50); }
+        .modal-bar-fill.repair-rate { background: linear-gradient(90deg, #e57373, #f44336); }
+        
+        .modal-comparison {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.8rem;
+        }
+        
+        .modal-comparison span:first-child { color: #81c784; }
+        .modal-comparison span:last-child { color: #e57373; }
+        
+        .click-hint {
+            text-align: center;
+            color: #546e7a;
+            font-size: 0.75rem;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        
+        .chart-container canvas {
+            cursor: pointer;
+        }
+        
         .dashboard {
             max-width: 1400px;
             margin: 0 auto;
@@ -245,8 +436,13 @@
             top: 0;
         }
         
+        tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
         tr:hover {
-            background: rgba(79, 195, 247, 0.05);
+            background: rgba(79, 195, 247, 0.1);
         }
         
         .badge {
@@ -366,6 +562,18 @@
             .kpi-value {
                 font-size: 1.5rem;
             }
+            
+            .modal-content {
+                padding: 20px;
+            }
+            
+            .modal-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .modal-breakdown {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -378,6 +586,63 @@
             <input type="password" id="passwordInput" placeholder="Enter password..." onkeypress="if(event.key==='Enter')checkPassword()">
             <button onclick="checkPassword()">Access Dashboard</button>
             <p class="password-error" id="passwordError">Incorrect password. Please try again.</p>
+        </div>
+    </div>
+
+    <!-- Model Detail Modal -->
+    <div class="modal-overlay" id="modelModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalTitle">Model Name</h2>
+                    <div class="item-number" id="modalItemNumber">Item #</div>
+                </div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <div class="modal-stats-grid" id="modalStatsGrid">
+                <!-- Stats populated by JS -->
+            </div>
+            
+            <div class="modal-section">
+                <h4>🔧 Repair Breakdown</h4>
+                <div class="modal-breakdown" id="modalRepairBreakdown">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            
+            <div class="modal-section">
+                <h4>💥 Accidental Damage Rate</h4>
+                <div class="modal-bar">
+                    <div class="modal-bar-fill accidental" id="modalAccidentalBar"></div>
+                </div>
+                <div class="modal-comparison">
+                    <span>Non-Accidental</span>
+                    <span id="modalAccidentalPct">0%</span>
+                </div>
+            </div>
+            
+            <div class="modal-section">
+                <h4>📋 Warranty Status</h4>
+                <div class="modal-bar">
+                    <div class="modal-bar-fill warranty" id="modalWarrantyBar"></div>
+                </div>
+                <div class="modal-comparison">
+                    <span id="modalInWarrantyPct">In Warranty: 0%</span>
+                    <span id="modalOutWarrantyPct">Out: 0%</span>
+                </div>
+            </div>
+            
+            <div class="modal-section">
+                <h4>📈 Repair Rate vs Fleet Average</h4>
+                <div class="modal-bar">
+                    <div class="modal-bar-fill repair-rate" id="modalRepairRateBar"></div>
+                </div>
+                <div class="modal-comparison">
+                    <span>Fleet Avg: 5.27%</span>
+                    <span id="modalRepairRatePct">This Model: 0%</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -421,12 +686,14 @@
                 <div class="chart-wrapper tall">
                     <canvas id="repairRateChart"></canvas>
                 </div>
+                <p class="click-hint">💡 Click on any bar to view detailed model information</p>
             </div>
             <div class="chart-container">
                 <h3>💰 Estimated Repair Cost by Model (Top 15)</h3>
                 <div class="chart-wrapper tall">
                     <canvas id="costByModelChart"></canvas>
                 </div>
+                <p class="click-hint">💡 Click on any bar to view detailed model information</p>
             </div>
         </div>
         
@@ -453,6 +720,7 @@
                 <div class="chart-wrapper tall">
                     <canvas id="accidentalChart"></canvas>
                 </div>
+                <p class="click-hint">💡 Click on any bar to view detailed model information</p>
             </div>
             <div class="chart-container">
                 <h3>📋 Warranty Status Distribution</h3>
@@ -470,7 +738,7 @@
         
         <!-- Data Tables -->
         <div class="table-container">
-            <h3>📊 Model Analysis Tables</h3>
+            <h3>📊 Model Analysis Tables <span style="font-size: 0.8rem; color: #90a4ae; font-weight: normal;">(click any row for details)</span></h3>
             <div class="tab-buttons">
                 <button class="tab-btn active" onclick="showTab('worstTab')">⚠️ Highest Repair Rate</button>
                 <button class="tab-btn" onclick="showTab('bestTab')">✅ Most Reliable</button>
@@ -584,6 +852,10 @@
     </div>
 
     <script>
+        // Global data store
+        let warrantyData = [];
+        let dataByItem = {};
+        
         // Password check function
         function checkPassword() {
             const password = document.getElementById('passwordInput').value;
@@ -600,9 +872,95 @@
             }
         }
         
+        // Modal functions
+        function openModal(itemNumber) {
+            const data = dataByItem[itemNumber];
+            if (!data) return;
+            
+            document.getElementById('modalTitle').textContent = data.model;
+            document.getElementById('modalItemNumber').textContent = `Item #: ${data.item}`;
+            
+            // Stats grid
+            document.getElementById('modalStatsGrid').innerHTML = `
+                <div class="modal-stat">
+                    <div class="modal-stat-value">${data.sold.toLocaleString()}</div>
+                    <div class="modal-stat-label">Units Sold</div>
+                </div>
+                <div class="modal-stat">
+                    <div class="modal-stat-value warning">${data.total.toLocaleString()}</div>
+                    <div class="modal-stat-label">Total Repairs</div>
+                </div>
+                <div class="modal-stat">
+                    <div class="modal-stat-value ${parseFloat(data.repairRate) > 10 ? 'danger' : parseFloat(data.repairRate) > 5 ? 'warning' : 'success'}">${data.repairRate}%</div>
+                    <div class="modal-stat-label">Repair Rate</div>
+                </div>
+                <div class="modal-stat">
+                    <div class="modal-stat-value warning">$${data.totalCost.toLocaleString()}</div>
+                    <div class="modal-stat-label">Est. Total Cost</div>
+                </div>
+                <div class="modal-stat">
+                    <div class="modal-stat-value purple">${data.accidentalPct}%</div>
+                    <div class="modal-stat-label">Accidental %</div>
+                </div>
+                <div class="modal-stat">
+                    <div class="modal-stat-value success">${data.inWarrantyPct}%</div>
+                    <div class="modal-stat-label">In Warranty %</div>
+                </div>
+            `;
+            
+            // Repair breakdown
+            document.getElementById('modalRepairBreakdown').innerHTML = `
+                <div class="breakdown-item">
+                    <div class="breakdown-value">${data.major.toLocaleString()}</div>
+                    <div class="breakdown-label">Major Repairs</div>
+                    <div class="breakdown-cost">$${(data.major * 100).toLocaleString()}</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-value">${data.minor.toLocaleString()}</div>
+                    <div class="breakdown-label">Minor Repairs</div>
+                    <div class="breakdown-cost">$${(data.minor * 50).toLocaleString()}</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-value">${data.npu.toLocaleString()}</div>
+                    <div class="breakdown-label">NPU/NPF</div>
+                    <div class="breakdown-cost">$${(data.npu * 20).toLocaleString()}</div>
+                </div>
+            `;
+            
+            // Accidental bar
+            document.getElementById('modalAccidentalBar').style.width = data.accidentalPct + '%';
+            document.getElementById('modalAccidentalPct').textContent = `Accidental: ${data.accidentalPct}%`;
+            
+            // Warranty bar
+            document.getElementById('modalWarrantyBar').style.width = data.inWarrantyPct + '%';
+            document.getElementById('modalInWarrantyPct').textContent = `In Warranty: ${data.inWarrantyPct}%`;
+            document.getElementById('modalOutWarrantyPct').textContent = `Out: ${data.outWarrantyPct}%`;
+            
+            // Repair rate bar (scale to max 25%)
+            const repairRateScaled = Math.min(parseFloat(data.repairRate) / 25 * 100, 100);
+            document.getElementById('modalRepairRateBar').style.width = repairRateScaled + '%';
+            document.getElementById('modalRepairRatePct').textContent = `This Model: ${data.repairRate}%`;
+            
+            document.getElementById('modelModal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('modelModal').classList.remove('active');
+        }
+        
+        // Close modal on overlay click
+        document.getElementById('modelModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+        
         function initDashboard() {
             // Model data - filtered for >1000 units, excluding NL71/NL81
-            const warrantyData = [
+            warrantyData = [
                 { model: "CTL Chromebook VX11 4/32", item: "CBUS1100004", sold: 15831, major: 94, minor: 204, npu: 22, accidental: 215, total: 320, inWarranty: 27, outWarranty: 306 },
                 { model: "CTL Chromebook NL72TW/8/64 CBU", item: "CBUS1100011", sold: 35388, major: 1183, minor: 2479, npu: 682, accidental: 1801, total: 4344, inWarranty: 4306, outWarranty: 348 },
                 { model: "CTL Chromebook NL72-L 4/64 LTE", item: "CBUS1100013", sold: 1679, major: 83, minor: 235, npu: 33, accidental: 194, total: 351, inWarranty: 310, outWarranty: 77 },
@@ -642,16 +1000,17 @@
                 { model: "CTL Chrome Tablet Tx1 4GB/32", item: "NBCTX1", sold: 4257, major: 10, minor: 5, npu: 4, accidental: 8, total: 19, inWarranty: 8, outWarranty: 12 }
             ];
             
-            // Calculate derived metrics
+            // Calculate derived metrics and build lookup
             warrantyData.forEach(d => {
                 d.repairRate = ((d.total / d.sold) * 100).toFixed(2);
                 d.totalCost = (d.major * 100) + (d.minor * 50) + (d.npu * 20);
-                d.accidentalPct = d.total > 0 ? ((d.accidental / d.total) * 100).toFixed(2) : 0;
+                d.accidentalPct = d.total > 0 ? ((d.accidental / d.total) * 100).toFixed(2) : "0.00";
                 d.inWarrantyPct = (d.inWarranty + d.outWarranty) > 0 ? 
-                    ((d.inWarranty / (d.inWarranty + d.outWarranty)) * 100).toFixed(2) : 0;
+                    ((d.inWarranty / (d.inWarranty + d.outWarranty)) * 100).toFixed(2) : "0.00";
                 d.outWarrantyPct = (d.inWarranty + d.outWarranty) > 0 ? 
-                    ((d.outWarranty / (d.inWarranty + d.outWarranty)) * 100).toFixed(2) : 0;
+                    ((d.outWarranty / (d.inWarranty + d.outWarranty)) * 100).toFixed(2) : "0.00";
                 d.shortName = d.model.replace('CTL Chromebook ', '').replace('CTL ', '').substring(0, 20);
+                dataByItem[d.item] = d;
             });
             
             // Calculate totals
@@ -685,15 +1044,21 @@
                 return `rgba(${229 - ratio * 80}, ${115 + ratio * 80}, ${115 + ratio * 80}, 0.8)`;
             });
             
-            const greenGradient = byReliable.slice(0, 15).map((_, i) => {
-                const ratio = i / 15;
-                return `rgba(${129 + ratio * 50}, ${199 - ratio * 50}, ${132 + ratio * 50}, 0.8)`;
-            });
-            
             const purpleGradient = byAccidental.slice(0, 15).map((_, i) => {
                 const ratio = i / 15;
                 return `rgba(${186 - ratio * 40}, ${104 + ratio * 40}, ${200 - ratio * 40}, 0.8)`;
             });
+            
+            // Chart click handler
+            function createClickHandler(dataArray) {
+                return function(event, elements) {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const item = dataArray[index].item;
+                        openModal(item);
+                    }
+                };
+            }
             
             // Repair Rate Chart
             new Chart(document.getElementById('repairRateChart'), {
@@ -712,13 +1077,14 @@
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: createClickHandler(byRepairRate.slice(0, 15)),
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 afterLabel: function(context) {
                                     const d = byRepairRate[context.dataIndex];
-                                    return `Sold: ${d.sold.toLocaleString()} | Repairs: ${d.total.toLocaleString()}`;
+                                    return `Sold: ${d.sold.toLocaleString()} | Repairs: ${d.total.toLocaleString()}\nClick for details`;
                                 }
                             }
                         }
@@ -754,12 +1120,16 @@
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: createClickHandler(byCost.slice(0, 15)),
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
                                     return 'Cost: $' + context.raw.toLocaleString();
+                                },
+                                afterLabel: function() {
+                                    return 'Click for details';
                                 }
                             }
                         }
@@ -866,8 +1236,16 @@
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: createClickHandler(byAccidental.slice(0, 15)),
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function() {
+                                    return 'Click for details';
+                                }
+                            }
+                        }
                     },
                     scales: {
                         x: {
@@ -966,7 +1344,7 @@
                 </div>
             `).join('');
             
-            // Populate Tables
+            // Populate Tables with click handlers
             function getRateBadge(rate) {
                 rate = parseFloat(rate);
                 if (rate > 10) return `<span class="badge badge-danger">${rate}%</span>`;
@@ -980,7 +1358,7 @@
             
             // Worst table (highest repair rate)
             document.getElementById('worstTable').innerHTML = byRepairRate.slice(0, 15).map(d => `
-                <tr>
+                <tr onclick="openModal('${d.item}')">
                     <td>${d.model}</td>
                     <td>${d.item}</td>
                     <td>${d.sold.toLocaleString()}</td>
@@ -992,7 +1370,7 @@
             
             // Best table (lowest repair rate)
             document.getElementById('bestTable').innerHTML = byReliable.slice(0, 15).map(d => `
-                <tr>
+                <tr onclick="openModal('${d.item}')">
                     <td>${d.model}</td>
                     <td>${d.item}</td>
                     <td>${d.sold.toLocaleString()}</td>
@@ -1004,7 +1382,7 @@
             
             // Cost table
             document.getElementById('costTable').innerHTML = byCost.slice(0, 15).map(d => `
-                <tr>
+                <tr onclick="openModal('${d.item}')">
                     <td>${d.model}</td>
                     <td>${d.sold.toLocaleString()}</td>
                     <td>${d.total.toLocaleString()}</td>
@@ -1015,7 +1393,7 @@
             
             // Accidental table
             document.getElementById('accidentalTable').innerHTML = byAccidental.slice(0, 15).map(d => `
-                <tr>
+                <tr onclick="openModal('${d.item}')">
                     <td>${d.model}</td>
                     <td>${d.accidental.toLocaleString()}</td>
                     <td>${d.total.toLocaleString()}</td>
@@ -1027,7 +1405,7 @@
             const byWarranty = [...warrantyData].filter(d => (d.inWarranty + d.outWarranty) > 0)
                 .sort((a, b) => parseFloat(b.outWarrantyPct) - parseFloat(a.outWarrantyPct));
             document.getElementById('warrantyTable').innerHTML = byWarranty.slice(0, 15).map(d => `
-                <tr>
+                <tr onclick="openModal('${d.item}')">
                     <td>${d.model}</td>
                     <td>${d.inWarranty.toLocaleString()}</td>
                     <td>${d.outWarranty.toLocaleString()}</td>
@@ -1038,7 +1416,7 @@
             
             // All models table
             document.getElementById('allTable').innerHTML = warrantyData.sort((a,b) => b.totalCost - a.totalCost).map(d => `
-                <tr>
+                <tr onclick="openModal('${d.item}')">
                     <td>${d.model}</td>
                     <td>${d.item}</td>
                     <td>${d.sold.toLocaleString()}</td>
