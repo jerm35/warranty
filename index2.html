@@ -1,0 +1,2345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTL Warranty Analysis Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2234;
+            --bg-card-hover: #1f2a42;
+            --border-color: #2d3a52;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #22d3ee;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-green: #10b981;
+            --accent-purple: #a855f7;
+            --accent-pink: #ec4899;
+            --gradient-blue: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            --gradient-orange: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --gradient-red: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --gradient-green: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --gradient-purple: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+            --gradient-cyan: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Password Overlay */
+        .password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .password-overlay.hidden {
+            display: none;
+        }
+
+        .password-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 48px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .password-box h2 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--accent-cyan);
+        }
+
+        .password-box p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+
+        .password-box input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .password-box input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        .password-box button {
+            width: 100%;
+            padding: 14px;
+            background: var(--gradient-cyan);
+            border: none;
+            border-radius: 8px;
+            color: var(--bg-primary);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .password-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(34, 211, 238, 0.3);
+        }
+
+        .password-error {
+            color: var(--accent-red);
+            font-size: 0.85rem;
+            margin-top: 12px;
+            display: none;
+        }
+
+        /* Dashboard Container */
+        .dashboard {
+            display: none;
+            padding: 24px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .dashboard.visible {
+            display: block;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-left h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .header-left p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .last-updated {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        .last-updated span {
+            color: var(--accent-cyan);
+        }
+
+        .nav-btn, .refresh-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-cyan);
+        }
+
+        .refresh-btn {
+            background: var(--gradient-green);
+            color: white;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 1400px) {
+            .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-cyan);
+        }
+
+        .kpi-card.blue::before { background: var(--gradient-blue); }
+        .kpi-card.orange::before { background: var(--gradient-orange); }
+        .kpi-card.red::before { background: var(--gradient-red); }
+        .kpi-card.green::before { background: var(--gradient-green); }
+        .kpi-card.purple::before { background: var(--gradient-purple); }
+        .kpi-card.cyan::before { background: var(--gradient-cyan); }
+
+        .kpi-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .kpi-card.blue .kpi-value { color: var(--accent-blue); }
+        .kpi-card.orange .kpi-value { color: var(--accent-orange); }
+        .kpi-card.red .kpi-value { color: var(--accent-red); }
+        .kpi-card.green .kpi-value { color: var(--accent-green); }
+        .kpi-card.purple .kpi-value { color: var(--accent-purple); }
+        .kpi-card.cyan .kpi-value { color: var(--accent-cyan); }
+
+        .kpi-subtext {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Financial KPI Section */
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 32px 0 16px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: var(--gradient-cyan);
+            border-radius: 2px;
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .charts-row-full {
+            grid-template-columns: 1fr;
+        }
+
+        .charts-row-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .charts-row-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        @media (max-width: 1200px) {
+            .charts-row-2, .charts-row-3 { grid-template-columns: 1fr; }
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-title .badge {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        .chart-container.small {
+            height: 280px;
+        }
+
+        /* Tables */
+        .tables-section {
+            margin-top: 40px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+
+        .tab-btn .stat {
+            display: block;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 4px;
+            opacity: 0.8;
+        }
+
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: var(--bg-secondary);
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        th:hover {
+            background: var(--bg-card-hover);
+        }
+
+        th .sort-icon {
+            margin-left: 6px;
+            opacity: 0.5;
+        }
+
+        th.sorted .sort-icon {
+            opacity: 1;
+            color: var(--accent-cyan);
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        tr:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-green { color: var(--accent-green); }
+        .text-red { color: var(--accent-red); }
+        .text-orange { color: var(--accent-orange); }
+        .text-cyan { color: var(--accent-cyan); }
+        .text-purple { color: var(--accent-purple); }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            max-width: 900px;
+            width: 95%;
+            max-height: 85vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+            z-index: 10;
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            color: var(--accent-cyan);
+            margin-bottom: 4px;
+        }
+
+        .modal-header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px 12px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .modal-stat {
+            background: var(--bg-secondary);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .modal-stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .modal-stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .modal-stat-compare {
+            font-size: 0.75rem;
+            margin-top: 4px;
+        }
+
+        .compare-up { color: var(--accent-red); }
+        .compare-down { color: var(--accent-green); }
+        .compare-neutral { color: var(--text-muted); }
+
+        .modal-table {
+            margin-top: 20px;
+        }
+
+        .modal-table h4 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        /* Insights Section */
+        .insights-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .insights-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .insight-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .insight-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .insight-icon.red { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+        .insight-icon.green { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+        .insight-icon.orange { background: rgba(245, 158, 11, 0.2); color: var(--accent-orange); }
+        .insight-icon.purple { background: rgba(168, 85, 247, 0.2); color: var(--accent-purple); }
+        .insight-icon.cyan { background: rgba(34, 211, 238, 0.2); color: var(--accent-cyan); }
+
+        .insight-content h5 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .insight-content p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 23, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        .loading-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <!-- Password Overlay -->
+    <div class="password-overlay" id="passwordOverlay">
+        <div class="password-box">
+            <h2>🔒 Dashboard Access</h2>
+            <p>Enter password to view the CTL Warranty Dashboard</p>
+            <input type="password" id="passwordInput" placeholder="Enter password..." autofocus>
+            <button onclick="checkPassword()">Access Dashboard</button>
+            <p class="password-error" id="passwordError">Incorrect password. Please try again.</p>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Loading warranty data...</p>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalTitle">Model Details</h2>
+                    <p id="modalSubtitle"></p>
+                </div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <header class="header">
+            <div class="header-left">
+                <h1>CTL Warranty Analysis Dashboard</h1>
+                <p>Repair metrics, warranty analysis, and financial performance • Excludes NL71/NL81 models • QTY Sold &gt; 1,000</p>
+            </div>
+            <div class="header-right">
+                <div class="last-updated">
+                    <div>Last Updated: <span id="lastUpdated">Never</span></div>
+                    <div style="font-size: 0.7rem; margin-top: 2px;">Auto-refresh every 6 hours</div>
+                </div>
+                <button class="nav-btn" onclick="window.location.href='all-models.html'">
+                    📊 View All Models
+                </button>
+                <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">
+                    <span class="spinner" id="refreshSpinner"></span>
+                    <span id="refreshText">Refresh Data</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Repair KPIs -->
+        <div class="section-title">Repair Metrics</div>
+        <div class="kpi-grid">
+            <div class="kpi-card blue" onclick="showKPIModal('unitsSold')">
+                <div class="kpi-label">Total Units Sold</div>
+                <div class="kpi-value" id="kpiUnitsSold">--</div>
+            </div>
+            <div class="kpi-card orange" onclick="showKPIModal('totalRepairs')">
+                <div class="kpi-label">Total Repairs</div>
+                <div class="kpi-value" id="kpiTotalRepairs">--</div>
+            </div>
+            <div class="kpi-card red" onclick="showKPIModal('repairRate')">
+                <div class="kpi-label">Overall Repair Rate</div>
+                <div class="kpi-value" id="kpiRepairRate">--</div>
+            </div>
+            <div class="kpi-card orange" onclick="showKPIModal('estCost')">
+                <div class="kpi-label">Est. Repair Cost</div>
+                <div class="kpi-value" id="kpiEstCost">--</div>
+                <div class="kpi-subtext">$100/$50/$20 formula</div>
+            </div>
+            <div class="kpi-card purple" onclick="showKPIModal('accidental')">
+                <div class="kpi-label">Accidental Damage</div>
+                <div class="kpi-value" id="kpiAccidental">--</div>
+            </div>
+            <div class="kpi-card green" onclick="showKPIModal('inWarranty')">
+                <div class="kpi-label">In Warranty</div>
+                <div class="kpi-value" id="kpiInWarranty">--</div>
+            </div>
+        </div>
+
+        <!-- Financial KPIs -->
+        <div class="section-title">Financial Performance (Actual Data)</div>
+        <div class="kpi-grid">
+            <div class="kpi-card cyan" onclick="showKPIModal('actualCost')">
+                <div class="kpi-label">Actual Total Cost</div>
+                <div class="kpi-value" id="kpiActualCost">--</div>
+                <div class="kpi-subtext">From repair records</div>
+            </div>
+            <div class="kpi-card green" onclick="showKPIModal('totalRevenue')">
+                <div class="kpi-label">Total Revenue</div>
+                <div class="kpi-value" id="kpiRevenue">--</div>
+                <div class="kpi-subtext">Warranty revenue</div>
+            </div>
+            <div class="kpi-card" id="kpiProfitCard" onclick="showKPIModal('profit')">
+                <div class="kpi-label">Net Profit/Loss</div>
+                <div class="kpi-value" id="kpiProfit">--</div>
+                <div class="kpi-subtext">Revenue - Cost</div>
+            </div>
+            <div class="kpi-card purple" onclick="showKPIModal('avgCostPerRepair')">
+                <div class="kpi-label">Avg Cost/Repair</div>
+                <div class="kpi-value" id="kpiAvgCost">--</div>
+            </div>
+            <div class="kpi-card orange" onclick="showKPIModal('warrantySkuCount')">
+                <div class="kpi-label">Warranty SKUs</div>
+                <div class="kpi-value" id="kpiWarrantySku">--</div>
+                <div class="kpi-subtext">Unique warranties</div>
+            </div>
+            <div class="kpi-card blue" onclick="showKPIModal('repairsWithFinancials')">
+                <div class="kpi-label">Repairs w/ Financials</div>
+                <div class="kpi-value" id="kpiFinancialRepairs">--</div>
+                <div class="kpi-subtext">Have cost or revenue data</div>
+            </div>
+        </div>
+
+        <!-- Key Insights -->
+        <div class="insights-section">
+            <div class="insights-title">💡 Key Insights</div>
+            <div class="insights-grid" id="insightsGrid">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Charts Row 1: Repair Rate -->
+        <div class="section-title">Repair Analysis</div>
+        <div class="charts-grid charts-row-full">
+            <div class="chart-card">
+                <div class="chart-title">Repair Rate by Model <span class="badge">Top 15</span></div>
+                <div class="chart-container">
+                    <canvas id="chartRepairRate"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 2: Cost Comparison -->
+        <div class="charts-grid charts-row-2">
+            <div class="chart-card">
+                <div class="chart-title">Estimated Cost by Model <span class="badge">$100/$50/$20</span></div>
+                <div class="chart-container">
+                    <canvas id="chartEstCost"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Actual Cost by Model <span class="badge">Real Data</span></div>
+                <div class="chart-container">
+                    <canvas id="chartActualCost"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 3: Profit/Loss -->
+        <div class="section-title">Profitability Analysis</div>
+        <div class="charts-grid charts-row-full">
+            <div class="chart-card">
+                <div class="chart-title">Profit/Loss by Model <span class="badge">Revenue - Cost</span></div>
+                <div class="chart-container">
+                    <canvas id="chartProfitLoss"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 4: Distributions -->
+        <div class="charts-grid charts-row-3">
+            <div class="chart-card">
+                <div class="chart-title">Repair Type Distribution</div>
+                <div class="chart-container small">
+                    <canvas id="chartRepairType"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Accidental vs Non-Accidental</div>
+                <div class="chart-container small">
+                    <canvas id="chartAccidental"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Warranty Status</div>
+                <div class="chart-container small">
+                    <canvas id="chartWarrantyStatus"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 5: Cost Breakdowns -->
+        <div class="charts-grid charts-row-2">
+            <div class="chart-card">
+                <div class="chart-title">Est. Cost by Repair Type</div>
+                <div class="chart-container small">
+                    <canvas id="chartCostByType"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Actual Cost: In vs Out of Warranty</div>
+                <div class="chart-container small">
+                    <canvas id="chartCostByWarranty"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 6: Accidental Analysis -->
+        <div class="charts-grid charts-row-2">
+            <div class="chart-card">
+                <div class="chart-title">Accidental Damage Rate by Model <span class="badge">100+ repairs only</span></div>
+                <div class="chart-container">
+                    <canvas id="chartAccidentalRate"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">Accidental Damage Cost by Model <span class="badge">100+ repairs only</span></div>
+                <div class="chart-container">
+                    <canvas id="chartAccidentalCost"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warranty SKU Section -->
+        <div class="section-title">Warranty SKU Analysis</div>
+        <div class="table-container" style="margin-bottom: 32px;">
+            <div class="table-wrapper">
+                <table id="warrantySkuTable">
+                    <thead>
+                        <tr>
+                            <th>Warranty SKU</th>
+                            <th class="text-right">Repairs</th>
+                            <th class="text-right">Total Cost</th>
+                            <th class="text-right">Total Revenue</th>
+                            <th class="text-right">Profit/Loss</th>
+                            <th class="text-right">Avg Cost/Repair</th>
+                            <th class="text-right">Margin %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="warrantySkuBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Data Tables -->
+        <div class="tables-section">
+            <div class="section-title">Detailed Data Tables</div>
+            <div class="tab-buttons">
+                <button class="tab-btn active" data-tab="highestRepairRate" onclick="switchTab('highestRepairRate')">
+                    Highest Repair Rate
+                    <span class="stat" id="tabStatHighest">--</span>
+                </button>
+                <button class="tab-btn" data-tab="mostReliable" onclick="switchTab('mostReliable')">
+                    Most Reliable
+                    <span class="stat" id="tabStatReliable">--</span>
+                </button>
+                <button class="tab-btn" data-tab="highestCost" onclick="switchTab('highestCost')">
+                    Highest Cost
+                    <span class="stat" id="tabStatCost">--</span>
+                </button>
+                <button class="tab-btn" data-tab="mostProfitable" onclick="switchTab('mostProfitable')">
+                    Most Profitable
+                    <span class="stat" id="tabStatProfit">--</span>
+                </button>
+                <button class="tab-btn" data-tab="leastProfitable" onclick="switchTab('leastProfitable')">
+                    Least Profitable
+                    <span class="stat" id="tabStatLoss">--</span>
+                </button>
+                <button class="tab-btn" data-tab="allModels" onclick="switchTab('allModels')">
+                    All Models
+                    <span class="stat" id="tabStatAll">--</span>
+                </button>
+            </div>
+
+            <div class="table-container">
+                <div class="table-wrapper">
+                    <table id="dataTable">
+                        <thead id="tableHead">
+                        </thead>
+                        <tbody id="tableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const CONFIG = {
+            csvUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=986703446&single=true&output=csv',
+            storageKey: 'warrantyDashboardData',
+            password: 'CTLdata20232026',
+            refreshInterval: 6 * 60 * 60 * 1000, // 6 hours
+            excludeModels: ['NL71', 'NL81'],
+            minQtySold: 1000,
+            costs: { major: 100, minor: 50, npu: 20 }
+        };
+
+        // Global state
+        let dashboardData = null;
+        let charts = {};
+        let currentTab = 'highestRepairRate';
+        let tableSortColumn = null;
+        let tableSortAsc = true;
+
+        // Password check
+        function checkPassword() {
+            const input = document.getElementById('passwordInput').value;
+            if (input === CONFIG.password) {
+                document.getElementById('passwordOverlay').classList.add('hidden');
+                document.getElementById('dashboard').classList.add('visible');
+                initDashboard();
+            } else {
+                document.getElementById('passwordError').style.display = 'block';
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkPassword();
+        });
+
+        // Initialize dashboard
+        function initDashboard() {
+            const cached = localStorage.getItem(CONFIG.storageKey);
+            if (cached) {
+                try {
+                    const data = JSON.parse(cached);
+                    const age = Date.now() - new Date(data.lastUpdated).getTime();
+                    dashboardData = data;
+                    renderDashboard();
+                    updateLastUpdated(data.lastUpdated, age > CONFIG.refreshInterval);
+                    
+                    if (age > CONFIG.refreshInterval) {
+                        refreshData();
+                    }
+                } catch (e) {
+                    console.error('Cache parse error:', e);
+                    refreshData();
+                }
+            } else {
+                refreshData();
+            }
+
+            // Auto-refresh timer
+            setInterval(() => {
+                refreshData();
+            }, CONFIG.refreshInterval);
+        }
+
+        // Refresh data from Google Sheets
+        async function refreshData() {
+            const btn = document.getElementById('refreshBtn');
+            const spinner = document.getElementById('refreshSpinner');
+            const text = document.getElementById('refreshText');
+            const loading = document.getElementById('loadingOverlay');
+
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            text.textContent = 'Loading...';
+            loading.classList.add('active');
+
+            try {
+                const response = await fetch(CONFIG.csvUrl);
+                const csvText = await response.text();
+                
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        const processed = processData(results.data);
+                        dashboardData = {
+                            ...processed,
+                            lastUpdated: new Date().toLocaleString()
+                        };
+                        localStorage.setItem(CONFIG.storageKey, JSON.stringify(dashboardData));
+                        renderDashboard();
+                        updateLastUpdated(dashboardData.lastUpdated, false);
+                    },
+                    error: (err) => {
+                        console.error('Parse error:', err);
+                        alert('Failed to parse data. Please try again.');
+                    }
+                });
+            } catch (err) {
+                console.error('Fetch error:', err);
+                alert('Failed to fetch data. Please check your connection.');
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                text.textContent = 'Refresh Data';
+                loading.classList.remove('active');
+            }
+        }
+
+        // Process raw CSV data
+        function processData(rows) {
+            const modelMap = {};
+            const warrantySkuMap = {};
+            const repairCategories = {};
+            let totalActualCost = 0;
+            let totalRevenue = 0;
+            let repairsWithFinancials = 0;
+
+            // Normalize warranty SKU (sort parts alphabetically)
+            function normalizeWarrantySku(sku) {
+                if (!sku || sku.trim() === '') return 'No Warranty';
+                if (sku.includes(' - ')) {
+                    return sku.split(' - ').sort().join(' - ');
+                }
+                return sku.trim();
+            }
+
+            rows.forEach(row => {
+                // Apply filters
+                const orderDate = row['Order Received Date'];
+                const qtySold = parseInt(row['QTY Sold']) || 0;
+                const modelName = row['Model Name'];
+                const itemNumber = row['Item Number'];
+
+                if (!orderDate || orderDate.trim() === '') return;
+                if (qtySold <= CONFIG.minQtySold) return;
+                if (!modelName || modelName === 'No Match') return;
+                if (!itemNumber || itemNumber === 'No Match') return;
+
+                // Exclude NL71/NL81 for main dashboard
+                if (CONFIG.excludeModels.some(ex => modelName.includes(ex))) return;
+
+                // Parse repair data
+                const isMajor = row['Major Repairs'] === 'Yes';
+                const repairType = row['Repair'] || '';
+                const isNPU = repairType.includes('NPU') || repairType.includes('NPF');
+                const accidentalDamage = row['Accidental Damage'];
+                const isAccidental = accidentalDamage === 'Yes' || accidentalDamage === 'Liquid';
+                const warrantyStatus = row['Warranty Status'];
+                const isInWarranty = warrantyStatus === 'In Warranty';
+                const isOutWarranty = warrantyStatus === 'Out of Warranty';
+
+                // Parse financial data
+                const warrantySku = normalizeWarrantySku(row['Warranty'] || '');
+                const cost = parseFloat(row['Cost']) || 0;
+                const revenue = parseFloat(row['Revenue']) || 0;
+
+                // Calculate estimated cost
+                let estCost = CONFIG.costs.minor;
+                if (isMajor) estCost = CONFIG.costs.major;
+                else if (isNPU) estCost = CONFIG.costs.npu;
+
+                // Track if has financial data
+                const hasFinancials = cost > 0 || revenue > 0;
+                if (hasFinancials) repairsWithFinancials++;
+
+                totalActualCost += cost;
+                totalRevenue += revenue;
+
+                // Aggregate by model
+                const key = `${modelName}|${itemNumber}`;
+                if (!modelMap[key]) {
+                    modelMap[key] = {
+                        model: modelName,
+                        item: itemNumber,
+                        sold: qtySold,
+                        major: 0,
+                        minor: 0,
+                        npu: 0,
+                        accidental: 0,
+                        total: 0,
+                        inWarranty: 0,
+                        outWarranty: 0,
+                        estCost: 0,
+                        actualCost: 0,
+                        revenue: 0,
+                        repairs: []
+                    };
+                }
+
+                const m = modelMap[key];
+                m.total++;
+                if (isMajor) m.major++;
+                else if (isNPU) m.npu++;
+                else m.minor++;
+                if (isAccidental) m.accidental++;
+                if (isInWarranty) m.inWarranty++;
+                if (isOutWarranty) m.outWarranty++;
+                m.estCost += estCost;
+                m.actualCost += cost;
+                m.revenue += revenue;
+                m.repairs.push({ type: repairType, isMajor, isNPU, isAccidental, cost, revenue, warrantySku });
+
+                // Aggregate by warranty SKU
+                if (!warrantySkuMap[warrantySku]) {
+                    warrantySkuMap[warrantySku] = {
+                        sku: warrantySku,
+                        repairs: 0,
+                        cost: 0,
+                        revenue: 0,
+                        models: new Set()
+                    };
+                }
+                warrantySkuMap[warrantySku].repairs++;
+                warrantySkuMap[warrantySku].cost += cost;
+                warrantySkuMap[warrantySku].revenue += revenue;
+                warrantySkuMap[warrantySku].models.add(modelName);
+
+                // Track repair categories
+                const category = repairType || 'Unknown';
+                if (!repairCategories[category]) {
+                    repairCategories[category] = { count: 0, models: new Set() };
+                }
+                repairCategories[category].count++;
+                repairCategories[category].models.add(modelName);
+            });
+
+            // Calculate derived fields for models
+            const models = Object.values(modelMap).map(m => {
+                const shortName = m.model.replace(/^CTL\s+/, '').replace(/Chromebook\s+/i, '');
+                return {
+                    ...m,
+                    shortName,
+                    repairRate: ((m.total / m.sold) * 100).toFixed(2),
+                    accidentalPct: m.total > 0 ? ((m.accidental / m.total) * 100).toFixed(2) : '0.00',
+                    inWarrantyPct: (m.inWarranty + m.outWarranty) > 0 
+                        ? ((m.inWarranty / (m.inWarranty + m.outWarranty)) * 100).toFixed(2) 
+                        : '0.00',
+                    profit: m.revenue - m.actualCost,
+                    avgCostPerRepair: m.total > 0 ? (m.actualCost / m.total).toFixed(2) : '0.00'
+                };
+            });
+
+            // Process warranty SKU data
+            const warrantySkus = Object.values(warrantySkuMap).map(w => ({
+                ...w,
+                profit: w.revenue - w.cost,
+                avgCost: w.repairs > 0 ? (w.cost / w.repairs).toFixed(2) : '0.00',
+                margin: w.revenue > 0 ? (((w.revenue - w.cost) / w.revenue) * 100).toFixed(1) : '0.0',
+                modelCount: w.models.size
+            })).sort((a, b) => b.repairs - a.repairs);
+
+            // Sort repair categories
+            const sortedCategories = Object.entries(repairCategories)
+                .sort((a, b) => b[1].count - a[1].count)
+                .slice(0, 10)
+                .map(([name, data]) => ({ name, ...data, models: Array.from(data.models) }));
+
+            return {
+                models,
+                warrantySkus,
+                repairCategories: sortedCategories,
+                totals: {
+                    actualCost: totalActualCost,
+                    revenue: totalRevenue,
+                    profit: totalRevenue - totalActualCost,
+                    repairsWithFinancials
+                }
+            };
+        }
+
+        // Render the dashboard
+        function renderDashboard() {
+            if (!dashboardData || !dashboardData.models) return;
+
+            const models = dashboardData.models;
+            const totals = dashboardData.totals;
+
+            // Calculate totals
+            const totalSold = models.reduce((sum, m) => sum + m.sold, 0);
+            const totalRepairs = models.reduce((sum, m) => sum + m.total, 0);
+            const totalEstCost = models.reduce((sum, m) => sum + m.estCost, 0);
+            const totalAccidental = models.reduce((sum, m) => sum + m.accidental, 0);
+            const totalInWarranty = models.reduce((sum, m) => sum + m.inWarranty, 0);
+            const totalOutWarranty = models.reduce((sum, m) => sum + m.outWarranty, 0);
+            const totalMajor = models.reduce((sum, m) => sum + m.major, 0);
+            const totalMinor = models.reduce((sum, m) => sum + m.minor, 0);
+            const totalNPU = models.reduce((sum, m) => sum + m.npu, 0);
+
+            // Update KPIs
+            document.getElementById('kpiUnitsSold').textContent = totalSold.toLocaleString();
+            document.getElementById('kpiTotalRepairs').textContent = totalRepairs.toLocaleString();
+            document.getElementById('kpiRepairRate').textContent = ((totalRepairs / totalSold) * 100).toFixed(2) + '%';
+            document.getElementById('kpiEstCost').textContent = '$' + totalEstCost.toLocaleString();
+            document.getElementById('kpiAccidental').textContent = ((totalAccidental / totalRepairs) * 100).toFixed(1) + '%';
+            document.getElementById('kpiInWarranty').textContent = ((totalInWarranty / (totalInWarranty + totalOutWarranty)) * 100).toFixed(1) + '%';
+
+            // Financial KPIs
+            document.getElementById('kpiActualCost').textContent = '$' + Math.round(totals.actualCost).toLocaleString();
+            document.getElementById('kpiRevenue').textContent = '$' + Math.round(totals.revenue).toLocaleString();
+            
+            const profitEl = document.getElementById('kpiProfit');
+            const profitCard = document.getElementById('kpiProfitCard');
+            profitEl.textContent = (totals.profit >= 0 ? '+$' : '-$') + Math.abs(Math.round(totals.profit)).toLocaleString();
+            profitCard.classList.remove('green', 'red');
+            profitCard.classList.add(totals.profit >= 0 ? 'green' : 'red');
+            profitCard.style.setProperty('--before-bg', totals.profit >= 0 ? 'var(--gradient-green)' : 'var(--gradient-red)');
+
+            document.getElementById('kpiAvgCost').textContent = '$' + (totals.actualCost / totalRepairs).toFixed(2);
+            document.getElementById('kpiWarrantySku').textContent = dashboardData.warrantySkus.length;
+            document.getElementById('kpiFinancialRepairs').textContent = totals.repairsWithFinancials.toLocaleString();
+
+            // Render charts
+            renderCharts(models, totalMajor, totalMinor, totalNPU, totalAccidental, totalInWarranty, totalOutWarranty, totalRepairs);
+
+            // Render warranty SKU table
+            renderWarrantySkuTable();
+
+            // Render insights
+            renderInsights(models, totals);
+
+            // Update tab stats
+            updateTabStats(models);
+
+            // Render current table
+            renderTable(currentTab);
+        }
+
+        // Render all charts
+        function renderCharts(models, totalMajor, totalMinor, totalNPU, totalAccidental, totalInWarranty, totalOutWarranty, totalRepairs) {
+            // Destroy existing charts
+            Object.values(charts).forEach(chart => chart.destroy());
+            charts = {};
+
+            // 1. Repair Rate by Model (Top 15)
+            const sortedByRate = [...models].sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate)).slice(0, 15);
+            charts.repairRate = new Chart(document.getElementById('chartRepairRate'), {
+                type: 'bar',
+                data: {
+                    labels: sortedByRate.map(m => m.shortName),
+                    datasets: [{
+                        label: 'Repair Rate %',
+                        data: sortedByRate.map(m => parseFloat(m.repairRate)),
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            showModelModal(sortedByRate[elements[0].index]);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.raw.toFixed(2)}% repair rate`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: { 
+                            grid: { display: false },
+                            ticks: { color: '#f1f5f9', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+
+            // 2. Estimated Cost by Model
+            const sortedByEstCost = [...models].sort((a, b) => b.estCost - a.estCost).slice(0, 15);
+            charts.estCost = new Chart(document.getElementById('chartEstCost'), {
+                type: 'bar',
+                data: {
+                    labels: sortedByEstCost.map(m => m.shortName),
+                    datasets: [{
+                        label: 'Estimated Cost',
+                        data: sortedByEstCost.map(m => m.estCost),
+                        backgroundColor: 'rgba(245, 158, 11, 0.8)',
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            showModelModal(sortedByEstCost[elements[0].index]);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => '$' + ctx.raw.toLocaleString()
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#94a3b8', callback: v => '$' + (v/1000).toFixed(0) + 'k' }
+                        },
+                        y: { 
+                            grid: { display: false },
+                            ticks: { color: '#f1f5f9', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+
+            // 3. Actual Cost by Model
+            const sortedByActualCost = [...models].filter(m => m.actualCost > 0).sort((a, b) => b.actualCost - a.actualCost).slice(0, 15);
+            charts.actualCost = new Chart(document.getElementById('chartActualCost'), {
+                type: 'bar',
+                data: {
+                    labels: sortedByActualCost.map(m => m.shortName),
+                    datasets: [{
+                        label: 'Actual Cost',
+                        data: sortedByActualCost.map(m => m.actualCost),
+                        backgroundColor: 'rgba(34, 211, 238, 0.8)',
+                        borderColor: 'rgba(34, 211, 238, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            showModelModal(sortedByActualCost[elements[0].index]);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => '$' + ctx.raw.toLocaleString()
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#94a3b8', callback: v => '$' + (v/1000).toFixed(0) + 'k' }
+                        },
+                        y: { 
+                            grid: { display: false },
+                            ticks: { color: '#f1f5f9', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+
+            // 4. Profit/Loss by Model
+            const modelsWithProfit = [...models].filter(m => m.actualCost > 0 || m.revenue > 0).sort((a, b) => b.profit - a.profit);
+            const topProfit = modelsWithProfit.slice(0, 8);
+            const topLoss = modelsWithProfit.slice(-7).reverse();
+            const profitLossModels = [...topProfit, ...topLoss.filter(m => !topProfit.includes(m))];
+            
+            charts.profitLoss = new Chart(document.getElementById('chartProfitLoss'), {
+                type: 'bar',
+                data: {
+                    labels: profitLossModels.map(m => m.shortName),
+                    datasets: [{
+                        label: 'Profit/Loss',
+                        data: profitLossModels.map(m => m.profit),
+                        backgroundColor: profitLossModels.map(m => m.profit >= 0 ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)'),
+                        borderColor: profitLossModels.map(m => m.profit >= 0 ? 'rgba(16, 185, 129, 1)' : 'rgba(239, 68, 68, 1)'),
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            showModelModal(profitLossModels[elements[0].index]);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => (ctx.raw >= 0 ? '+$' : '-$') + Math.abs(ctx.raw).toLocaleString()
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { 
+                                color: '#94a3b8', 
+                                callback: v => (v >= 0 ? '$' : '-$') + Math.abs(v/1000).toFixed(0) + 'k' 
+                            }
+                        },
+                        y: { 
+                            grid: { display: false },
+                            ticks: { color: '#f1f5f9', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+
+            // 5. Repair Type Distribution
+            charts.repairType = new Chart(document.getElementById('chartRepairType'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Major', 'Minor', 'NPU/NPF'],
+                    datasets: [{
+                        data: [totalMajor, totalMinor, totalNPU],
+                        backgroundColor: ['rgba(239, 68, 68, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(34, 211, 238, 0.8)'],
+                        borderColor: ['rgba(239, 68, 68, 1)', 'rgba(245, 158, 11, 1)', 'rgba(34, 211, 238, 1)'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'right',
+                            labels: { color: '#f1f5f9', padding: 16 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.label}: ${ctx.raw.toLocaleString()} (${((ctx.raw / (totalMajor + totalMinor + totalNPU)) * 100).toFixed(1)}%)`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 6. Accidental vs Non-Accidental
+            const nonAccidental = totalRepairs - totalAccidental;
+            charts.accidental = new Chart(document.getElementById('chartAccidental'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Accidental', 'Non-Accidental'],
+                    datasets: [{
+                        data: [totalAccidental, nonAccidental],
+                        backgroundColor: ['rgba(168, 85, 247, 0.8)', 'rgba(59, 130, 246, 0.8)'],
+                        borderColor: ['rgba(168, 85, 247, 1)', 'rgba(59, 130, 246, 1)'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'right',
+                            labels: { color: '#f1f5f9', padding: 16 }
+                        }
+                    }
+                }
+            });
+
+            // 7. Warranty Status
+            charts.warrantyStatus = new Chart(document.getElementById('chartWarrantyStatus'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['In Warranty', 'Out of Warranty'],
+                    datasets: [{
+                        data: [totalInWarranty, totalOutWarranty],
+                        backgroundColor: ['rgba(16, 185, 129, 0.8)', 'rgba(239, 68, 68, 0.8)'],
+                        borderColor: ['rgba(16, 185, 129, 1)', 'rgba(239, 68, 68, 1)'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'right',
+                            labels: { color: '#f1f5f9', padding: 16 }
+                        }
+                    }
+                }
+            });
+
+            // 8. Cost by Repair Type
+            const majorCost = totalMajor * CONFIG.costs.major;
+            const minorCost = totalMinor * CONFIG.costs.minor;
+            const npuCost = totalNPU * CONFIG.costs.npu;
+            charts.costByType = new Chart(document.getElementById('chartCostByType'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Major ($100)', 'Minor ($50)', 'NPU/NPF ($20)'],
+                    datasets: [{
+                        data: [majorCost, minorCost, npuCost],
+                        backgroundColor: ['rgba(239, 68, 68, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(34, 211, 238, 0.8)'],
+                        borderColor: ['rgba(239, 68, 68, 1)', 'rgba(245, 158, 11, 1)', 'rgba(34, 211, 238, 1)'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'right',
+                            labels: { color: '#f1f5f9', padding: 16 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.label}: $${ctx.raw.toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 9. Actual Cost by Warranty Status
+            const inWarrantyCost = models.reduce((sum, m) => {
+                const inWarrantyRatio = m.total > 0 ? m.inWarranty / m.total : 0;
+                return sum + (m.actualCost * inWarrantyRatio);
+            }, 0);
+            const outWarrantyCost = dashboardData.totals.actualCost - inWarrantyCost;
+            
+            charts.costByWarranty = new Chart(document.getElementById('chartCostByWarranty'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['In Warranty', 'Out of Warranty'],
+                    datasets: [{
+                        data: [Math.round(inWarrantyCost), Math.round(outWarrantyCost)],
+                        backgroundColor: ['rgba(16, 185, 129, 0.8)', 'rgba(239, 68, 68, 0.8)'],
+                        borderColor: ['rgba(16, 185, 129, 1)', 'rgba(239, 68, 68, 1)'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'right',
+                            labels: { color: '#f1f5f9', padding: 16 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.label}: $${ctx.raw.toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 10. Accidental Damage Rate (100+ repairs)
+            const modelsHighVolume = models.filter(m => m.total >= 100);
+            const sortedByAccRate = [...modelsHighVolume].sort((a, b) => parseFloat(b.accidentalPct) - parseFloat(a.accidentalPct)).slice(0, 15);
+            
+            charts.accidentalRate = new Chart(document.getElementById('chartAccidentalRate'), {
+                type: 'bar',
+                data: {
+                    labels: sortedByAccRate.map(m => m.shortName),
+                    datasets: [{
+                        label: 'Accidental %',
+                        data: sortedByAccRate.map(m => parseFloat(m.accidentalPct)),
+                        backgroundColor: 'rgba(168, 85, 247, 0.8)',
+                        borderColor: 'rgba(168, 85, 247, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            showModelModal(sortedByAccRate[elements[0].index]);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.raw.toFixed(2)}% accidental`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: { 
+                            grid: { display: false },
+                            ticks: { color: '#f1f5f9', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+
+            // 11. Accidental Damage Cost (100+ repairs)
+            const sortedByAccCost = [...modelsHighVolume]
+                .map(m => ({
+                    ...m,
+                    accidentalCost: m.accidental * (m.total > 0 ? m.actualCost / m.total : 0)
+                }))
+                .sort((a, b) => b.accidentalCost - a.accidentalCost)
+                .slice(0, 15);
+            
+            charts.accidentalCost = new Chart(document.getElementById('chartAccidentalCost'), {
+                type: 'bar',
+                data: {
+                    labels: sortedByAccCost.map(m => m.shortName),
+                    datasets: [{
+                        label: 'Accidental Cost',
+                        data: sortedByAccCost.map(m => Math.round(m.accidentalCost)),
+                        backgroundColor: 'rgba(168, 85, 247, 0.8)',
+                        borderColor: 'rgba(168, 85, 247, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            showModelModal(sortedByAccCost[elements[0].index]);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => '$' + ctx.raw.toLocaleString()
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#94a3b8', callback: v => '$' + (v/1000).toFixed(0) + 'k' }
+                        },
+                        y: { 
+                            grid: { display: false },
+                            ticks: { color: '#f1f5f9', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render warranty SKU table
+        function renderWarrantySkuTable() {
+            const tbody = document.getElementById('warrantySkuBody');
+            tbody.innerHTML = '';
+
+            dashboardData.warrantySkus.forEach(sku => {
+                const row = document.createElement('tr');
+                const profitClass = sku.profit >= 0 ? 'text-green' : 'text-red';
+                const marginClass = parseFloat(sku.margin) >= 0 ? 'text-green' : 'text-red';
+                
+                row.innerHTML = `
+                    <td><span class="mono">${sku.sku}</span></td>
+                    <td class="text-right mono">${sku.repairs.toLocaleString()}</td>
+                    <td class="text-right mono text-orange">$${Math.round(sku.cost).toLocaleString()}</td>
+                    <td class="text-right mono text-cyan">$${Math.round(sku.revenue).toLocaleString()}</td>
+                    <td class="text-right mono ${profitClass}">${sku.profit >= 0 ? '+' : ''}$${Math.round(sku.profit).toLocaleString()}</td>
+                    <td class="text-right mono">$${sku.avgCost}</td>
+                    <td class="text-right mono ${marginClass}">${sku.margin}%</td>
+                `;
+                row.onclick = () => showWarrantySkuModal(sku);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Render insights
+        function renderInsights(models, totals) {
+            const grid = document.getElementById('insightsGrid');
+            const insights = [];
+
+            // Highest repair rate
+            const highestRate = [...models].sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate))[0];
+            if (highestRate) {
+                insights.push({
+                    icon: '⚠️',
+                    iconClass: 'red',
+                    title: 'Highest Repair Rate',
+                    text: `${highestRate.shortName} at ${highestRate.repairRate}%`
+                });
+            }
+
+            // Most reliable
+            const mostReliable = [...models].sort((a, b) => parseFloat(a.repairRate) - parseFloat(b.repairRate))[0];
+            if (mostReliable) {
+                insights.push({
+                    icon: '✓',
+                    iconClass: 'green',
+                    title: 'Most Reliable',
+                    text: `${mostReliable.shortName} at ${mostReliable.repairRate}%`
+                });
+            }
+
+            // Highest actual cost
+            const highestCost = [...models].sort((a, b) => b.actualCost - a.actualCost)[0];
+            if (highestCost && highestCost.actualCost > 0) {
+                insights.push({
+                    icon: '💰',
+                    iconClass: 'orange',
+                    title: 'Highest Repair Cost',
+                    text: `${highestCost.shortName}: $${Math.round(highestCost.actualCost).toLocaleString()}`
+                });
+            }
+
+            // Most profitable
+            const mostProfitable = [...models].sort((a, b) => b.profit - a.profit)[0];
+            if (mostProfitable && mostProfitable.profit > 0) {
+                insights.push({
+                    icon: '📈',
+                    iconClass: 'green',
+                    title: 'Most Profitable Model',
+                    text: `${mostProfitable.shortName}: +$${Math.round(mostProfitable.profit).toLocaleString()}`
+                });
+            }
+
+            // Least profitable
+            const leastProfitable = [...models].sort((a, b) => a.profit - b.profit)[0];
+            if (leastProfitable && leastProfitable.profit < 0) {
+                insights.push({
+                    icon: '📉',
+                    iconClass: 'red',
+                    title: 'Least Profitable Model',
+                    text: `${leastProfitable.shortName}: -$${Math.abs(Math.round(leastProfitable.profit)).toLocaleString()}`
+                });
+            }
+
+            // Overall profit status
+            insights.push({
+                icon: totals.profit >= 0 ? '✨' : '⚡',
+                iconClass: totals.profit >= 0 ? 'cyan' : 'red',
+                title: 'Overall Warranty Performance',
+                text: totals.profit >= 0 
+                    ? `Net profit of $${Math.round(totals.profit).toLocaleString()}`
+                    : `Net loss of $${Math.abs(Math.round(totals.profit)).toLocaleString()}`
+            });
+
+            grid.innerHTML = insights.map(i => `
+                <div class="insight-item">
+                    <div class="insight-icon ${i.iconClass}">${i.icon}</div>
+                    <div class="insight-content">
+                        <h5>${i.title}</h5>
+                        <p>${i.text}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update tab stats
+        function updateTabStats(models) {
+            const sorted = {
+                highest: [...models].sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate)),
+                reliable: [...models].sort((a, b) => parseFloat(a.repairRate) - parseFloat(b.repairRate)),
+                cost: [...models].sort((a, b) => b.actualCost - a.actualCost),
+                profit: [...models].sort((a, b) => b.profit - a.profit),
+                loss: [...models].sort((a, b) => a.profit - b.profit)
+            };
+
+            document.getElementById('tabStatHighest').textContent = sorted.highest[0] ? `${sorted.highest[0].shortName}: ${sorted.highest[0].repairRate}%` : '--';
+            document.getElementById('tabStatReliable').textContent = sorted.reliable[0] ? `${sorted.reliable[0].shortName}: ${sorted.reliable[0].repairRate}%` : '--';
+            document.getElementById('tabStatCost').textContent = sorted.cost[0] ? `$${Math.round(sorted.cost[0].actualCost).toLocaleString()}` : '--';
+            document.getElementById('tabStatProfit').textContent = sorted.profit[0] ? `+$${Math.round(sorted.profit[0].profit).toLocaleString()}` : '--';
+            document.getElementById('tabStatLoss').textContent = sorted.loss[0] ? `-$${Math.abs(Math.round(sorted.loss[0].profit)).toLocaleString()}` : '--';
+            document.getElementById('tabStatAll').textContent = `${models.length} models`;
+        }
+
+        // Switch table tab
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            tableSortColumn = null;
+            tableSortAsc = true;
+            renderTable(tab);
+        }
+
+        // Render data table
+        function renderTable(tab) {
+            if (!dashboardData) return;
+
+            const thead = document.getElementById('tableHead');
+            const tbody = document.getElementById('tableBody');
+            let models = [...dashboardData.models];
+            let limit = 30;
+
+            // Define columns based on tab
+            const columns = [
+                { key: 'shortName', label: 'Model', align: 'left' },
+                { key: 'sold', label: 'Units Sold', align: 'right', format: 'number' },
+                { key: 'total', label: 'Repairs', align: 'right', format: 'number' },
+                { key: 'repairRate', label: 'Repair Rate', align: 'right', format: 'percent' },
+                { key: 'actualCost', label: 'Actual Cost', align: 'right', format: 'currency' },
+                { key: 'revenue', label: 'Revenue', align: 'right', format: 'currency' },
+                { key: 'profit', label: 'Profit/Loss', align: 'right', format: 'profit' }
+            ];
+
+            // Sort based on tab
+            switch (tab) {
+                case 'highestRepairRate':
+                    models.sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate));
+                    break;
+                case 'mostReliable':
+                    models.sort((a, b) => parseFloat(a.repairRate) - parseFloat(b.repairRate));
+                    break;
+                case 'highestCost':
+                    models.sort((a, b) => b.actualCost - a.actualCost);
+                    break;
+                case 'mostProfitable':
+                    models.sort((a, b) => b.profit - a.profit);
+                    break;
+                case 'leastProfitable':
+                    models.sort((a, b) => a.profit - b.profit);
+                    break;
+                case 'allModels':
+                    limit = models.length;
+                    if (tableSortColumn) {
+                        models.sort((a, b) => {
+                            let aVal = a[tableSortColumn];
+                            let bVal = b[tableSortColumn];
+                            if (typeof aVal === 'string') {
+                                aVal = parseFloat(aVal) || aVal;
+                                bVal = parseFloat(bVal) || bVal;
+                            }
+                            if (tableSortAsc) return aVal > bVal ? 1 : -1;
+                            return aVal < bVal ? 1 : -1;
+                        });
+                    }
+                    break;
+            }
+
+            models = models.slice(0, limit);
+
+            // Render header
+            thead.innerHTML = `<tr>${columns.map(col => {
+                const sortIcon = tab === 'allModels' 
+                    ? `<span class="sort-icon">${tableSortColumn === col.key ? (tableSortAsc ? '▲' : '▼') : '↕'}</span>`
+                    : '';
+                const sortedClass = tableSortColumn === col.key ? 'sorted' : '';
+                return `<th class="${col.align === 'right' ? 'text-right' : ''} ${sortedClass}" 
+                    ${tab === 'allModels' ? `onclick="sortTable('${col.key}')"` : ''}>
+                    ${col.label}${sortIcon}
+                </th>`;
+            }).join('')}</tr>`;
+
+            // Render body
+            tbody.innerHTML = models.map(m => `
+                <tr onclick="showModelModal(dashboardData.models.find(x => x.item === '${m.item}'))">
+                    ${columns.map(col => {
+                        let value = m[col.key];
+                        let className = col.align === 'right' ? 'text-right mono' : '';
+                        
+                        switch (col.format) {
+                            case 'number':
+                                value = value.toLocaleString();
+                                break;
+                            case 'percent':
+                                value = value + '%';
+                                break;
+                            case 'currency':
+                                value = '$' + Math.round(value).toLocaleString();
+                                className += ' text-orange';
+                                break;
+                            case 'profit':
+                                const isPositive = value >= 0;
+                                value = (isPositive ? '+$' : '-$') + Math.abs(Math.round(value)).toLocaleString();
+                                className += isPositive ? ' text-green' : ' text-red';
+                                break;
+                        }
+                        return `<td class="${className}">${value}</td>`;
+                    }).join('')}
+                </tr>
+            `).join('');
+        }
+
+        // Sort table (for All Models tab)
+        function sortTable(column) {
+            if (tableSortColumn === column) {
+                tableSortAsc = !tableSortAsc;
+            } else {
+                tableSortColumn = column;
+                tableSortAsc = true;
+            }
+            renderTable('allModels');
+        }
+
+        // Show model modal
+        function showModelModal(model) {
+            if (!model) return;
+
+            const overlay = document.getElementById('modalOverlay');
+            document.getElementById('modalTitle').textContent = model.shortName;
+            document.getElementById('modalSubtitle').textContent = model.item;
+
+            // Calculate fleet averages
+            const avgRepairRate = (dashboardData.models.reduce((s, m) => s + parseFloat(m.repairRate), 0) / dashboardData.models.length).toFixed(2);
+            const avgCost = dashboardData.totals.actualCost / dashboardData.models.reduce((s, m) => s + m.total, 0);
+
+            const compareRate = parseFloat(model.repairRate) - parseFloat(avgRepairRate);
+            const compareCost = parseFloat(model.avgCostPerRepair) - avgCost;
+
+            document.getElementById('modalBody').innerHTML = `
+                <div class="modal-stats">
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Units Sold</div>
+                        <div class="modal-stat-value text-blue">${model.sold.toLocaleString()}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Total Repairs</div>
+                        <div class="modal-stat-value text-orange">${model.total.toLocaleString()}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Repair Rate</div>
+                        <div class="modal-stat-value text-red">${model.repairRate}%</div>
+                        <div class="modal-stat-compare ${compareRate > 0 ? 'compare-up' : 'compare-down'}">
+                            ${compareRate > 0 ? '▲' : '▼'} ${Math.abs(compareRate).toFixed(2)}% vs avg
+                        </div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Actual Cost</div>
+                        <div class="modal-stat-value text-cyan">$${Math.round(model.actualCost).toLocaleString()}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Revenue</div>
+                        <div class="modal-stat-value text-green">$${Math.round(model.revenue).toLocaleString()}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Profit/Loss</div>
+                        <div class="modal-stat-value ${model.profit >= 0 ? 'text-green' : 'text-red'}">
+                            ${model.profit >= 0 ? '+' : ''}$${Math.round(model.profit).toLocaleString()}
+                        </div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Est. Cost</div>
+                        <div class="modal-stat-value text-orange">$${model.estCost.toLocaleString()}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Major Repairs</div>
+                        <div class="modal-stat-value">${model.major.toLocaleString()}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Minor Repairs</div>
+                        <div class="modal-stat-value">${model.minor.toLocaleString()}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">NPU/NPF</div>
+                        <div class="modal-stat-value">${model.npu.toLocaleString()}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Accidental %</div>
+                        <div class="modal-stat-value text-purple">${model.accidentalPct}%</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">In Warranty %</div>
+                        <div class="modal-stat-value text-green">${model.inWarrantyPct}%</div>
+                    </div>
+                </div>
+
+                <div class="modal-table">
+                    <h4>Repair Type Breakdown</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th class="text-right">Count</th>
+                                <th class="text-right">Est. Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Major Repairs ($100)</td>
+                                <td class="text-right mono">${model.major.toLocaleString()}</td>
+                                <td class="text-right mono text-red">$${(model.major * 100).toLocaleString()}</td>
+                            </tr>
+                            <tr>
+                                <td>Minor Repairs ($50)</td>
+                                <td class="text-right mono">${model.minor.toLocaleString()}</td>
+                                <td class="text-right mono text-orange">$${(model.minor * 50).toLocaleString()}</td>
+                            </tr>
+                            <tr>
+                                <td>NPU/NPF ($20)</td>
+                                <td class="text-right mono">${model.npu.toLocaleString()}</td>
+                                <td class="text-right mono text-cyan">$${(model.npu * 20).toLocaleString()}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            overlay.classList.add('active');
+        }
+
+        // Show warranty SKU modal
+        function showWarrantySkuModal(sku) {
+            const overlay = document.getElementById('modalOverlay');
+            document.getElementById('modalTitle').textContent = sku.sku;
+            document.getElementById('modalSubtitle').textContent = `Warranty SKU • ${sku.modelCount} models`;
+
+            document.getElementById('modalBody').innerHTML = `
+                <div class="modal-stats">
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Total Repairs</div>
+                        <div class="modal-stat-value text-orange">${sku.repairs.toLocaleString()}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Total Cost</div>
+                        <div class="modal-stat-value text-red">$${Math.round(sku.cost).toLocaleString()}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Total Revenue</div>
+                        <div class="modal-stat-value text-cyan">$${Math.round(sku.revenue).toLocaleString()}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Profit/Loss</div>
+                        <div class="modal-stat-value ${sku.profit >= 0 ? 'text-green' : 'text-red'}">
+                            ${sku.profit >= 0 ? '+' : ''}$${Math.round(sku.profit).toLocaleString()}
+                        </div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Avg Cost/Repair</div>
+                        <div class="modal-stat-value">$${sku.avgCost}</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-label">Margin</div>
+                        <div class="modal-stat-value ${parseFloat(sku.margin) >= 0 ? 'text-green' : 'text-red'}">
+                            ${sku.margin}%
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-table">
+                    <h4>Models with this Warranty</h4>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">
+                        ${sku.modelCount} model${sku.modelCount !== 1 ? 's' : ''} use this warranty SKU
+                    </p>
+                </div>
+            `;
+
+            overlay.classList.add('active');
+        }
+
+        // Show KPI modal
+        function showKPIModal(type) {
+            const overlay = document.getElementById('modalOverlay');
+            let title, subtitle, models;
+
+            switch (type) {
+                case 'unitsSold':
+                    title = 'Units Sold by Model';
+                    subtitle = 'Top 15 models by units sold';
+                    models = [...dashboardData.models].sort((a, b) => b.sold - a.sold).slice(0, 15);
+                    break;
+                case 'totalRepairs':
+                    title = 'Total Repairs by Model';
+                    subtitle = 'Top 15 models by repair count';
+                    models = [...dashboardData.models].sort((a, b) => b.total - a.total).slice(0, 15);
+                    break;
+                case 'repairRate':
+                    title = 'Repair Rate by Model';
+                    subtitle = 'Top 15 models by repair rate';
+                    models = [...dashboardData.models].sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate)).slice(0, 15);
+                    break;
+                case 'estCost':
+                    title = 'Estimated Cost by Model';
+                    subtitle = 'Top 15 models by estimated repair cost';
+                    models = [...dashboardData.models].sort((a, b) => b.estCost - a.estCost).slice(0, 15);
+                    break;
+                case 'actualCost':
+                    title = 'Actual Cost by Model';
+                    subtitle = 'Top 15 models by actual repair cost';
+                    models = [...dashboardData.models].sort((a, b) => b.actualCost - a.actualCost).slice(0, 15);
+                    break;
+                case 'totalRevenue':
+                    title = 'Revenue by Model';
+                    subtitle = 'Top 15 models by warranty revenue';
+                    models = [...dashboardData.models].sort((a, b) => b.revenue - a.revenue).slice(0, 15);
+                    break;
+                case 'profit':
+                    title = 'Profit/Loss by Model';
+                    subtitle = 'Top 15 models by profit';
+                    models = [...dashboardData.models].sort((a, b) => b.profit - a.profit).slice(0, 15);
+                    break;
+                case 'accidental':
+                    title = 'Accidental Damage by Model';
+                    subtitle = 'Top 15 models by accidental damage count';
+                    models = [...dashboardData.models].sort((a, b) => b.accidental - a.accidental).slice(0, 15);
+                    break;
+                case 'inWarranty':
+                    title = 'In Warranty Repairs by Model';
+                    subtitle = 'Top 15 models by in-warranty count';
+                    models = [...dashboardData.models].sort((a, b) => b.inWarranty - a.inWarranty).slice(0, 15);
+                    break;
+                default:
+                    return;
+            }
+
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalSubtitle').textContent = subtitle;
+
+            document.getElementById('modalBody').innerHTML = `
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Model</th>
+                                <th class="text-right">Units Sold</th>
+                                <th class="text-right">Repairs</th>
+                                <th class="text-right">Rate</th>
+                                <th class="text-right">Actual Cost</th>
+                                <th class="text-right">Revenue</th>
+                                <th class="text-right">Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${models.map((m, i) => `
+                                <tr onclick="closeModal(); setTimeout(() => showModelModal(dashboardData.models.find(x => x.item === '${m.item}')), 100)">
+                                    <td class="text-muted">${i + 1}</td>
+                                    <td>${m.shortName}</td>
+                                    <td class="text-right mono">${m.sold.toLocaleString()}</td>
+                                    <td class="text-right mono">${m.total.toLocaleString()}</td>
+                                    <td class="text-right mono text-red">${m.repairRate}%</td>
+                                    <td class="text-right mono text-orange">$${Math.round(m.actualCost).toLocaleString()}</td>
+                                    <td class="text-right mono text-cyan">$${Math.round(m.revenue).toLocaleString()}</td>
+                                    <td class="text-right mono ${m.profit >= 0 ? 'text-green' : 'text-red'}">
+                                        ${m.profit >= 0 ? '+' : ''}$${Math.round(m.profit).toLocaleString()}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            overlay.classList.add('active');
+        }
+
+        // Close modal
+        function closeModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        // Update last updated display
+        function updateLastUpdated(timestamp, isStale) {
+            const el = document.getElementById('lastUpdated');
+            el.textContent = timestamp + (isStale ? ' (stale)' : ' (cached)');
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
