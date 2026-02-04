@@ -161,8 +161,67 @@
             box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
         }
         
-        .nav-button.all-models {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        /* Date Filter Bar */
+        .date-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(145deg, #1e3a5f, #1a2d47);
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(79, 195, 247, 0.15);
+            flex-wrap: wrap;
+        }
+        
+        .date-filter-bar label {
+            color: #90a4ae;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .date-filter-bar input[type="date"] {
+            padding: 7px 12px;
+            border: 1px solid #2c5282;
+            border-radius: 6px;
+            background: #1a2d47;
+            color: #e4e4e4;
+            font-size: 0.85rem;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        
+        .date-filter-bar input[type="date"]:focus {
+            outline: none;
+            border-color: #4fc3f7;
+        }
+        
+        .date-filter-apply {
+            padding: 7px 18px;
+            background: linear-gradient(135deg, #4fc3f7 0%, #2196f3 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .date-filter-apply:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(79, 195, 247, 0.4);
+        }
+        
+        .date-filter-apply:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .date-filter-active {
+            color: #81c784;
+            font-size: 0.8rem;
+            margin-left: 4px;
         }
         
         .refresh-section {
@@ -684,6 +743,77 @@
             font-size: 0.9rem;
         }
         
+        /* Assumptions Panel */
+        .assumptions-panel {
+            margin-top: 30px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(79, 195, 247, 0.15);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .assumptions-panel:hover {
+            border-color: rgba(79, 195, 247, 0.3);
+        }
+        .assumptions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            color: #90a4ae;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .assumptions-arrow {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+        .assumptions-panel.expanded .assumptions-arrow {
+            transform: rotate(90deg);
+        }
+        .assumptions-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+        .assumptions-panel.expanded .assumptions-body {
+            max-height: 2000px;
+        }
+        .assumptions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            padding: 0 20px 20px;
+        }
+        .assumption-section {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 6px;
+            padding: 14px;
+        }
+        .assumption-section h4 {
+            color: #4fc3f7;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+        .assumption-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .assumption-section li {
+            color: #b0bec5;
+            font-size: 0.8rem;
+            padding: 3px 0;
+            padding-left: 12px;
+            position: relative;
+        }
+        .assumption-section li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #607d8b;
+        }
+
         .footer {
             text-align: center;
             color: #607d8b;
@@ -704,6 +834,7 @@
             .kpi-grid { grid-template-columns: repeat(2, 1fr); }
             .header-controls { flex-direction: column; gap: 15px; align-items: flex-start; }
             .refresh-section { flex-direction: column; align-items: flex-start; }
+            .date-filter-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
         }
     </style>
 </head>
@@ -728,9 +859,14 @@
     <!-- Dashboard Content -->
     <div class="dashboard hidden" id="dashboard">
         <div class="header-controls">
-            <a href="all-models.html" class="nav-button all-models">
-                📋 View All Models (incl. NL71/NL81)
-            </a>
+            <div class="date-filter-bar">
+                <label>📅 Date Range:</label>
+                <input type="date" id="filterStartDate" value="2023-01-01">
+                <span style="color: #90a4ae;">to</span>
+                <input type="date" id="filterEndDate" value="2025-12-31">
+                <button class="date-filter-apply" id="applyDateFilter" onclick="applyDateFilter()">Apply</button>
+                <span class="date-filter-active" id="dateFilterStatus">Showing: 1/1/2023 – 12/31/2025</span>
+            </div>
             <div class="refresh-section">
                 <div class="last-updated">
                     Last updated: <strong id="lastUpdated">Never</strong>
@@ -742,9 +878,10 @@
             </div>
         </div>
         <h1>📊 CTL Warranty Analysis Dashboard</h1>
-        <p class="subtitle">Repair Data 2023-2025 | Models with >1,000 units sold | NL72 / PX11E Devices and Newer</p>
+        <p class="subtitle" id="dashboardSubtitle">Repair Data | Only models with >1,000 units sold showing in charts | All Models</p>
         <div class="header-actions">
-            <span style="color: #81c784; font-size: 0.9rem;">✓ Excludes NL71/NL81 legacy models • Only completed repairs (Order Received Date required)</span>
+            <span style="color: #81c784; font-size: 0.9rem;">✓ All models included • Only completed repairs (Order Received Date required)</span>
+            <br><span style="color: #90caf9; font-size: 0.85rem;">Unit Sales and Warranty Revenue are based on years only – Repairs are granular</span>
         </div>
         
         <!-- KPI Cards -->
@@ -796,7 +933,7 @@
         <!-- Charts Row 1 -->
         <div class="chart-grid">
             <div class="chart-container full-width">
-                <h3>⚠️ Repair Rate by Model (Highest to Lowest)</h3>
+                <h3>🔧 Number of Repairs by Model (Highest to Lowest)</h3>
                 <div class="chart-wrapper" style="height: 400px;">
                     <canvas id="repairRateChart"></canvas>
                 </div>
@@ -878,7 +1015,7 @@
         
         <div class="chart-grid">
             <div class="chart-container">
-                <h3>🏷️ Warranty Code Distribution</h3>
+                <h3>🏷️ Warranty Repair Cost Distribution</h3>
                 <div class="chart-wrapper">
                     <canvas id="warrantyCodeChart"></canvas>
                 </div>
@@ -1064,9 +1201,71 @@
             </div>
         </div>
         
+        <!-- Assumptions Panel -->
+        <div class="assumptions-panel" onclick="this.classList.toggle('expanded')">
+            <div class="assumptions-header">
+                <span>📋 Assumptions &amp; Methodology</span>
+                <span class="assumptions-arrow">▶</span>
+            </div>
+            <div class="assumptions-body">
+                <div class="assumptions-grid">
+                    <div class="assumption-section">
+                        <h4>💰 Cost Calculations</h4>
+                        <ul>
+                            <li><strong>Shipping cost:</strong> $10 added to each repair's <strong>actual cost</strong> only</li>
+                            <li><strong>Actual cost:</strong> "Costs" field from repair data + $10 shipping per repair</li>
+                            <li><strong>Estimated costs</strong> are based on repair type lookup (below) — shipping already included in estimates</li>
+                            <li><strong>Default estimated cost:</strong> $50 for any unlisted repair type</li>
+                        </ul>
+                    </div>
+                    <div class="assumption-section">
+                        <h4>📦 Units Sold</h4>
+                        <ul>
+                            <li>Sourced from <strong>Sales CSV</strong> (Total Sales Qty), not from repair data</li>
+                            <li>Filtered by date range (Year column in sales data)</li>
+                            <li>Summed across all warranty codes per device</li>
+                            <li>Models with &le;1,000 units sold are hidden from charts/tables (data still in KPI totals)</li>
+                        </ul>
+                    </div>
+                    <div class="assumption-section">
+                        <h4>🔧 Repair Filtering</h4>
+                        <ul>
+                            <li>Only repairs with an <strong>Order Received Date</strong> are included</li>
+                            <li>Rows with "No Match" for Model Name or Item Number are excluded</li>
+                            <li>Date range filter applies to repair Order Received Date</li>
+                            <li>All models included (no model exclusions)</li>
+                        </ul>
+                    </div>
+                    <div class="assumption-section">
+                        <h4>💵 Revenue</h4>
+                        <ul>
+                            <li><strong>Warranty Revenue:</strong> from Sales CSV (Total Sales column or Qty &times; Price)</li>
+                            <li><strong>Repair Revenue:</strong> from repair data "Repair Revenue" field (out-of-warranty)</li>
+                            <li><strong>Net P/L:</strong> Warranty Revenue + Repair Revenue &minus; Actual Cost</li>
+                        </ul>
+                    </div>
+                    <div class="assumption-section">
+                        <h4>📊 Repair Classification</h4>
+                        <ul>
+                            <li><strong>NPU/NPF:</strong> repair name contains "NPU" or "NPF"</li>
+                            <li><strong>Major:</strong> "Major Repairs" field = "Yes" (and not NPU/NPF)</li>
+                            <li><strong>Minor:</strong> all other repairs</li>
+                            <li><strong>Accidental:</strong> "Accidental Damage" = "Yes" or "Liquid"</li>
+                            <li><strong>In Warranty:</strong> model-level count from repair data "In Warranty" field</li>
+                        </ul>
+                    </div>
+                    <div class="assumption-section">
+                        <h4>🔖 Estimated Repair Costs</h4>
+                        <div id="estimatedCostsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px; font-size: 0.8rem;"></div>
+                        <div style="margin-top: 6px; color: #78909c; font-size: 0.75rem;">Estimated costs already include shipping — no additional $10 added</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="footer">
-            CTL Warranty Analysis Dashboard | Data: 2023-2025 | Live from Google Sheets<br>
-            Filtered: Models with >1000 units sold | Excluded: NL71 and NL81 models
+            CTL Warranty Analysis Dashboard | Live from Google Sheets<br>
+            Filtered: Only models with >1,000 units sold showing in charts | Date range applied
         </div>
     </div>
 
@@ -1114,9 +1313,9 @@
                 <table class="repair-table">
                     <thead>
                         <tr>
-                            <th>Repair Type</th>
-                            <th>Count</th>
-                            <th>% of Category</th>
+                            <th id="pieModalCol1Header">Repair Type</th>
+                            <th id="pieModalCol2Header">Count</th>
+                            <th id="pieModalCol3Header">% of Category</th>
                         </tr>
                     </thead>
                     <tbody id="pieModalRepairTable"></tbody>
@@ -1171,10 +1370,18 @@
         // Configuration
         const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=986703446&single=true&output=csv';
         const SALES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=235319241&single=true&output=csv';
-        const EXCLUDE_NL71_NL81 = true; // Set to false for all-models version
         const AUTO_REFRESH_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
         
+        // Date filter defaults (use constructor to avoid UTC timezone shift)
+        let filterStartDate = new Date(2023, 0, 1);   // Jan 1, 2023 local
+        let filterEndDate = new Date(2025, 11, 31, 23, 59, 59); // Dec 31, 2025 end-of-day local
+        
+        // Raw fetched data (before date filtering) - kept for re-filtering without re-fetching
+        let rawFetchedData = [];
+        let rawFetchedSalesData = [];
+        
         // Estimated repair cost lookup by repair type
+        const SHIPPING_COST_PER_REPAIR = 10; // $10 shipping cost added to each repair
         const ESTIMATED_REPAIR_COSTS = {
             'AC Adapter': 50, 'Accidental': 100, 'Battery': 100, 'Camera': 50,
             'Daughterboard': 50, 'DC Port': 50, 'Declined': 50, 'Headphone Port': 50,
@@ -1297,7 +1504,7 @@
         // Password check function
         function checkPassword() {
             const password = document.getElementById('passwordInput').value;
-            const correctPassword = 'CTLdata20232026';
+            const correctPassword = 'CTLdata2026';
             
             if (password === correctPassword) {
                 document.getElementById('passwordOverlay').classList.add('hidden');
@@ -1325,7 +1532,7 @@
         // Load data from localStorage
         function loadFromLocalStorage() {
             try {
-                const storageKey = EXCLUDE_NL71_NL81 ? 'warrantyDashboardData' : 'warrantyDashboardDataAll';
+                const storageKey = 'warrantyDashboardData';
                 const savedData = localStorage.getItem(storageKey);
                 if (!savedData) return false;
                 
@@ -1372,7 +1579,7 @@
         // Save data to localStorage
         function saveToLocalStorage() {
             try {
-                const storageKey = EXCLUDE_NL71_NL81 ? 'warrantyDashboardData' : 'warrantyDashboardDataAll';
+                const storageKey = 'warrantyDashboardData';
                 const dataToSave = {
                     allModelData: allModelData,
                     customerData: customerData,
@@ -1388,7 +1595,6 @@
                 if (e.name === 'QuotaExceededError') {
                     console.log('Storage quota exceeded, clearing old data...');
                     localStorage.removeItem('warrantyDashboardData');
-                    localStorage.removeItem('warrantyDashboardDataAll');
                 }
             }
         }
@@ -1411,7 +1617,7 @@
             showLoading('Refreshing data from Google Sheets...');
             
             // Clear cached data before fetching fresh
-            const storageKey = EXCLUDE_NL71_NL81 ? 'warrantyDashboardData' : 'warrantyDashboardDataAll';
+            const storageKey = 'warrantyDashboardData';
             localStorage.removeItem(storageKey);
             console.log('Cleared localStorage cache');
             
@@ -1425,6 +1631,133 @@
                 btn.classList.remove('loading');
                 hideLoading();
             }
+        }
+        
+        // Apply date filter - re-process cached data with new date range
+        async function applyDateFilter() {
+            const startInput = document.getElementById('filterStartDate').value;
+            const endInput = document.getElementById('filterEndDate').value;
+            
+            if (!startInput || !endInput) {
+                alert('Please select both a start and end date.');
+                return;
+            }
+            
+            // Parse as local time to avoid UTC timezone shift
+            const [sy, sm, sd] = startInput.split('-').map(Number);
+            const [ey, em, ed] = endInput.split('-').map(Number);
+            const newStart = new Date(sy, sm - 1, sd);
+            const newEnd = new Date(ey, em - 1, ed, 23, 59, 59);
+            
+            if (newStart > newEnd) {
+                alert('Start date must be before end date.');
+                return;
+            }
+            
+            filterStartDate = newStart;
+            filterEndDate = newEnd;
+            
+            // Update status display
+            const startDisplay = newStart.toLocaleDateString('en-US');
+            const endDisplay = newEnd.toLocaleDateString('en-US');
+            document.getElementById('dateFilterStatus').textContent = 
+                `Showing: ${startDisplay} – ${endDisplay}`;
+            
+            // If we have cached raw data, reprocess without re-fetching
+            if (rawFetchedData && rawFetchedData.length > 0) {
+                showLoading('Applying date filter...');
+                try {
+                    reprocessWithDateFilter();
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                // No cached data yet, do a full load
+                showLoading('Loading data with date filter...');
+                try {
+                    await loadDataAndInit();
+                } finally {
+                    hideLoading();
+                }
+            }
+        }
+        
+        // Reprocess cached data with current date filter (no network fetch)
+        function reprocessWithDateFilter() {
+            // Reset rawDataFetchPromise so lazy-fetch will re-filter
+            rawDataFetchPromise = null;
+            
+            // Destroy existing charts
+            Object.values(charts).forEach(chart => {
+                if (chart && typeof chart.destroy === 'function') chart.destroy();
+            });
+            charts = {};
+            
+            // Reprocess
+            salesLookup = buildSalesLookup(rawFetchedSalesData);
+            allModelData = processData(rawFetchedData);
+            repairCategories = generateRepairCategories();
+            
+            // Recalculate derived metrics
+            dataByItem = {};
+            allModelData.forEach(d => {
+                d.repairRate = d.sold > 0 ? ((d.total / d.sold) * 100).toFixed(2) : "N/A";
+                d.totalCost = d.actualCost;
+                d.totalEstimatedCost = d.estimatedCost;
+                d.accidentalPct = d.total > 0 ? ((d.accidental / d.total) * 100).toFixed(2) : "0.00";
+                d.inWarrantyPct = (d.inWarranty + d.outWarranty) > 0 ? 
+                    ((d.inWarranty / (d.inWarranty + d.outWarranty)) * 100).toFixed(2) : "0.00";
+                d.outWarrantyPct = (d.inWarranty + d.outWarranty) > 0 ? 
+                    ((d.outWarranty / (d.inWarranty + d.outWarranty)) * 100).toFixed(2) : "0.00";
+                d.shortName = d.model.replace('CTL Chromebook ', '').replace('CTL ', '').substring(0, 25);
+                d.netWarranty = d.warrantyRevenue - d.actualCost;
+                d.netTotal = d.warrantyRevenue + d.repairRevenue - d.actualCost;
+                d.avgCostPerRepair = d.total > 0 ? Math.round(d.actualCost / d.total) : 0;
+                dataByItem[d.item] = d;
+            });
+            
+            // Rebuild customer data
+            const validItems = new Set(allModelData.map(d => d.item));
+            const custMap = {};
+            rawData.forEach(row => {
+                const item = (row['Item Number'] || '').trim();
+                if (!validItems.has(item)) return;
+                const parent = (row['Parent Customer'] || '').trim();
+                const child = (row['Child Customer'] || '').trim();
+                const custName = parent || child || 'Unknown';
+                if (!custMap[custName]) {
+                    custMap[custName] = { name: custName, repairs: 0, cost: 0, estimatedCost: 0, repairRevenue: 0, models: new Set() };
+                }
+                const c = custMap[custName];
+                c.repairs++;
+                c.cost += (parseFloat(row['Costs']) || 0) + SHIPPING_COST_PER_REPAIR;
+                c.estimatedCost += getEstimatedCost((row['Repair'] || '').trim());
+                c.repairRevenue += parseFloat(row['Repair Revenue']) || 0;
+                const modelName = (row['Model Name'] || '').trim().replace('CTL Chromebook ', '').replace('CTL ', '').substring(0, 25);
+                if (modelName) c.models.add(modelName);
+            });
+            customerData = Object.values(custMap).map(c => ({
+                name: c.name,
+                repairs: c.repairs,
+                cost: Math.round(c.cost),
+                estimatedCost: Math.round(c.estimatedCost),
+                repairRevenue: Math.round(c.repairRevenue),
+                modelCount: c.models.size,
+                models: [...c.models]
+            })).sort((a, b) => b.cost - a.cost);
+            
+            // Filter and sort for display
+            warrantyData = allModelData.filter(d => d.sold > 1000);
+            warrantyData.sort((a, b) => b.total - a.total);
+            
+            // Re-render dashboard
+            initDashboard();
+            
+            // Save updated data
+            saveToLocalStorage();
+            
+            console.log('Date filter applied:', filterStartDate.toLocaleDateString(), '-', filterEndDate.toLocaleDateString(), 
+                        '| Models:', allModelData.length, '| Repairs:', rawData.length);
         }
         
         // Fetch and parse CSV from Google Sheets
@@ -1459,7 +1792,7 @@
             });
         }
         
-        // Build sales lookup from sales CSV: {itemNo: {warrantyCode: {qty, price, revenue}}}
+        // Build sales lookup from sales CSV: {itemNo: {warrantyCode: {qty, price, revenue, byYear}, _soldByYear: {year: qty}}}
         function buildSalesLookup(salesData) {
             const lookup = {};
             salesData.forEach(row => {
@@ -1468,37 +1801,59 @@
                 const qty = parseInt(row['Total Sales Qty']) || 0;
                 const price = parseFloat((row['Price'] || '').replace(/[$,]/g, '')) || 0;
                 const totalSales = parseFloat((row['Total Sales'] || '').replace(/[$,]/g, '')) || 0;
+                const year = (row['Year'] || '').trim();
                 
                 if (!itemNo || !code) return;
                 
-                if (!lookup[itemNo]) lookup[itemNo] = {};
+                if (!lookup[itemNo]) lookup[itemNo] = { _soldByYear: {} };
                 // If same item+code appears multiple times, sum qty and revenue
                 if (!lookup[itemNo][code]) {
-                    lookup[itemNo][code] = { qty: 0, price: 0, revenue: 0 };
+                    lookup[itemNo][code] = { qty: 0, price: 0, revenue: 0, byYear: {} };
                 }
                 lookup[itemNo][code].qty += qty;
                 if (price > 0 && lookup[itemNo][code].price === 0) {
                     lookup[itemNo][code].price = price;
                 }
+                const rowRevenue = totalSales > 0 ? totalSales : (qty * price);
                 // Use Total Sales column directly if available, otherwise calculate
-                lookup[itemNo][code].revenue += totalSales > 0 ? totalSales : (qty * price);
+                lookup[itemNo][code].revenue += rowRevenue;
+                
+                // Track per-year breakdown per warranty code
+                if (year) {
+                    if (!lookup[itemNo][code].byYear[year]) {
+                        lookup[itemNo][code].byYear[year] = { qty: 0, revenue: 0 };
+                    }
+                    lookup[itemNo][code].byYear[year].qty += qty;
+                    lookup[itemNo][code].byYear[year].revenue += rowRevenue;
+                    
+                    // Track total units sold per item per year (across all warranty codes)
+                    if (!lookup[itemNo]._soldByYear[year]) {
+                        lookup[itemNo]._soldByYear[year] = 0;
+                    }
+                    lookup[itemNo]._soldByYear[year] += qty;
+                }
             });
             return lookup;
         }
         
         // Process raw data into aggregated format
         function processData(data) {
-            // Filter: Only rows with Order Received Date
-            const filtered = data.filter(row => 
-                row['Order Received Date'] && 
-                row['Order Received Date'].trim() !== '' &&
-                row['Model Name'] && 
-                row['Model Name'].trim() !== '' &&
-                row['Model Name'].trim().toLowerCase() !== 'no match' &&
-                row['Item Number'] &&
-                row['Item Number'].trim() !== '' &&
-                row['Item Number'].trim().toLowerCase() !== 'no match'
-            );
+            // Filter: Only rows with Order Received Date + date range filter
+            const filtered = data.filter(row => {
+                const dateStr = (row['Order Received Date'] || '').trim();
+                if (!dateStr) return false;
+                if (!(row['Model Name'] || '').trim() || 
+                    (row['Model Name'] || '').trim().toLowerCase() === 'no match') return false;
+                if (!(row['Item Number'] || '').trim() || 
+                    (row['Item Number'] || '').trim().toLowerCase() === 'no match') return false;
+                
+                // Apply date range filter
+                const rowDate = new Date(dateStr);
+                if (isNaN(rowDate.getTime())) return false;
+                if (rowDate < filterStartDate || rowDate > filterEndDate) return false;
+                
+                return true;
+            });
             
             // Store raw data for repair categories
             rawData = filtered;
@@ -1511,29 +1866,25 @@
                     grouped[item] = {
                         model: row['Model Name'].trim(),
                         item: item,
-                        sold: parseInt(row['QTY Sold']) || 0,
                         rows: []
                     };
                 }
                 grouped[item].rows.push(row);
             });
             
+            // Determine which years overlap with the date filter range
+            const startYear = filterStartDate.getFullYear();
+            const endYear = filterEndDate.getFullYear();
+            
             // Calculate metrics for each model
             const models = [];
             Object.values(grouped).forEach(group => {
-                // Exclude NL71/NL81 if configured
-                if (EXCLUDE_NL71_NL81 && (group.model.includes('NL71') || group.model.includes('NL81'))) {
-                    return;
-                }
-                
                 let major = 0, minor = 0, npu = 0, accidental = 0, inWarranty = 0, outWarranty = 0;
                 let actualCost = 0, repairRevenue = 0;
                 let majorCost = 0, minorCost = 0, npuCost = 0;
                 let estimatedCost = 0, estimatedMajorCost = 0, estimatedMinorCost = 0, estimatedNpuCost = 0;
                 const warrantyCodes = {};
-                
-                // Get In Warranty count from first row (model-level field)
-                inWarranty = parseInt(group.rows[0]['In Warranty']) || 0;
+                const yearlyRepairs = {};  // { year: { repairs, cost, estimatedCost, repairRevenue, major, minor, npu, accidental, majorCost, minorCost, npuCost, inWarranty, outWarranty } }
                 
                 group.rows.forEach(row => {
                     const repair = (row['Repair'] || '').trim();
@@ -1541,21 +1892,30 @@
                     const accDamage = (row['Accidental Damage'] || '').trim().toLowerCase();
                     const warrantyCode = (row['Warranty Code'] || '').trim();
                     const cost = parseFloat(row['Costs']) || 0;
+                    const costWithShipping = cost + SHIPPING_COST_PER_REPAIR;
                     const repRev = parseFloat(row['Repair Revenue']) || 0;
                     const estCost = getEstimatedCost(repair);
+                    
+                    // Count warranty status from per-row "Warranty Status" column
+                    const warrantyStatus = (row['Warranty Status'] || '').trim().toLowerCase();
+                    if (warrantyStatus === 'in warranty') {
+                        inWarranty++;
+                    } else if (warrantyStatus === 'out of warranty') {
+                        outWarranty++;
+                    }
                     
                     // Count repair types and their costs
                     if (repair.toLowerCase().includes('npu') || repair.toLowerCase().includes('npf')) {
                         npu++;
-                        npuCost += cost;
+                        npuCost += costWithShipping;
                         estimatedNpuCost += estCost;
                     } else if (isMajor) {
                         major++;
-                        majorCost += cost;
+                        majorCost += costWithShipping;
                         estimatedMajorCost += estCost;
                     } else {
                         minor++;
-                        minorCost += cost;
+                        minorCost += costWithShipping;
                         estimatedMinorCost += estCost;
                     }
                     
@@ -1564,8 +1924,8 @@
                         accidental++;
                     }
                     
-                    // Sum actual costs and repair revenue
-                    actualCost += cost;
+                    // Sum actual costs and repair revenue (includes $10 shipping per repair)
+                    actualCost += costWithShipping;
                     estimatedCost += estCost;
                     repairRevenue += repRev;
                     
@@ -1575,43 +1935,102 @@
                             warrantyCodes[warrantyCode] = { count: 0, cost: 0, repairRev: 0, estimatedCost: 0 };
                         }
                         warrantyCodes[warrantyCode].count++;
-                        warrantyCodes[warrantyCode].cost += cost;
+                        warrantyCodes[warrantyCode].cost += costWithShipping;
                         warrantyCodes[warrantyCode].repairRev += repRev;
                         warrantyCodes[warrantyCode].estimatedCost += estCost;
+                    }
+                    
+                    // Track yearly repair data
+                    const rowDate = new Date((row['Order Received Date'] || '').trim());
+                    if (!isNaN(rowDate.getTime())) {
+                        const yr = rowDate.getFullYear().toString();
+                        if (!yearlyRepairs[yr]) {
+                            yearlyRepairs[yr] = { repairs: 0, cost: 0, estimatedCost: 0, repairRevenue: 0, major: 0, minor: 0, npu: 0, accidental: 0, majorCost: 0, minorCost: 0, npuCost: 0, inWarranty: 0, outWarranty: 0 };
+                        }
+                        yearlyRepairs[yr].repairs++;
+                        yearlyRepairs[yr].cost += costWithShipping;
+                        yearlyRepairs[yr].estimatedCost += estCost;
+                        yearlyRepairs[yr].repairRevenue += repRev;
+                        // Track warranty status per year
+                        if (warrantyStatus === 'in warranty') {
+                            yearlyRepairs[yr].inWarranty++;
+                        } else if (warrantyStatus === 'out of warranty') {
+                            yearlyRepairs[yr].outWarranty++;
+                        }
+                        // Track category breakdowns per year
+                        if (repair.toLowerCase().includes('npu') || repair.toLowerCase().includes('npf')) {
+                            yearlyRepairs[yr].npu++;
+                            yearlyRepairs[yr].npuCost += costWithShipping;
+                        } else if (isMajor) {
+                            yearlyRepairs[yr].major++;
+                            yearlyRepairs[yr].majorCost += costWithShipping;
+                        } else {
+                            yearlyRepairs[yr].minor++;
+                            yearlyRepairs[yr].minorCost += costWithShipping;
+                        }
+                        if (accDamage === 'yes' || accDamage === 'liquid') {
+                            yearlyRepairs[yr].accidental++;
+                        }
                     }
                 });
                 
                 // Merge sales data into warranty codes
                 const itemSales = salesLookup[group.item] || {};
                 let warrantyRevenue = 0;
+                const yearlyWarrantyRevenue = {};  // { year: revenue }
+                
+                // Compute units sold from sales CSV, filtered by date range
+                const soldByYear = itemSales._soldByYear || {};
+                let sold = 0;
+                const yearlySold = {};  // { year: qty }
+                Object.entries(soldByYear).forEach(([yr, qty]) => {
+                    const yearNum = parseInt(yr);
+                    if (yearNum >= startYear && yearNum <= endYear) {
+                        sold += qty;
+                        yearlySold[yr] = qty;
+                    }
+                });
                 
                 // Update existing repair codes with sales data + add sales-only codes
-                const allCodes = new Set([...Object.keys(warrantyCodes), ...Object.keys(itemSales)]);
+                const allCodes = new Set([
+                    ...Object.keys(warrantyCodes),
+                    ...Object.keys(itemSales).filter(k => !k.startsWith('_'))
+                ]);
                 const mergedWarrantyCodes = {};
                 
                 allCodes.forEach(code => {
                     const repairData = warrantyCodes[code] || { count: 0, cost: 0, repairRev: 0, estimatedCost: 0 };
-                    const saleData = itemSales[code] || { qty: 0, price: 0, revenue: 0 };
+                    const saleData = itemSales[code] || { qty: 0, price: 0, revenue: 0, byYear: {} };
+                    
+                    // Filter sales data by date range (year-level filtering)
+                    let filteredQty = 0, filteredRevenue = 0;
+                    Object.entries(saleData.byYear || {}).forEach(([yr, yrData]) => {
+                        const yearNum = parseInt(yr);
+                        if (yearNum >= startYear && yearNum <= endYear) {
+                            filteredQty += yrData.qty;
+                            filteredRevenue += yrData.revenue;
+                            if (!yearlyWarrantyRevenue[yr]) yearlyWarrantyRevenue[yr] = 0;
+                            yearlyWarrantyRevenue[yr] += yrData.revenue;
+                        }
+                    });
                     
                     mergedWarrantyCodes[code] = {
                         count: repairData.count,
                         cost: Math.round(repairData.cost),
                         estimatedCost: Math.round(repairData.estimatedCost),
                         repairRev: Math.round(repairData.repairRev),
-                        qtySold: saleData.qty,
+                        qtySold: filteredQty,
                         unitPrice: Math.round(saleData.price * 100) / 100,
-                        warrantyRev: Math.round(saleData.revenue)
+                        warrantyRev: Math.round(filteredRevenue)
                     };
-                    warrantyRevenue += saleData.revenue;
+                    warrantyRevenue += filteredRevenue;
                 });
                 
-                // Calculate out of warranty from total - in warranty
-                outWarranty = Math.max(0, group.rows.length - inWarranty);
                 
                 models.push({
                     model: group.model,
                     item: group.item,
-                    sold: group.sold,
+                    sold: sold,
                     major: major,
                     minor: minor,
                     npu: npu,
@@ -1629,7 +2048,10 @@
                     estimatedNpuCost: Math.round(estimatedNpuCost),
                     repairRevenue: Math.round(repairRevenue),
                     warrantyRevenue: Math.round(warrantyRevenue),
-                    warrantyCodes: mergedWarrantyCodes
+                    warrantyCodes: mergedWarrantyCodes,
+                    yearlyRepairs: yearlyRepairs,
+                    yearlyWarrantyRevenue: yearlyWarrantyRevenue,
+                    yearlySold: yearlySold
                 });
             });
             
@@ -1723,13 +2145,15 @@
             
             try {
                 const [data, salesData] = await Promise.all([fetchData(), fetchSalesData()]);
+                rawFetchedData = data;       // Cache for date re-filtering
+                rawFetchedSalesData = salesData;
                 salesLookup = buildSalesLookup(salesData);
                 allModelData = processData(data);
                 repairCategories = generateRepairCategories();
                 
                 // Calculate derived metrics for ALL models
                 allModelData.forEach(d => {
-                    d.repairRate = ((d.total / d.sold) * 100).toFixed(2);
+                    d.repairRate = d.sold > 0 ? ((d.total / d.sold) * 100).toFixed(2) : "N/A";
                     d.totalCost = d.actualCost;
                     d.totalEstimatedCost = d.estimatedCost;
                     d.accidentalPct = d.total > 0 ? ((d.accidental / d.total) * 100).toFixed(2) : "0.00";
@@ -1758,7 +2182,7 @@
                     }
                     const c = custMap[custName];
                     c.repairs++;
-                    c.cost += parseFloat(row['Costs']) || 0;
+                    c.cost += (parseFloat(row['Costs']) || 0) + SHIPPING_COST_PER_REPAIR;
                     c.estimatedCost += getEstimatedCost((row['Repair'] || '').trim());
                     c.repairRevenue += parseFloat(row['Repair Revenue']) || 0;
                     const modelName = (row['Model Name'] || '').trim().replace('CTL Chromebook ', '').replace('CTL ', '').substring(0, 25);
@@ -1833,7 +2257,7 @@
                     <div class="modal-stat-label">Total Repairs</div>
                 </div>
                 <div class="modal-stat">
-                    <div class="modal-stat-value ${parseFloat(data.repairRate) > 10 ? 'danger' : parseFloat(data.repairRate) > 5 ? 'warning' : 'success'}">${data.repairRate}%</div>
+                    <div class="modal-stat-value ${data.repairRate === 'N/A' ? '' : parseFloat(data.repairRate) > 10 ? 'danger' : parseFloat(data.repairRate) > 5 ? 'warning' : 'success'}">${data.repairRate === 'N/A' ? 'N/A' : data.repairRate + '%'}</div>
                     <div class="modal-stat-label">Repair Rate</div>
                 </div>
                 <div class="modal-stat">
@@ -1898,7 +2322,7 @@
             document.getElementById('comparisonContent').innerHTML = `
                 <div class="comparison-item">
                     <span>Repair Rate</span>
-                    <span>${data.repairRate}% vs ${fleetRepairRate}% fleet avg ${compareRate(data.repairRate, fleetRepairRate)}</span>
+                    <span>${data.repairRate === 'N/A' ? 'N/A (no sales data)' : data.repairRate + '% vs ' + fleetRepairRate + '% fleet avg ' + compareRate(data.repairRate, fleetRepairRate)}</span>
                 </div>
                 <div class="comparison-item">
                     <span>Accidental Damage</span>
@@ -1915,7 +2339,7 @@
                         const detailId = 'wcDetail_' + code.replace(/[^a-zA-Z0-9]/g, '_');
                         return `
                         <div class="comparison-item wc-expandable" onclick="toggleWarrantyCodeDetail('${data.item}', '${code}', this)">
-                            <span><span class="wc-arrow">▶</span> Code ${code}</span>
+                            <span><span class="wc-arrow">▶</span> ${code}</span>
                             <span>${cd.qtySold.toLocaleString()} sold @ $${cd.unitPrice.toFixed(2)}/ea = $${cd.warrantyRev.toLocaleString()} | ${cd.count} repairs | Cost: $${cd.cost.toLocaleString()} | Est: $${cd.estimatedCost.toLocaleString()}</span>
                         </div>
                         <div class="wc-detail" id="${detailId}"></div>`;
@@ -1983,19 +2407,18 @@
                     download: true,
                     header: true,
                     complete: function(results) {
-                        rawData = results.data.filter(row => 
-                            row['Order Received Date'] && row['Order Received Date'].trim() !== '' &&
-                            row['Model Name'] && row['Model Name'].trim() !== '' &&
-                            row['Model Name'].trim().toLowerCase() !== 'no match' &&
-                            row['Item Number'] && row['Item Number'].trim() !== '' &&
-                            row['Item Number'].trim().toLowerCase() !== 'no match'
-                        );
-                        if (EXCLUDE_NL71_NL81) {
-                            rawData = rawData.filter(row => {
-                                const m = (row['Model Name'] || '').trim();
-                                return !m.includes('NL71') && !m.includes('NL81');
-                            });
-                        }
+                        rawData = results.data.filter(row => {
+                            const dateStr = (row['Order Received Date'] || '').trim();
+                            if (!dateStr) return false;
+                            if (!(row['Model Name'] || '').trim() || 
+                                (row['Model Name'] || '').trim().toLowerCase() === 'no match') return false;
+                            if (!(row['Item Number'] || '').trim() || 
+                                (row['Item Number'] || '').trim().toLowerCase() === 'no match') return false;
+                            const rowDate = new Date(dateStr);
+                            if (isNaN(rowDate.getTime())) return false;
+                            if (rowDate < filterStartDate || rowDate > filterEndDate) return false;
+                            return true;
+                        });
                         console.log('Lazy-loaded rawData:', rawData.length, 'rows');
                         resolve();
                     },
@@ -2025,6 +2448,7 @@
                     const isMajor = (r['Major Repairs'] || '').trim().toLowerCase() === 'yes';
                     const accDamage = (r['Accidental Damage'] || '').trim();
                     const cost = parseFloat(r['Costs']) || 0;
+                    const costWithShipping = cost + SHIPPING_COST_PER_REPAIR;
                     const repRev = parseFloat(r['Repair Revenue']) || 0;
                     const orderId = (r['Order Id'] || '').trim();
                     const estCost = getEstimatedCost(repair);
@@ -2034,7 +2458,7 @@
                         <td title="${repair}">${repair.length > 35 ? repair.substring(0, 35) + '…' : repair}</td>
                         <td>${type}</td>
                         <td>${accDamage || 'No'}</td>
-                        <td>$${Math.round(cost).toLocaleString()}</td>
+                        <td>$${Math.round(costWithShipping).toLocaleString()}</td>
                         <td>$${estCost}</td>
                         <td>$${Math.round(repRev).toLocaleString()}</td>
                     </tr>`;
@@ -2062,6 +2486,9 @@
         function openPieModal(category, index) {
             let title, subtitle, models, topRepairs, totalCount;
             
+            // Reset table headers (KPI modals may have changed them)
+            setPieModalHeaders('Repair Type', 'Count', '% of Category');
+            
             const totalRepairs = allModelData.reduce((sum, d) => sum + d.total, 0);
             const totalMajor = allModelData.reduce((sum, d) => sum + d.major, 0);
             const totalMinor = allModelData.reduce((sum, d) => sum + d.minor, 0);
@@ -2075,19 +2502,19 @@
                     if (index === 0) { // Major
                         title = '🔧 Major Repairs';
                         totalCount = totalMajor;
-                        models = warrantyData.map(d => ({ name: d.shortName, count: d.major, item: d.item }))
+                        models = allModelData.map(d => ({ name: d.shortName, count: d.major, item: d.item }))
                             .filter(m => m.count > 0).sort((a, b) => b.count - a.count);
                         topRepairs = repairCategories.majorTop10;
                     } else if (index === 1) { // Minor
                         title = '🔧 Minor Repairs';
                         totalCount = totalMinor;
-                        models = warrantyData.map(d => ({ name: d.shortName, count: d.minor, item: d.item }))
+                        models = allModelData.map(d => ({ name: d.shortName, count: d.minor, item: d.item }))
                             .filter(m => m.count > 0).sort((a, b) => b.count - a.count);
                         topRepairs = repairCategories.minorTop10;
                     } else { // NPU
                         title = '🔧 NPU/NPF Repairs';
                         totalCount = totalNPU;
-                        models = warrantyData.map(d => ({ name: d.shortName, count: d.npu, item: d.item }))
+                        models = allModelData.map(d => ({ name: d.shortName, count: d.npu, item: d.item }))
                             .filter(m => m.count > 0).sort((a, b) => b.count - a.count);
                         topRepairs = repairCategories.npuTop10;
                     }
@@ -2096,13 +2523,13 @@
                     if (index === 0) { // Accidental
                         title = '💥 Accidental Damage';
                         totalCount = totalAccidental;
-                        models = warrantyData.map(d => ({ name: d.shortName, count: d.accidental, item: d.item }))
+                        models = allModelData.map(d => ({ name: d.shortName, count: d.accidental, item: d.item }))
                             .filter(m => m.count > 0).sort((a, b) => b.count - a.count);
                         topRepairs = repairCategories.accidentalTop10;
                     } else { // Non-Accidental
                         title = '🔧 Non-Accidental Damage';
                         totalCount = totalRepairs - totalAccidental;
-                        models = warrantyData.map(d => ({ name: d.shortName, count: d.total - d.accidental, item: d.item }))
+                        models = allModelData.map(d => ({ name: d.shortName, count: d.total - d.accidental, item: d.item }))
                             .filter(m => m.count > 0).sort((a, b) => b.count - a.count);
                         topRepairs = repairCategories.nonAccidentalTop10;
                     }
@@ -2111,20 +2538,20 @@
                     if (index === 0) { // In Warranty
                         title = '📋 In Warranty Repairs';
                         totalCount = totalInWarranty;
-                        models = warrantyData.map(d => ({ name: d.shortName, count: d.inWarranty, item: d.item }))
+                        models = allModelData.map(d => ({ name: d.shortName, count: d.inWarranty, item: d.item }))
                             .filter(m => m.count > 0).sort((a, b) => b.count - a.count);
                         topRepairs = []; // Per-row warranty classification no longer available
                     } else { // Out of Warranty
                         title = '📋 Out of Warranty Repairs';
                         totalCount = totalOutWarranty;
-                        models = warrantyData.map(d => ({ name: d.shortName, count: d.outWarranty, item: d.item }))
+                        models = allModelData.map(d => ({ name: d.shortName, count: d.outWarranty, item: d.item }))
                             .filter(m => m.count > 0).sort((a, b) => b.count - a.count);
                         topRepairs = []; // Per-row warranty classification no longer available
                     }
                     break;
                 case 'warrantyCost':
                     {
-                        const costModels = warrantyData.map(d => {
+                        const costModels = allModelData.map(d => {
                             const avgCpr = d.total > 0 ? d.totalCost / d.total : 0;
                             const inCost = Math.round(d.inWarranty * avgCpr);
                             const outCost = Math.round(d.outWarranty * avgCpr);
@@ -2230,6 +2657,7 @@
                         `;
                         
                         // Show top customers table (all customers, not just this one)
+                        setPieModalHeaders('Customer', 'Cost', '% of Total');
                         document.getElementById('pieModalRepairTable').innerHTML = topCusts.map((c, i) => `
                             <tr style="cursor: pointer; ${i === index ? 'background: rgba(79,195,247,0.15);' : ''}" onclick="closePieModal(); openPieModal('customerCost', ${i})">
                                 <td>${c.name.length > 40 ? c.name.substring(0, 38) + '…' : c.name}</td>
@@ -2342,7 +2770,7 @@
             const plFmt = (v) => v >= 0 ? '+$' + Math.round(v).toLocaleString() : '-$' + Math.abs(Math.round(v)).toLocaleString();
             const plColor = (v) => v >= 0 ? '#81c784' : '#ef5350';
             
-            document.getElementById('warrantyCodeModalTitle').innerHTML = `🏷️ Warranty Code ${code} — Device Breakdown ` + sheetsIcon('warrantyCodeModal', 'WarrantyCode_' + code);
+            document.getElementById('warrantyCodeModalTitle').innerHTML = `🏷️ ${code} — Device Breakdown ` + sheetsIcon('warrantyCodeModal', 'WarrantyCode_' + code);
             document.getElementById('warrantyCodeModalSubtitle').textContent = `${totalQtySold.toLocaleString()} warranties sold | ${totalCount.toLocaleString()} repairs across ${modelsWithCode.length} models`;
             
             document.getElementById('warrantyCodeModalStats').innerHTML = `
@@ -2374,7 +2802,7 @@
                 </div>
             `;
             
-            document.getElementById('warrantyCodeModalTableTitle').textContent = `📋 Devices with Warranty Code ${code}`;
+            document.getElementById('warrantyCodeModalTableTitle').textContent = `📋 Devices with ${code}`;
             document.getElementById('warrantyCodeModalTable').innerHTML = modelsWithCode.map(m => `
                 <tr onclick="closeWarrantyCodeModal(); openModal('${m.item}')" style="cursor: pointer;">
                     <td>${m.model}</td>
@@ -2396,6 +2824,216 @@
         }
         
         // KPI Modal function
+        // Helper: set pie modal table column headers
+        function setPieModalHeaders(col1, col2, col3) {
+            document.getElementById('pieModalCol1Header').textContent = col1 || 'Repair Type';
+            document.getElementById('pieModalCol2Header').textContent = col2 || 'Count';
+            document.getElementById('pieModalCol3Header').textContent = col3 || '% of Category';
+        }
+        
+        // Helper: build year breakdown HTML from allModelData yearly aggregation
+        function buildYearBreakdownHTML(type) {
+            const yearTotals = {};
+            allModelData.forEach(d => {
+                if (type === 'unitsSold') {
+                    Object.entries(d.yearlySold || {}).forEach(([yr, qty]) => {
+                        if (!yearTotals[yr]) yearTotals[yr] = 0;
+                        yearTotals[yr] += qty;
+                    });
+                } else if (type === 'warrantyRevenue') {
+                    Object.entries(d.yearlyWarrantyRevenue || {}).forEach(([yr, rev]) => {
+                        if (!yearTotals[yr]) yearTotals[yr] = 0;
+                        yearTotals[yr] += rev;
+                    });
+                } else {
+                    // All repair-based types use yearlyRepairs
+                    Object.entries(d.yearlyRepairs || {}).forEach(([yr, yrData]) => {
+                        if (!yearTotals[yr]) yearTotals[yr] = { repairs: 0, cost: 0, estimatedCost: 0, repairRevenue: 0, major: 0, minor: 0, npu: 0, accidental: 0, majorCost: 0, minorCost: 0, npuCost: 0, inWarranty: 0, outWarranty: 0 };
+                        const t = yearTotals[yr];
+                        t.repairs += yrData.repairs;
+                        t.cost += yrData.cost;
+                        t.estimatedCost += yrData.estimatedCost;
+                        t.repairRevenue += yrData.repairRevenue;
+                        t.major += yrData.major || 0;
+                        t.minor += yrData.minor || 0;
+                        t.npu += yrData.npu || 0;
+                        t.accidental += yrData.accidental || 0;
+                        t.majorCost += yrData.majorCost || 0;
+                        t.minorCost += yrData.minorCost || 0;
+                        t.npuCost += yrData.npuCost || 0;
+                        t.inWarranty += yrData.inWarranty || 0;
+                        t.outWarranty += yrData.outWarranty || 0;
+                    });
+                }
+            });
+            
+            // Also merge unitsSold per year for repair rate calculation
+            let yearSold = {};
+            if (type === 'repairRate') {
+                allModelData.forEach(d => {
+                    Object.entries(d.yearlySold || {}).forEach(([yr, qty]) => {
+                        if (!yearSold[yr]) yearSold[yr] = 0;
+                        yearSold[yr] += qty;
+                    });
+                });
+            }
+            
+            const sortedYears = Object.keys(yearTotals).sort();
+            if (sortedYears.length === 0) return '';
+            
+            let heading, headers, rowFn;
+            
+            switch(type) {
+                case 'unitsSold': {
+                    const total = sortedYears.reduce((sum, yr) => sum + yearTotals[yr], 0);
+                    heading = '📅 Units Sold by Year';
+                    headers = '<th>Year</th><th>Units Sold</th><th>% of Total</th>';
+                    rowFn = yr => `<tr><td><strong>${yr}</strong></td><td>${yearTotals[yr].toLocaleString()}</td><td>${total > 0 ? ((yearTotals[yr] / total) * 100).toFixed(1) : 0}%</td></tr>`;
+                    break;
+                }
+                case 'warrantyRevenue': {
+                    const total = sortedYears.reduce((sum, yr) => sum + yearTotals[yr], 0);
+                    heading = '📅 Warranty Revenue by Year';
+                    headers = '<th>Year</th><th>Revenue</th><th>% of Total</th>';
+                    rowFn = yr => `<tr><td><strong>${yr}</strong></td><td>$${Math.round(yearTotals[yr]).toLocaleString()}</td><td>${total > 0 ? ((yearTotals[yr] / total) * 100).toFixed(1) : 0}%</td></tr>`;
+                    break;
+                }
+                case 'repairs': {
+                    const total = sortedYears.reduce((sum, yr) => sum + yearTotals[yr].repairs, 0);
+                    heading = '📅 Repairs by Year';
+                    headers = '<th>Year</th><th>Repairs</th><th>Major</th><th>Minor</th><th>NPU/NPF</th><th>% of Total</th>';
+                    rowFn = yr => {
+                        const y = yearTotals[yr];
+                        return `<tr><td><strong>${yr}</strong></td><td>${y.repairs.toLocaleString()}</td><td>${y.major.toLocaleString()}</td><td>${y.minor.toLocaleString()}</td><td>${y.npu.toLocaleString()}</td><td>${total > 0 ? ((y.repairs / total) * 100).toFixed(1) : 0}%</td></tr>`;
+                    };
+                    break;
+                }
+                case 'repairRate': {
+                    heading = '📅 Repair Rate by Year';
+                    headers = '<th>Year</th><th>Repairs</th><th>Units Sold</th><th>Repair Rate</th>';
+                    rowFn = yr => {
+                        const y = yearTotals[yr];
+                        const sold = yearSold[yr] || 0;
+                        const rate = sold > 0 ? ((y.repairs / sold) * 100).toFixed(2) : 'N/A';
+                        return `<tr><td><strong>${yr}</strong></td><td>${y.repairs.toLocaleString()}</td><td>${sold.toLocaleString()}</td><td>${rate === 'N/A' ? 'N/A' : rate + '%'}</td></tr>`;
+                    };
+                    break;
+                }
+                case 'totalCost': {
+                    const total = sortedYears.reduce((sum, yr) => sum + yearTotals[yr].cost, 0);
+                    heading = '📅 Repair Costs by Year';
+                    headers = '<th>Year</th><th>Actual Cost</th><th>Est. Cost</th><th>Major</th><th>Minor</th><th>NPU/NPF</th><th>% of Total</th>';
+                    rowFn = yr => {
+                        const y = yearTotals[yr];
+                        return `<tr><td><strong>${yr}</strong></td><td>$${Math.round(y.cost).toLocaleString()}</td><td>$${Math.round(y.estimatedCost).toLocaleString()}</td><td>$${Math.round(y.majorCost).toLocaleString()}</td><td>$${Math.round(y.minorCost).toLocaleString()}</td><td>$${Math.round(y.npuCost).toLocaleString()}</td><td>${total > 0 ? ((y.cost / total) * 100).toFixed(1) : 0}%</td></tr>`;
+                    };
+                    break;
+                }
+                case 'accidental': {
+                    const total = sortedYears.reduce((sum, yr) => sum + yearTotals[yr].accidental, 0);
+                    heading = '📅 Accidental Damage by Year';
+                    headers = '<th>Year</th><th>Accidental</th><th>Total Repairs</th><th>Accidental %</th><th>% of All Accidental</th>';
+                    rowFn = yr => {
+                        const y = yearTotals[yr];
+                        const pct = y.repairs > 0 ? ((y.accidental / y.repairs) * 100).toFixed(1) : '0.0';
+                        return `<tr><td><strong>${yr}</strong></td><td>${y.accidental.toLocaleString()}</td><td>${y.repairs.toLocaleString()}</td><td>${pct}%</td><td>${total > 0 ? ((y.accidental / total) * 100).toFixed(1) : 0}%</td></tr>`;
+                    };
+                    break;
+                }
+                case 'repairRevenue': {
+                    const total = sortedYears.reduce((sum, yr) => sum + yearTotals[yr].repairRevenue, 0);
+                    heading = '📅 Repair Revenue (OOW) by Year';
+                    headers = '<th>Year</th><th>Revenue</th><th>% of Total</th>';
+                    rowFn = yr => {
+                        const y = yearTotals[yr];
+                        return `<tr><td><strong>${yr}</strong></td><td>$${Math.round(y.repairRevenue).toLocaleString()}</td><td>${total > 0 ? ((y.repairRevenue / total) * 100).toFixed(1) : 0}%</td></tr>`;
+                    };
+                    break;
+                }
+                case 'warrantyStatus': {
+                    const totalIn = sortedYears.reduce((sum, yr) => sum + yearTotals[yr].inWarranty, 0);
+                    const totalOut = sortedYears.reduce((sum, yr) => sum + yearTotals[yr].outWarranty, 0);
+                    const totalAll = totalIn + totalOut;
+                    const totalInPct = totalAll > 0 ? ((totalIn / totalAll) * 100).toFixed(1) : '0.0';
+                    const totalOutPct = totalAll > 0 ? ((totalOut / totalAll) * 100).toFixed(1) : '0.0';
+                    return `
+                        <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #4fc3f7; margin-bottom: 10px;">📋 In Warranty vs Out of Warranty by Year</h4>
+                            <table class="repair-table">
+                                <thead><tr><th>Year</th><th>In Warranty</th><th>Out of Warranty</th><th>Total</th><th>In Warranty %</th><th>OOW %</th></tr></thead>
+                                <tbody>
+                                    ${sortedYears.map(yr => {
+                                        const y = yearTotals[yr];
+                                        const yrTotal = y.inWarranty + y.outWarranty;
+                                        const inPct = yrTotal > 0 ? ((y.inWarranty / yrTotal) * 100).toFixed(1) : '0.0';
+                                        const outPct = yrTotal > 0 ? ((y.outWarranty / yrTotal) * 100).toFixed(1) : '0.0';
+                                        return `<tr><td><strong>${yr}</strong></td><td style="color:#4ade80">${y.inWarranty.toLocaleString()}</td><td style="color:#f87171">${y.outWarranty.toLocaleString()}</td><td>${yrTotal.toLocaleString()}</td><td>${inPct}%</td><td>${outPct}%</td></tr>`;
+                                    }).join('')}
+                                    <tr style="border-top: 2px solid rgba(255,255,255,0.3); font-weight: bold;">
+                                        <td><strong>Total</strong></td>
+                                        <td style="color:#4ade80">${totalIn.toLocaleString()}</td>
+                                        <td style="color:#f87171">${totalOut.toLocaleString()}</td>
+                                        <td>${totalAll.toLocaleString()}</td>
+                                        <td>${totalInPct}%</td>
+                                        <td>${totalOutPct}%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                case 'netPL': {
+                    // Need warranty revenue by year too
+                    const yrWarRev = {};
+                    allModelData.forEach(d => {
+                        Object.entries(d.yearlyWarrantyRevenue || {}).forEach(([yr, rev]) => {
+                            if (!yrWarRev[yr]) yrWarRev[yr] = 0;
+                            yrWarRev[yr] += rev;
+                        });
+                    });
+                    // Combine all years from both sources
+                    Object.keys(yrWarRev).forEach(yr => {
+                        if (!yearTotals[yr]) yearTotals[yr] = { repairs: 0, cost: 0, estimatedCost: 0, repairRevenue: 0, major: 0, minor: 0, npu: 0, accidental: 0, majorCost: 0, minorCost: 0, npuCost: 0, inWarranty: 0, outWarranty: 0 };
+                    });
+                    const allYears = [...new Set([...Object.keys(yearTotals), ...Object.keys(yrWarRev)])].sort();
+                    heading = '📅 Net P/L by Year';
+                    headers = '<th>Year</th><th>Warranty Rev</th><th>Repair Rev</th><th>Total Cost</th><th>Net P/L</th>';
+                    const plColor = v => v >= 0 ? '#81c784' : '#ef5350';
+                    const plFmt2 = v => v >= 0 ? '+$' + v.toLocaleString() : '-$' + Math.abs(v).toLocaleString();
+                    return `
+                        <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="color: #4fc3f7; margin-bottom: 10px;">${heading}</h4>
+                            <table class="repair-table">
+                                <thead><tr>${headers}</tr></thead>
+                                <tbody>
+                                    ${allYears.map(yr => {
+                                        const y = yearTotals[yr] || { cost: 0, repairRevenue: 0 };
+                                        const wRev = Math.round(yrWarRev[yr] || 0);
+                                        const rRev = Math.round(y.repairRevenue);
+                                        const cost = Math.round(y.cost);
+                                        const net = wRev + rRev - cost;
+                                        return `<tr><td><strong>${yr}</strong></td><td>$${wRev.toLocaleString()}</td><td>$${rRev.toLocaleString()}</td><td>$${cost.toLocaleString()}</td><td style="color: ${plColor(net)};">${plFmt2(net)}</td></tr>`;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                default:
+                    return '';
+            }
+            
+            return `
+                <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <h4 style="color: #4fc3f7; margin-bottom: 10px;">${heading}</h4>
+                    <table class="repair-table">
+                        <thead><tr>${headers}</tr></thead>
+                        <tbody>${sortedYears.map(rowFn).join('')}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+        
         function openKpiModal(kpiType) {
             if (!allModelData || allModelData.length === 0) {
                 alert('Please load data first by clicking the Refresh button.');
@@ -2403,6 +3041,9 @@
             }
             
             let title, subtitle, models, totalValue;
+            
+            // Reset table headers to defaults (overridden per KPI type as needed)
+            setPieModalHeaders('Device', 'Count', '% of Category');
             
             const totalSold = allModelData.reduce((sum, d) => sum + d.sold, 0);
             const totalRepairs = allModelData.reduce((sum, d) => sum + d.total, 0);
@@ -2416,10 +3057,10 @@
                 case 'unitsSold':
                     title = '📦 Total Units Sold Breakdown';
                     subtitle = `${totalSold.toLocaleString()} total units across ${allModelData.length} models`;
-                    models = [...warrantyData].sort((a, b) => b.sold - a.sold);
+                    models = [...allModelData].sort((a, b) => b.sold - a.sold);
                     totalValue = totalSold;
                     document.getElementById('pieModalStats').innerHTML = `
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px;">
                             <div class="modal-stat">
                                 <div class="modal-stat-value">${totalSold.toLocaleString()}</div>
                                 <div class="modal-stat-label">Total Units Sold</div>
@@ -2433,7 +3074,9 @@
                                 <div class="modal-stat-label">Avg per Model</div>
                             </div>
                         </div>
+                        ${buildYearBreakdownHTML('unitsSold')}
                     `;
+                    setPieModalHeaders('Device', 'Units Sold', '% of Total');
                     document.getElementById('pieModalRepairTable').innerHTML = models.slice(0, 15).map(d => `
                         <tr onclick="closePieModal(); openModal('${d.item}')" style="cursor: pointer;">
                             <td>${d.shortName}</td>
@@ -2447,7 +3090,7 @@
                 case 'totalRepairs':
                     title = '🔧 Total Repairs Breakdown';
                     subtitle = `${totalRepairs.toLocaleString()} total repairs across ${allModelData.length} models`;
-                    models = [...warrantyData].sort((a, b) => b.total - a.total);
+                    models = [...allModelData].sort((a, b) => b.total - a.total);
                     totalValue = totalRepairs;
                     document.getElementById('pieModalStats').innerHTML = `
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
@@ -2464,6 +3107,8 @@
                                 <div class="modal-stat-label">Avg per Model</div>
                             </div>
                         </div>
+                        ${buildYearBreakdownHTML('repairs')}
+                        ${buildYearBreakdownHTML('warrantyStatus')}
                     `;
                     document.getElementById('pieModalRepairTable').innerHTML = models.slice(0, 15).map(d => `
                         <tr onclick="closePieModal(); openModal('${d.item}')" style="cursor: pointer;">
@@ -2479,7 +3124,7 @@
                     title = '📊 Repair Rate Breakdown';
                     const avgRate = ((totalRepairs / totalSold) * 100).toFixed(2);
                     subtitle = `${avgRate}% overall repair rate`;
-                    models = [...warrantyData].sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate));
+                    models = [...allModelData].filter(d => d.sold > 0).sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate));
                     document.getElementById('pieModalStats').innerHTML = `
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
                             <div class="modal-stat">
@@ -2495,7 +3140,9 @@
                                 <div class="modal-stat-label">Lowest Rate</div>
                             </div>
                         </div>
+                        ${buildYearBreakdownHTML('repairRate')}
                     `;
+                    setPieModalHeaders('Device', 'Rate', 'Repairs / Sold');
                     document.getElementById('pieModalRepairTable').innerHTML = models.slice(0, 15).map(d => `
                         <tr onclick="closePieModal(); openModal('${d.item}')" style="cursor: pointer;">
                             <td>${d.shortName}</td>
@@ -2509,7 +3156,7 @@
                 case 'totalCost':
                     title = '💰 Repair Cost Breakdown';
                     subtitle = `$${totalCost.toLocaleString()} total repair cost | $${totalEstimatedCost.toLocaleString()} estimated`;
-                    models = [...warrantyData].sort((a, b) => b.totalCost - a.totalCost);
+                    models = [...allModelData].sort((a, b) => b.totalCost - a.totalCost);
                     const totalMajorCost = allModelData.reduce((sum, d) => sum + d.majorCost, 0);
                     const totalMinorCost = allModelData.reduce((sum, d) => sum + d.minorCost, 0);
                     const totalNpuCost = allModelData.reduce((sum, d) => sum + d.npuCost, 0);
@@ -2535,7 +3182,9 @@
                                 <div class="modal-stat-label">Avg per Repair</div>
                             </div>
                         </div>
+                        ${buildYearBreakdownHTML('totalCost')}
                     `;
+                    setPieModalHeaders('Device', 'Cost', '% of Total');
                     document.getElementById('pieModalRepairTable').innerHTML = models.slice(0, 15).map(d => `
                         <tr onclick="closePieModal(); openModal('${d.item}')" style="cursor: pointer;">
                             <td>${d.shortName}</td>
@@ -2550,7 +3199,7 @@
                     title = '💥 Accidental Damage Breakdown';
                     const accidentalPct = ((totalAccidental / totalRepairs) * 100).toFixed(1);
                     subtitle = `${accidentalPct}% of repairs are accidental (${totalAccidental.toLocaleString()} repairs)`;
-                    models = [...warrantyData].sort((a, b) => b.accidental - a.accidental);
+                    models = [...allModelData].sort((a, b) => b.accidental - a.accidental);
                     document.getElementById('pieModalStats').innerHTML = `
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
                             <div class="modal-stat">
@@ -2566,6 +3215,7 @@
                                 <div class="modal-stat-label">Accidental Rate</div>
                             </div>
                         </div>
+                        ${buildYearBreakdownHTML('accidental')}
                     `;
                     document.getElementById('pieModalRepairTable').innerHTML = models.slice(0, 15).map(d => `
                         <tr onclick="closePieModal(); openModal('${d.item}')" style="cursor: pointer;">
@@ -2581,7 +3231,7 @@
                     title = '📋 Warranty Status Breakdown';
                     const inWarrantyPct = ((totalInWarranty / (totalInWarranty + totalOutWarranty)) * 100).toFixed(1);
                     subtitle = `${inWarrantyPct}% of repairs are in warranty (${totalInWarranty.toLocaleString()} repairs)`;
-                    models = [...warrantyData].sort((a, b) => b.inWarranty - a.inWarranty);
+                    models = [...allModelData].sort((a, b) => b.inWarranty - a.inWarranty);
                     document.getElementById('pieModalStats').innerHTML = `
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
                             <div class="modal-stat">
@@ -2597,6 +3247,7 @@
                                 <div class="modal-stat-label">In Warranty Rate</div>
                             </div>
                         </div>
+                        ${buildYearBreakdownHTML('warrantyStatus')}
                     `;
                     document.getElementById('pieModalRepairTable').innerHTML = models.slice(0, 15).map(d => `
                         <tr onclick="closePieModal(); openModal('${d.item}')" style="cursor: pointer;">
@@ -2612,9 +3263,9 @@
                     const totWarRev = allModelData.reduce((sum, d) => sum + d.warrantyRevenue, 0);
                     title = '💵 Warranty Revenue Breakdown';
                     subtitle = `$${totWarRev.toLocaleString()} total warranty revenue`;
-                    models = [...warrantyData].sort((a, b) => b.warrantyRevenue - a.warrantyRevenue);
+                    models = [...allModelData].sort((a, b) => b.warrantyRevenue - a.warrantyRevenue);
                     document.getElementById('pieModalStats').innerHTML = `
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px;">
                             <div class="modal-stat">
                                 <div class="modal-stat-value" style="color: #4fc3f7;">$${totWarRev.toLocaleString()}</div>
                                 <div class="modal-stat-label">Total Warranty Revenue</div>
@@ -2628,7 +3279,9 @@
                                 <div class="modal-stat-label">Avg per Repair</div>
                             </div>
                         </div>
+                        ${buildYearBreakdownHTML('warrantyRevenue')}
                     `;
+                    setPieModalHeaders('Device', 'Revenue', '% of Total');
                     document.getElementById('pieModalRepairTable').innerHTML = models.slice(0, 15).map(d => `
                         <tr onclick="closePieModal(); openModal('${d.item}')" style="cursor: pointer;">
                             <td>${d.shortName}</td>
@@ -2643,7 +3296,7 @@
                     const totRepRev = allModelData.reduce((sum, d) => sum + d.repairRevenue, 0);
                     title = '🔧 Repair Revenue Breakdown (OOW)';
                     subtitle = `$${totRepRev.toLocaleString()} total out-of-warranty repair revenue`;
-                    models = [...warrantyData].sort((a, b) => b.repairRevenue - a.repairRevenue);
+                    models = [...allModelData].sort((a, b) => b.repairRevenue - a.repairRevenue);
                     document.getElementById('pieModalStats').innerHTML = `
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
                             <div class="modal-stat">
@@ -2659,7 +3312,9 @@
                                 <div class="modal-stat-label">Out of Warranty Repairs</div>
                             </div>
                         </div>
+                        ${buildYearBreakdownHTML('repairRevenue')}
                     `;
+                    setPieModalHeaders('Device', 'Revenue', '% of Total');
                     document.getElementById('pieModalRepairTable').innerHTML = models.slice(0, 15).map(d => `
                         <tr onclick="closePieModal(); openModal('${d.item}')" style="cursor: pointer;">
                             <td>${d.shortName}</td>
@@ -2676,7 +3331,7 @@
                     const totNet = totWR + totRR - totalCost;
                     title = '📊 Net Warranty P/L Breakdown';
                     subtitle = `${totNet >= 0 ? '+' : '-'}$${Math.abs(totNet).toLocaleString()} net warranty profit/loss`;
-                    models = [...warrantyData].sort((a, b) => b.netTotal - a.netTotal);
+                    models = [...allModelData].sort((a, b) => b.netTotal - a.netTotal);
                     const plFmt = (v) => v >= 0 ? '+$' + v.toLocaleString() : '-$' + Math.abs(v).toLocaleString();
                     document.getElementById('pieModalStats').innerHTML = `
                         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
@@ -2697,7 +3352,9 @@
                                 <div class="modal-stat-label">Total Costs</div>
                             </div>
                         </div>
+                        ${buildYearBreakdownHTML('netPL')}
                     `;
+                    setPieModalHeaders('Device', 'Net P/L', 'Rev / Cost');
                     document.getElementById('pieModalRepairTable').innerHTML = models.slice(0, 15).map(d => `
                         <tr onclick="closePieModal(); openModal('${d.item}')" style="cursor: pointer;">
                             <td>${d.shortName}</td>
@@ -2774,11 +3431,11 @@
             const netCard = document.getElementById('kpiNetCard');
             netCard.style.borderLeft = '3px solid ' + (totalNetPL >= 0 ? '#81c784' : '#ef5350');
             
-            // Sort data for different views
-            const byRepairRate = [...warrantyData].sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate));
-            const byReliable = [...warrantyData].sort((a, b) => parseFloat(a.repairRate) - parseFloat(b.repairRate));
-            const byCost = [...warrantyData].sort((a, b) => b.totalCost - a.totalCost);
-            const byAccidental = [...warrantyData].filter(d => d.total >= 100).sort((a, b) => parseFloat(b.accidentalPct) - parseFloat(a.accidentalPct));
+            // Sort data for different views — use ALL models for repair-focused views
+            const byRepairRate = [...allModelData].filter(d => d.sold > 0).sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate));
+            const byReliable = [...allModelData].filter(d => d.sold > 0).sort((a, b) => parseFloat(a.repairRate) - parseFloat(b.repairRate));
+            const byCost = [...allModelData].sort((a, b) => b.totalCost - a.totalCost);
+            const byAccidental = [...allModelData].filter(d => d.total >= 100).sort((a, b) => parseFloat(b.accidentalPct) - parseFloat(a.accidentalPct));
             
             // Create click handler for charts
             const createClickHandler = (dataArray) => {
@@ -2806,14 +3463,15 @@
                 return `rgba(186, 104, 200, ${intensity})`;
             });
             
-            // Repair Rate Chart
+            // Number of Repairs Chart (sorted by total repairs)
+            const byTotalRepairs = [...allModelData].sort((a, b) => b.total - a.total);
             charts.repairRate = new Chart(document.getElementById('repairRateChart'), {
                 type: 'bar',
                 data: {
-                    labels: byRepairRate.slice(0, 15).map(d => d.shortName),
+                    labels: byTotalRepairs.slice(0, 15).map(d => d.shortName),
                     datasets: [{
-                        label: 'Repair Rate (%)',
-                        data: byRepairRate.slice(0, 15).map(d => parseFloat(d.repairRate)),
+                        label: 'Number of Repairs',
+                        data: byTotalRepairs.slice(0, 15).map(d => d.total),
                         backgroundColor: redGradient,
                         borderColor: redGradient.map(c => c.replace('0.', '1.')),
                         borderWidth: 1
@@ -2823,27 +3481,35 @@
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    onClick: createClickHandler(byRepairRate.slice(0, 15)),
+                    onClick: createClickHandler(byTotalRepairs.slice(0, 15)),
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const d = byRepairRate[context.dataIndex];
-                                    return `Repair Rate: ${d.repairRate}%`;
+                                    const d = byTotalRepairs[context.dataIndex];
+                                    return `Repairs: ${d.total.toLocaleString()}`;
                                 },
                                 afterLabel: function(context) {
-                                    const d = byRepairRate[context.dataIndex];
-                                    return `${d.total.toLocaleString()} repairs from ${d.sold.toLocaleString()} units\nClick for details`;
+                                    const d = byTotalRepairs[context.dataIndex];
+                                    const rate = d.repairRate === 'N/A' ? 'N/A' : d.repairRate + '%';
+                                    return `${d.sold.toLocaleString()} units sold | Rate: ${rate}\nClick for details`;
                                 }
                             }
                         }
                     },
                     scales: {
                         x: {
-                            ticks: { color: '#b0b0b0' },
+                            type: 'logarithmic',
+                            ticks: { 
+                                color: '#b0b0b0',
+                                callback: function(value) {
+                                    if ([1, 10, 100, 1000, 10000].includes(value)) return value.toLocaleString();
+                                    return '';
+                                }
+                            },
                             grid: { color: 'rgba(255,255,255,0.1)' },
-                            title: { display: true, text: 'Repair Rate (%)', color: '#90a4ae' }
+                            title: { display: true, text: 'Number of Repairs (log scale)', color: '#90a4ae' }
                         },
                         y: {
                             ticks: { color: '#e4e4e4', font: { size: 10 } },
@@ -3119,7 +3785,7 @@
             });
             
             // Accidental Damage Cost by Model Chart (100+ repairs only)
-            const byAccidentalCost = [...warrantyData]
+            const byAccidentalCost = [...allModelData]
                 .filter(d => d.total >= 100)
                 .map(d => {
                     const avgCostPerRepair = d.totalCost / d.total;
@@ -3233,7 +3899,7 @@
                 }
             });
             
-            // Warranty Code Distribution Chart - aggregate from ALL models
+            // Warranty Repair Cost Distribution Chart - aggregate from ALL models
             const allWarrantyCodes = {};
             allModelData.forEach(d => {
                 Object.entries(d.warrantyCodes).forEach(([code, data]) => {
@@ -3260,7 +3926,7 @@
             charts.warrantyCode = new Chart(document.getElementById('warrantyCodeChart'), {
                 type: 'doughnut',
                 data: {
-                    labels: sortedCodes.map(([code]) => 'Code ' + code),
+                    labels: sortedCodes.map(([code]) => code),
                     datasets: [{
                         data: sortedCodes.map(([, data]) => data.count),
                         backgroundColor: codeColors.slice(0, sortedCodes.length),
@@ -3363,7 +4029,7 @@
             charts.warrantyCodeSummary = new Chart(document.getElementById('warrantyCodeSummaryChart'), {
                 type: 'bar',
                 data: {
-                    labels: allCodesSorted.map(([code]) => 'Code ' + code),
+                    labels: allCodesSorted.map(([code]) => code),
                     datasets: [
                         {
                             label: 'Warranty Revenue',
@@ -3471,7 +4137,7 @@
             `).join('');
             
             // Populate tables
-            const getRateClass = (rate) => {
+            const getRateClass = (rate) => { if (rate === 'N/A') return '';
                 const r = parseFloat(rate);
                 return r > 10 ? 'rate-high' : r > 5 ? 'rate-medium' : 'rate-low';
             };
@@ -3483,7 +4149,7 @@
                     <td>${d.item}</td>
                     <td>${d.sold.toLocaleString()}</td>
                     <td>${d.total.toLocaleString()}</td>
-                    <td class="${getRateClass(d.repairRate)}">${d.repairRate}%</td>
+                    <td class="${getRateClass(d.repairRate)}">${d.repairRate === 'N/A' ? 'N/A' : d.repairRate + '%'}</td>
                     <td>$${d.totalCost.toLocaleString()}</td>
                 </tr>
             `).join('');
@@ -3495,7 +4161,7 @@
                     <td>${d.item}</td>
                     <td>${d.sold.toLocaleString()}</td>
                     <td>${d.total.toLocaleString()}</td>
-                    <td class="${getRateClass(d.repairRate)}">${d.repairRate}%</td>
+                    <td class="${getRateClass(d.repairRate)}">${d.repairRate === 'N/A' ? 'N/A' : d.repairRate + '%'}</td>
                     <td>$${d.totalCost.toLocaleString()}</td>
                 </tr>
             `).join('');
@@ -3515,7 +4181,7 @@
             `).join('');
             
             // Accidental table - sorted by accidental count descending, 30 rows
-            const byAccidentalCount = [...warrantyData].sort((a, b) => b.accidental - a.accidental);
+            const byAccidentalCount = [...allModelData].sort((a, b) => b.accidental - a.accidental);
             document.getElementById('accidentalTable').innerHTML = byAccidentalCount.slice(0, 30).map(d => `
                 <tr onclick="openModal('${d.item}')">
                     <td>${d.model}</td>
@@ -3528,7 +4194,7 @@
             `).join('');
             
             // Warranty table - sorted by inWarranty count descending, 30 rows
-            const byInWarrantyCount = [...warrantyData].sort((a, b) => b.inWarranty - a.inWarranty);
+            const byInWarrantyCount = [...allModelData].sort((a, b) => b.inWarranty - a.inWarranty);
             document.getElementById('warrantyTable').innerHTML = byInWarrantyCount.slice(0, 30).map(d => `
                 <tr onclick="openModal('${d.item}')">
                     <td>${d.model}</td>
@@ -3541,7 +4207,7 @@
             `).join('');
             
             // Revenue table - sorted by net P/L descending
-            const byNetPL = [...warrantyData].sort((a, b) => b.netTotal - a.netTotal);
+            const byNetPL = [...allModelData].sort((a, b) => b.netTotal - a.netTotal);
             const plClass = (val) => val >= 0 ? 'rate-low' : 'rate-high';
             const plFormat = (val) => val >= 0 ? '+$' + val.toLocaleString() : '-$' + Math.abs(val).toLocaleString();
             document.getElementById('revenueTable').innerHTML = byNetPL.slice(0, 30).map(d => `
@@ -3603,9 +4269,9 @@
             const totalAccidental = allModelData.reduce((sum, d) => sum + d.accidental, 0);
             const totalInWarranty = allModelData.reduce((sum, d) => sum + d.inWarranty, 0);
             
-            const byRepairRate = [...warrantyData].sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate));
-            const byReliable = [...warrantyData].sort((a, b) => parseFloat(a.repairRate) - parseFloat(b.repairRate));
-            const byCost = [...warrantyData].sort((a, b) => b.totalCost - a.totalCost);
+            const byRepairRate = [...allModelData].filter(d => d.sold > 0).sort((a, b) => parseFloat(b.repairRate) - parseFloat(a.repairRate));
+            const byReliable = [...allModelData].filter(d => d.sold > 0).sort((a, b) => parseFloat(a.repairRate) - parseFloat(b.repairRate));
+            const byCost = [...allModelData].sort((a, b) => b.totalCost - a.totalCost);
             
             document.getElementById('tabBtnWorst').innerHTML = `
                 <span class="tab-title">⚠️ Highest Repair Rate</span>
@@ -3648,7 +4314,7 @@
             
             document.getElementById('tabBtnAll').innerHTML = `
                 <span class="tab-title">📄 All Models</span>
-                <span class="tab-stats">${warrantyData.length} models | ${totalRepairs.toLocaleString()} repairs</span>
+                <span class="tab-stats">${allModelData.length} models | ${totalRepairs.toLocaleString()} repairs</span>
             `;
         }
         
@@ -3658,7 +4324,7 @@
         function renderAllModelsTable(column, direction) {
             currentSort = { column, direction };
             
-            const getRateClass = (rate) => {
+            const getRateClass = (rate) => { if (rate === 'N/A') return '';
                 const r = parseFloat(rate);
                 return r > 10 ? 'rate-high' : r > 5 ? 'rate-medium' : 'rate-low';
             };
@@ -3666,14 +4332,14 @@
             const plClass = (val) => val >= 0 ? 'rate-low' : 'rate-high';
             const plFormat = (val) => val >= 0 ? '+$' + val.toLocaleString() : '-$' + Math.abs(val).toLocaleString();
             
-            const sorted = [...warrantyData].sort((a, b) => {
+            const sorted = [...allModelData].sort((a, b) => {
                 let aVal, bVal;
                 switch(column) {
                     case 'model': aVal = a.model; bVal = b.model; break;
                     case 'item': aVal = a.item; bVal = b.item; break;
                     case 'sold': aVal = a.sold; bVal = b.sold; break;
                     case 'total': aVal = a.total; bVal = b.total; break;
-                    case 'rate': aVal = parseFloat(a.repairRate); bVal = parseFloat(b.repairRate); break;
+                    case 'rate': aVal = parseFloat(a.repairRate) || 0; bVal = parseFloat(b.repairRate) || 0; break;
                     case 'major': aVal = a.major; bVal = b.major; break;
                     case 'minor': aVal = a.minor; bVal = b.minor; break;
                     case 'npu': aVal = a.npu; bVal = b.npu; break;
@@ -3697,7 +4363,7 @@
                     <td>${d.item}</td>
                     <td>${d.sold.toLocaleString()}</td>
                     <td>${d.total.toLocaleString()}</td>
-                    <td class="${getRateClass(d.repairRate)}">${d.repairRate}%</td>
+                    <td class="${getRateClass(d.repairRate)}">${d.repairRate === 'N/A' ? 'N/A' : d.repairRate + '%'}</td>
                     <td>${d.major.toLocaleString()}</td>
                     <td>${d.minor.toLocaleString()}</td>
                     <td>${d.npu.toLocaleString()}</td>
@@ -3722,6 +4388,17 @@
             const newDirection = (currentSort.column === column && currentSort.direction === 'desc') ? 'asc' : 'desc';
             renderAllModelsTable(column, newDirection);
         }
+        
+        // Populate estimated costs grid in assumptions panel
+        document.addEventListener('DOMContentLoaded', function() {
+            const grid = document.getElementById('estimatedCostsGrid');
+            if (grid) {
+                grid.innerHTML = Object.entries(ESTIMATED_REPAIR_COSTS)
+                    .sort((a, b) => a[0].localeCompare(b[0]))
+                    .map(([k, v]) => '<span style="color: #b0bec5;"><strong>' + k + ':</strong> $' + v + '</span>')
+                    .join('');
+            }
+        });
     </script>
 </body>
 </html>
