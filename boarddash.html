@@ -416,8 +416,8 @@ td.negative { color: var(--accent-red); }
 // ========== CONSTANTS ==========
 const PASSWORD = 'CTLdata2026';
 const SHIPPING_COST_PER_REPAIR = 10;
-const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRr3VZgMoyAA_kNPOR55xCLWsGIz9oKaSKKAOPzTpOekmNEJ3pFezUG_MhQfInoaqLFGk3f3pYY5GvW/pub?gid=0&single=true&output=csv';
-const SALES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRr3VZgMoyAA_kNPOR55xCLWsGIz9oKaSKKAOPzTpOekmNEJ3pFezUG_MhQfInoaqLFGk3f3pYY5GvW/pub?gid=1060498498&single=true&output=csv';
+const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=986703446&single=true&output=csv';
+const SALES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=235319241&single=true&output=csv';
 
 const ESTIMATED_REPAIR_COSTS = {
   'AC Adapter':50,'Accidental':100,'Battery':100,'Camera':50,
@@ -468,7 +468,7 @@ function fetchAllData() {
       document.getElementById('loadingMsg').textContent = 'Fetching sales data...';
       if (salesDone) processAndRender();
     },
-    error: (err) => { document.getElementById('loadingMsg').textContent = 'Error loading repair data: ' + err; }
+    error: (err) => { document.getElementById('loadingMsg').textContent = 'Error loading repair data: ' + (err.message || JSON.stringify(err)); }
   });
 
   Papa.parse(SALES_CSV_URL, {
@@ -478,7 +478,7 @@ function fetchAllData() {
       salesDone = true;
       if (repairDone) processAndRender();
     },
-    error: (err) => { document.getElementById('loadingMsg').textContent = 'Error loading sales data: ' + err; }
+    error: (err) => { document.getElementById('loadingMsg').textContent = 'Error loading sales data: ' + (err.message || JSON.stringify(err)); }
   });
 }
 
