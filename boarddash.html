@@ -80,6 +80,11 @@ td{padding:10px 16px;border-bottom:1px solid rgba(30,48,80,.4);color:var(--text-
 tr:hover td{background:rgba(42,90,143,.08)}
 td.mono{font-family:var(--font-mono);font-size:12px}
 td.positive{color:var(--accent-green)}td.negative{color:var(--accent-red)}
+/* Clickable model links in detail tables */
+.m-link{color:var(--accent-cyan);cursor:pointer;text-decoration:none;transition:color .15s}
+.m-link:hover{color:#fff;text-decoration:underline}
+tr.clickable-row{cursor:pointer}
+tr.clickable-row:hover td{background:rgba(34,211,238,.06)}
 .detail-modal-overlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
 .detail-modal-overlay.active{opacity:1;pointer-events:all}
 .detail-modal{background:var(--bg-card);border:1px solid var(--border-glow);border-radius:12px;max-width:900px;width:95%;max-height:80vh;overflow-y:auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.5)}
@@ -96,7 +101,6 @@ td.positive{color:var(--accent-green)}td.negative{color:var(--accent-red)}
 .export-btn{background:var(--bg-card-alt);border:1px solid var(--border);color:var(--accent-green);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;margin-top:12px;transition:all .15s}
 .export-btn:hover{background:rgba(52,211,153,.1)}
 .data-note{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--accent-yellow);line-height:1.5}
-/* Assumptions collapsible */
 .assumptions-section{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:24px;overflow:hidden}
 .assumptions-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:none;border:none;cursor:pointer;color:var(--text-primary);font-size:14px;font-weight:600;font-family:var(--font-main);transition:background .15s}
 .assumptions-toggle:hover{background:var(--bg-card-alt)}
@@ -111,6 +115,9 @@ td.positive{color:var(--accent-green)}td.negative{color:var(--accent-red)}
 .assumptions-content code{background:var(--bg-card-alt);padding:2px 6px;border-radius:4px;font-family:var(--font-mono);font-size:11px;color:var(--accent-cyan)}
 .footer{text-align:center;padding:24px;margin-top:40px;border-top:1px solid var(--border);color:var(--text-muted);font-size:11px}
 .footer span{color:var(--accent-cyan)}
+/* Back button in nested modals */
+.back-btn{background:none;border:1px solid var(--border);color:var(--accent-cyan);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;margin-right:12px;transition:all .15s}
+.back-btn:hover{background:rgba(34,211,238,.1)}
 @media(max-width:900px){.chart-grid{grid-template-columns:1fr}.header{flex-direction:column}}
 </style>
 </head>
@@ -141,140 +148,125 @@ td.positive{color:var(--accent-green)}td.negative{color:var(--accent-red)}
     </div>
   </div>
   <div class="kpi-row" id="kpiRow"></div>
-
   <div class="section-header"><h2>Warranties Sold &amp; Revenue</h2><span class="badge badge-blue">Sales Overview</span></div>
   <div class="chart-grid">
-    <div class="chart-card" data-clickable><h3>Warranty Units Sold by Year</h3><div class="chart-subtitle">Full history (2015–2025 only)</div><canvas id="chSold"></canvas></div>
-    <div class="chart-card" data-clickable><h3>Warranty Revenue by Year</h3><div class="chart-subtitle">Full history (2015–2025 only)</div><canvas id="chRev"></canvas></div>
+    <div class="chart-card" data-clickable><h3>Warranty Units Sold by Year</h3><div class="chart-subtitle">Full history (2015–2025)</div><canvas id="chSold"></canvas></div>
+    <div class="chart-card" data-clickable><h3>Warranty Revenue by Year</h3><div class="chart-subtitle">Full history (2015–2025)</div><canvas id="chRev"></canvas></div>
   </div>
-
   <div class="section-header"><h2>Claim Frequency &amp; Severity</h2><span class="badge badge-yellow">Claims Analysis</span></div>
   <div class="chart-grid">
     <div class="chart-card" data-clickable><h3>Claim Frequency by Warranty Code</h3><div class="chart-subtitle">Claims per warranty program</div><canvas id="chFreq"></canvas></div>
     <div class="chart-card" data-clickable><h3>Claim Severity</h3><div class="chart-subtitle">Major vs Minor vs NPU/NPF</div><canvas id="chSev"></canvas></div>
   </div>
-
   <div class="section-header"><h2>Breakage Rate Trends</h2><span class="badge badge-red">3-Year Trend</span></div>
   <div class="chart-grid">
     <div class="chart-card chart-full tall" data-clickable><h3>Quarterly Repair Count — Top Models</h3><div class="chart-subtitle">Repair volume per quarter (click point for model detail)</div><canvas id="chTrend"></canvas></div>
   </div>
-
   <div class="section-header"><h2>Warranty Cost Distribution</h2><span class="badge badge-purple">Distribution</span></div>
   <div class="chart-grid">
-    <div class="chart-card chart-full" data-clickable><h3>Avg Repair Cost per Warranty Code — Distribution</h3><div class="chart-subtitle">Click any bar to see warranty codes in that cost range</div><canvas id="chDist"></canvas></div>
+    <div class="chart-card chart-full" data-clickable><h3>Avg Repair Cost per Warranty Code — Distribution</h3><div class="chart-subtitle">Click any bar to see warranty codes in that range</div><canvas id="chDist"></canvas></div>
   </div>
-
   <div class="section-header"><h2>Cost Trends: Parts &amp; Labor</h2><span class="badge badge-green">Cost Tracking</span></div>
-  <div class="data-note"><strong>Note:</strong> Parts vs. Labor split is estimated by repair type classification. See Assumptions section below for details.</div>
+  <div class="data-note"><strong>Note:</strong> Parts vs. Labor split estimated by repair type. See Assumptions below.</div>
   <div class="chart-grid">
     <div class="chart-card" data-clickable><h3>Parts Cost by Quarter</h3><div class="chart-subtitle">Estimated parts cost over time</div><canvas id="chParts"></canvas></div>
     <div class="chart-card" data-clickable><h3>Labor Cost by Quarter</h3><div class="chart-subtitle">Estimated labor/diagnostic cost</div><canvas id="chLabor"></canvas></div>
   </div>
-
   <div class="section-header"><h2>Claims vs. Product Age</h2><span class="badge badge-blue">Field Analysis</span></div>
   <div class="chart-grid">
-    <div class="chart-card chart-full tall" data-clickable><h3>Claims by Product Age in Field — Top Models</h3><div class="chart-subtitle">Hover highlights the specific model. Click for full detail.</div><canvas id="chField"></canvas></div>
+    <div class="chart-card chart-full tall" data-clickable><h3>Claims by Product Age — Top Models</h3><div class="chart-subtitle">Hover highlights model. Click for detail.</div><canvas id="chField"></canvas></div>
   </div>
-
   <div class="section-header"><h2>Key Insights</h2><span class="badge badge-green">Auto-Generated</span></div>
   <div class="insight-grid" id="insightGrid"></div>
-
   <div class="data-table-container"><h3>Top Models Summary</h3>
     <table><thead><tr><th>Model</th><th>Units Sold</th><th>Repairs</th><th>Repair Rate</th><th>Warranty Rev</th><th>Total Cost</th><th>Net P/L</th><th>Trend</th></tr></thead><tbody id="summaryBody"></tbody></table>
   </div>
-
-  <!-- Assumptions Section -->
   <div class="assumptions-section">
-    <button class="assumptions-toggle" id="assumToggle" onclick="toggleAssumptions()">
-      <span>📋 Data Assumptions &amp; Methodology</span>
-      <span class="arrow">▼</span>
-    </button>
-    <div class="assumptions-body" id="assumBody">
-      <div class="assumptions-content">
-        <h4>Data Sources</h4>
-        <ul>
-          <li><strong>Repair Data:</strong> Sourced from published Google Sheets CSV (NetSuite export). One row per repair event. Filtered by <code>Order Received Date</code> within the selected date range (default: Jan 1, 2023 – Dec 31, 2025).</li>
-          <li><strong>Sales Data:</strong> Sourced from published Google Sheets CSV. One row per Item + Warranty Code + Year combination. <strong>Not filtered by date</strong> — full history is used to calculate accurate repair rates based on total units ever sold.</li>
-          <li><strong>Year Filter:</strong> Sales years are restricted to 2015–2025 to exclude erroneous future dates present in the source data (e.g., years 4037, 4043).</li>
-        </ul>
-        <h4>Key Calculations</h4>
-        <ul>
-          <li><strong>Units Sold:</strong> Sum of <code>Total Sales Qty</code> across all warranty codes for each item, across all valid years. This represents total warranty units sold (not device units).</li>
-          <li><strong>Repair Rate:</strong> <code>Total Repairs ÷ Units Sold × 100</code>. Uses full sales history as denominator.</li>
-          <li><strong>Repair Cost:</strong> <code>Costs</code> column from repair data + $10 flat shipping cost per repair.</li>
-          <li><strong>Estimated Cost:</strong> Based on lookup table by repair type (e.g., Panel = $100, NPU = $20). Used as secondary reference only.</li>
-          <li><strong>Warranty Revenue:</strong> <code>Total Sales</code> column from sales CSV (pre-calculated qty × price). Summed across all codes per item.</li>
-          <li><strong>Net P/L:</strong> <code>Warranty Revenue + Repair Revenue − Total Repair Cost</code>.</li>
-        </ul>
-        <h4>Parts vs. Labor Classification</h4>
-        <ul>
-          <li><strong>Parts repairs:</strong> Panel, Mainboard, Battery, Storage, Keyboard, Keyboard Keys, Daughterboard, Camera, LTE Module, LVDS, AC Adapter, Wifi Module, Touchpad, DC Port, USB Port, USB-C Port, Headphone Port, Hinge, Hinge Cover, Plastics, Replacement, Accidental</li>
-          <li><strong>Labor repairs:</strong> NPU, NPF, OS Issue, Tear Down, Declined, Please Select, Other</li>
-          <li>This is an <em>estimate</em> based on repair type — actual parts/labor cost breakdowns are not available in the source data.</li>
-        </ul>
-        <h4>Product-in-Field Analysis</h4>
-        <ul>
-          <li>Months since first sale are calculated from the <em>earliest year</em> that item appears in the sales data. Repair dates are compared against this baseline.</li>
-          <li>Repairs are bucketed into 3-month intervals. Top 10 models by total units sold are shown.</li>
-        </ul>
-        <h4>Data Caveats</h4>
-        <ul>
-          <li>Models with <code>Model Name = "No Match"</code> or <code>Item Number = "No Match"</code> are excluded.</li>
-          <li>Rows missing <code>Order Received Date</code> are excluded from repair analysis.</li>
-          <li>Shipping cost of <strong>$10 per repair</strong> is added to every repair's cost as a flat estimate.</li>
-          <li>Warranty Status (In Warranty / Out of Warranty) is read from the <code>Warranty Status</code> column — rows with blank status are excluded from warranty status percentages.</li>
-          <li>Accidental Damage includes both "Yes" and "Liquid" values from the <code>Accidental Damage</code> column.</li>
-        </ul>
-      </div>
-    </div>
+    <button class="assumptions-toggle" id="assumToggle" onclick="toggleAssumptions()"><span>📋 Data Assumptions &amp; Methodology</span><span class="arrow">▼</span></button>
+    <div class="assumptions-body" id="assumBody"><div class="assumptions-content">
+      <h4>Data Sources</h4><ul>
+        <li><strong>Repair Data:</strong> Google Sheets CSV (NetSuite). One row per repair. Filtered by <code>Order Received Date</code> within selected range.</li>
+        <li><strong>Sales Data:</strong> Google Sheets CSV. Not date-filtered — full history used for accurate rates.</li>
+        <li><strong>Year Filter:</strong> Years restricted to 2015–2025 to exclude erroneous dates in source data.</li></ul>
+      <h4>Key Calculations</h4><ul>
+        <li><strong>Units Sold:</strong> Sum of <code>Total Sales Qty</code> across all warranty codes per item, all valid years.</li>
+        <li><strong>Repair Rate:</strong> <code>Total Repairs ÷ Units Sold × 100</code>. Full sales history as denominator.</li>
+        <li><strong>Repair Cost:</strong> <code>Costs</code> column + $10 flat shipping per repair.</li>
+        <li><strong>Warranty Revenue:</strong> <code>Total Sales</code> from sales CSV, summed across all codes per item.</li>
+        <li><strong>Net P/L:</strong> <code>Warranty Revenue + Repair Revenue − Total Repair Cost</code>.</li></ul>
+      <h4>Parts vs. Labor</h4><ul>
+        <li><strong>Parts:</strong> Panel, Mainboard, Battery, Storage, Keyboard, Keyboard Keys, Daughterboard, Camera, LTE Module, LVDS, AC Adapter, Wifi Module, Touchpad, DC Port, USB Port, USB-C Port, Headphone Port, Hinge, Hinge Cover, Plastics, Replacement, Accidental</li>
+        <li><strong>Labor:</strong> NPU, NPF, OS Issue, Tear Down, Declined, Please Select, Other</li>
+        <li>This is an <em>estimate</em> — actual parts/labor breakdowns not in source data.</li></ul>
+      <h4>Product-in-Field</h4><ul>
+        <li>Months since first sale calculated from earliest year the item appears in sales data.</li>
+        <li>Repairs bucketed in 3-month intervals. Top 10 models by total units sold shown.</li></ul>
+      <h4>Caveats</h4><ul>
+        <li>Models with "No Match" excluded. Rows missing Order Received Date excluded.</li>
+        <li>$10/repair shipping cost added as flat estimate.</li>
+        <li>Accidental Damage includes "Yes" and "Liquid" values.</li></ul>
+    </div></div>
   </div>
-
   <div class="footer">CTL Warranty Board Report &bull; <span>Live from Google Sheets</span><br>Sales: full history (2015–2025) &bull; Repairs: filtered by date range</div>
 </div>
 
 <script>
-const PW='CTLdata2026',SHIP=10;
-const MIN_YEAR=2015,MAX_YEAR=2025; // Filter out bad years
-const REPAIR_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=986703446&single=true&output=csv';
-const SALES_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=235319241&single=true&output=csv';
+const PW='CTLdata2026',SHIP=10,MIN_YR=2015,MAX_YR=2025;
+const RU='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=986703446&single=true&output=csv';
+const SU='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=235319241&single=true&output=csv';
 const EC={'AC Adapter':50,Accidental:100,Battery:100,Camera:50,Daughterboard:50,'DC Port':50,Declined:50,'Headphone Port':50,Hinge:50,'Hinge Cover':50,Keyboard:50,'Keyboard Keys':50,'LTE Module':50,LVDS:50,Mainboard:100,NPF:20,NPU:20,'OS Issue':50,Other:50,Panel:100,Plastics:50,'Please Select':20,Replacement:100,Storage:100,'Tear Down':50,Touchpad:50,'USB Port':50,'USB-C Port':50,'Wifi Module':50};
 const PARTS=new Set(['Panel','Mainboard','Battery','Storage','Keyboard','Keyboard Keys','Daughterboard','Camera','LTE Module','LVDS','AC Adapter','Wifi Module','Touchpad','DC Port','USB Port','USB-C Port','Headphone Port','Hinge','Hinge Cover','Plastics','Replacement','Accidental']);
 const CC=['#22d3ee','#4aa3df','#a78bfa','#f472b6','#fbbf24','#34d399','#f97316','#ef4444','#818cf8','#2dd4bf','#fb923c','#c084fc'];
 let rawR=null,rawS=null,allMD=[],sL={},charts=[];
-let _ca={},_qa={},_bins=[],_cc=[];
-// Store KPI data for modals
-let _kpi={};
+let _ca={},_qa={},_bins=[],_cc=[],_kpi={};
+// Modal history stack for back navigation
+let _modalStack=[];
 
 const fmt=n=>n==null?'N/A':n.toLocaleString('en-US');
 const fD=n=>n==null?'N/A':'$'+Math.round(n).toLocaleString('en-US');
 const fP=n=>n==null?'N/A':n.toFixed(2)+'%';
-function isValidYear(y){const n=parseInt(y);return!isNaN(n)&&n>=MIN_YEAR&&n<=MAX_YEAR;}
+function vY(y){const n=parseInt(y);return!isNaN(n)&&n>=MIN_YR&&n<=MAX_YR;}
 function trd(v){const f=v.filter(x=>x!=null);if(f.length<2)return{t:'N/A',c:'flat'};const a=f[0],b=f[f.length-1];if(!a&&!b)return{t:'FLAT',c:'flat'};if(!a)return{t:'↑ UP',c:'up'};const p=((b-a)/Math.abs(a))*100;if(p>10)return{t:`↑ +${p.toFixed(0)}%`,c:'up'};if(p<-10)return{t:`↓ ${p.toFixed(0)}%`,c:'down'};return{t:'→ FLAT',c:'flat'};}
+
+// ===== CLICKABLE MODEL HELPER =====
+// Returns HTML for a clickable model name cell
+function mL(name,itemN){return `<td><span class="m-link" onclick="event.stopPropagation();openModelByItem('${itemN}')">${name}</span></td>`;}
+// Open model detail by itemNumber, with back-button support
+function openModelByItem(itemN){
+  const m=allMD.find(x=>x.itemNumber===itemN);
+  if(!m)return;
+  // Save current modal state for back navigation
+  const curTitle=document.getElementById('detailTitle').textContent;
+  const curBody=document.getElementById('detailBody').innerHTML;
+  if(curTitle&&curBody)_modalStack.push({title:curTitle,body:curBody});
+  openDM(m.model,modelHTML(m));
+}
+function goBack(){
+  if(_modalStack.length===0){closeDM();return;}
+  const prev=_modalStack.pop();
+  document.getElementById('detailTitle').textContent=prev.title;
+  document.getElementById('detailBody').innerHTML=prev.body;
+}
 
 function checkPw(){if(document.getElementById('pwInput').value===PW){document.getElementById('pwOverlay').classList.add('hidden');document.getElementById('loadingOverlay').classList.remove('hidden');fetchAll();}else document.getElementById('pwError').textContent='Incorrect password';}
 function fetchAll(){
   document.getElementById('loadingMsg').textContent='Fetching repair data...';let rd=false,sd=false;
-  Papa.parse(REPAIR_URL,{download:true,header:true,skipEmptyLines:true,complete:r=>{rawR=r.data;rd=true;document.getElementById('loadingMsg').textContent='Fetching sales...';if(sd)go();},error:e=>{document.getElementById('loadingMsg').textContent='Error: repair — '+(e.message||JSON.stringify(e));}});
-  Papa.parse(SALES_URL,{download:true,header:true,skipEmptyLines:true,complete:r=>{rawS=r.data;sd=true;if(rd)go();},error:e=>{document.getElementById('loadingMsg').textContent='Error: sales — '+(e.message||JSON.stringify(e));}});
+  Papa.parse(RU,{download:true,header:true,skipEmptyLines:true,complete:r=>{rawR=r.data;rd=true;document.getElementById('loadingMsg').textContent='Fetching sales...';if(sd)go();},error:e=>{document.getElementById('loadingMsg').textContent='Error: repair — '+(e.message||JSON.stringify(e));}});
+  Papa.parse(SU,{download:true,header:true,skipEmptyLines:true,complete:r=>{rawS=r.data;sd=true;if(rd)go();},error:e=>{document.getElementById('loadingMsg').textContent='Error: sales — '+(e.message||JSON.stringify(e));}});
 }
 function refresh(){document.getElementById('loadingOverlay').classList.remove('hidden');rawR=rawS=null;fetchAll();}
 function applyFilter(){if(rawR&&rawS){document.getElementById('loadingOverlay').classList.remove('hidden');document.getElementById('loadingMsg').textContent='Reprocessing...';setTimeout(go,50);}}
-function toggleAssumptions(){const t=document.getElementById('assumToggle'),b=document.getElementById('assumBody');t.classList.toggle('open');b.classList.toggle('open');}
-
+function toggleAssumptions(){document.getElementById('assumToggle').classList.toggle('open');document.getElementById('assumBody').classList.toggle('open');}
 function getDR(){const s=document.getElementById('startDate').value,e=document.getElementById('endDate').value;const[sy,sm,sd]=s.split('-').map(Number),[ey,em,ed]=e.split('-').map(Number);return{start:new Date(sy,sm-1,sd),end:new Date(ey,em-1,ed,23,59,59),sy,ey};}
 function pD(s){if(!s)return null;const d=new Date(s);if(isNaN(d))return null;return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
 function qL(d){return`${d.getFullYear()} Q${Math.floor(d.getMonth()/3)+1}`;}
 
 function buildSL(data){
   const L={};
-  data.forEach(r=>{
-    const it=(r['Item No']||'').trim(),co=(r['Warranty Code']||'').trim(),yr=(r['Year']||'').trim();
-    if(!isValidYear(yr)&&yr)return; // Skip bad years
-    const qt=parseFloat(r['Total Sales Qty'])||0,pr=parseFloat((r['Price']||'').replace(/[$,]/g,''))||0;
-    let rv=parseFloat((r['Total Sales']||'').replace(/[$,]/g,''))||0;
-    if(!rv&&qt&&pr)rv=qt*pr;if(!it||!co)return;
-    if(!L[it])L[it]={_byYr:{},_total:0};
-    if(!L[it][co])L[it][co]={qty:0,price:pr,rev:0,byYr:{}};
+  data.forEach(r=>{const it=(r['Item No']||'').trim(),co=(r['Warranty Code']||'').trim(),yr=(r['Year']||'').trim();
+    if(!vY(yr)&&yr)return;const qt=parseFloat(r['Total Sales Qty'])||0,pr=parseFloat((r['Price']||'').replace(/[$,]/g,''))||0;
+    let rv=parseFloat((r['Total Sales']||'').replace(/[$,]/g,''))||0;if(!rv&&qt&&pr)rv=qt*pr;if(!it||!co)return;
+    if(!L[it])L[it]={_byYr:{},_total:0};if(!L[it][co])L[it][co]={qty:0,price:pr,rev:0,byYr:{}};
     L[it][co].qty+=qt;L[it][co].rev+=rv;L[it]._total+=qt;
     if(yr){if(!L[it][co].byYr[yr])L[it][co].byYr[yr]={qty:0,rev:0};L[it][co].byYr[yr].qty+=qt;L[it][co].byYr[yr].rev+=rv;L[it]._byYr[yr]=(L[it]._byYr[yr]||0)+qt;}
   });return L;
@@ -302,29 +294,31 @@ function go(){
       if(wc){if(!wCR[wc])wCR[wc]={cnt:0,cost:0,est:0};wCR[wc].cnt++;wCR[wc].cost+=cost;wCR[wc].est+=est;}
     });
     let sold=0,wRev=0;const yS={},yWR={};const iS=sL[itemN];
-    if(iS){sold=iS._total||0;Object.entries(iS._byYr||{}).forEach(([yr,q])=>{if(isValidYear(yr))yS[yr]=q;});
-      Object.entries(iS).forEach(([co,sd])=>{if(co.startsWith('_'))return;Object.entries(sd.byYr||{}).forEach(([yr,yd])=>{if(isValidYear(yr))yWR[yr]=(yWR[yr]||0)+yd.rev;});wRev+=sd.rev;
+    if(iS){sold=iS._total||0;Object.entries(iS._byYr||{}).forEach(([yr,q])=>{if(vY(yr))yS[yr]=q;});
+      Object.entries(iS).forEach(([co,sd])=>{if(co.startsWith('_'))return;Object.entries(sd.byYr||{}).forEach(([yr,yd])=>{if(vY(yr))yWR[yr]=(yWR[yr]||0)+yd.rev;});wRev+=sd.rev;
         if(!wCR[co])wCR[co]={cnt:0,cost:0,est:0};wCR[co].qS=sd.qty;wCR[co].wR=sd.rev;wCR[co].uP=sd.price;});
     }
     const rr=sold>0?(tot/sold*100):null,nPL=wRev+rR-aC;
     const sn=model.replace(/^CTL Chromebook /i,'').replace(/^CTL /i,'').substring(0,30);
-    let eY=null;Object.keys(yS).forEach(yr=>{const y=parseInt(yr);if(isValidYear(yr)&&(!eY||y<eY))eY=y;});
+    let eY=null;Object.keys(yS).forEach(yr=>{const y=parseInt(yr);if(vY(yr)&&(!eY||y<eY))eY=y;});
     const mR={};if(eY)rows.forEach(r=>{const d=pD(r['Order Received Date']);if(!d)return;const mo=(d.getFullYear()-eY)*12+d.getMonth();if(mo>=0)mR[mo]=(mR[mo]||0)+1;});
     allMD.push({model,itemNumber:itemN,shortName:sn,total:tot,major:maj,minor:min,npu,accidental:acc,actualCost:aC,estimatedCost:eC,repairRevenue:rR,inWarranty:inW,outWarranty:outW,sold,warrantyRevenue:wRev,repairRate:rr,netPL:nPL,yearlyRepairs:yR,yearlySold:yS,yearlyWarrantyRevenue:yWR,quarterlyData:qD,repairTypeCounts:rTC,warrantyCodeRepairs:wCR,monthlyRepairs:mR,earliestSaleYear:eY});
   });
   allMD.sort((a,b)=>b.total-a.total);
-  document.getElementById('dateLabel').textContent=`Repairs: ${document.getElementById('startDate').value} — ${document.getElementById('endDate').value} | Sales: All Years (${MIN_YEAR}–${MAX_YEAR})`;
+  document.getElementById('dateLabel').textContent=`Repairs: ${document.getElementById('startDate').value} — ${document.getElementById('endDate').value} | Sales: All (${MIN_YR}–${MAX_YR})`;
   render();document.getElementById('loadingOverlay').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');
 }
 
 function openDM(title,html){document.getElementById('detailTitle').textContent=title;document.getElementById('detailBody').innerHTML=html;document.getElementById('detailOverlay').classList.add('active');}
-function closeDM(){document.getElementById('detailOverlay').classList.remove('active');}
+function closeDM(){document.getElementById('detailOverlay').classList.remove('active');_modalStack=[];}
 function exportCSV(tid){const t=document.getElementById(tid);if(!t)return;const rows=[];t.querySelectorAll('tr').forEach(tr=>{const c=Array.from(tr.querySelectorAll('th,td')).map(c=>'"'+c.textContent.replace(/"/g,'""').trim()+'"');if(c.length)rows.push(c.join(','));});const b=new Blob(['\ufeff'+rows.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='export.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);}
 
+// ===== FULL MODEL DETAIL (with back button when navigated from another modal) =====
 function modelHTML(m){
   const tR=Object.entries(m.repairTypeCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
   const wC=Object.entries(m.warrantyCodeRepairs).filter(([c])=>c).sort((a,b)=>(b[1].cnt||0)-(a[1].cnt||0));
-  let h=`<div class="detail-stats">
+  let h=`${_modalStack.length?'<button class="back-btn" onclick="goBack()">← Back</button>':''}`;
+  h+=`<div class="detail-stats">
     <div class="detail-stat"><div class="label">Units Sold</div><div class="value">${fmt(m.sold)}</div></div>
     <div class="detail-stat"><div class="label">Repairs</div><div class="value">${fmt(m.total)}</div></div>
     <div class="detail-stat"><div class="label">Repair Rate</div><div class="value">${m.repairRate!=null?fP(m.repairRate):'N/A'}</div></div>
@@ -334,87 +328,77 @@ function modelHTML(m){
     <div class="detail-stat"><div class="label">Maj/Min/NPU</div><div class="value" style="font-size:14px">${fmt(m.major)}/${fmt(m.minor)}/${fmt(m.npu)}</div></div>
     <div class="detail-stat"><div class="label">Accidental %</div><div class="value">${m.total>0?fP(m.accidental/m.total*100):'N/A'}</div></div>
   </div>`;
+  if(wC.length){h+=`<div class="section-label">Warranty Codes — Revenue &amp; Cost</div><table id="dtW"><thead><tr><th>Code</th><th>Units Sold</th><th>Revenue</th><th>Price/Unit</th><th>Repairs</th><th>Repair Cost</th><th>Net</th></tr></thead><tbody>`;
+    wC.forEach(([c,d])=>{const net=(d.wR||0)-(d.cost||0);h+=`<tr><td>${c}</td><td class="mono">${fmt(d.qS||0)}</td><td class="mono">${fD(d.wR||0)}</td><td class="mono">${d.uP?fD(d.uP):'—'}</td><td class="mono">${fmt(d.cnt)}</td><td class="mono">${fD(d.cost)}</td><td class="mono ${net>=0?'positive':'negative'}">${fD(net)}</td></tr>`;});h+=`</tbody></table>`;}
   h+=`<div class="section-label">Top Repair Types</div><table id="dtR"><thead><tr><th>Repair</th><th>Count</th><th>%</th></tr></thead><tbody>`;
   tR.forEach(([r,c])=>{h+=`<tr><td>${r}</td><td class="mono">${fmt(c)}</td><td class="mono">${fP(c/m.total*100)}</td></tr>`;});h+=`</tbody></table>`;
-  if(wC.length){h+=`<div class="section-label">Warranty Codes</div><table><thead><tr><th>Code</th><th>Repairs</th><th>Sold</th><th>Cost</th><th>Revenue</th></tr></thead><tbody>`;
-    wC.forEach(([c,d])=>{h+=`<tr><td>${c}</td><td class="mono">${fmt(d.cnt)}</td><td class="mono">${fmt(d.qS||0)}</td><td class="mono">${fD(d.cost)}</td><td class="mono">${fD(d.wR||0)}</td></tr>`;});h+=`</tbody></table>`;}
   const yrs=Object.keys(m.yearlyRepairs).sort();
-  if(yrs.length){h+=`<div class="section-label">Year-by-Year</div><table><thead><tr><th>Year</th><th>Repairs</th><th>Major</th><th>Minor</th><th>NPU</th><th>Cost</th><th>Sold</th></tr></thead><tbody>`;
+  if(yrs.length){h+=`<div class="section-label">Year-by-Year</div><table><thead><tr><th>Year</th><th>Repairs</th><th>Major</th><th>Minor</th><th>NPU</th><th>Cost</th><th>Units Sold</th></tr></thead><tbody>`;
     yrs.forEach(yr=>{const d=m.yearlyRepairs[yr];h+=`<tr><td>${yr}</td><td class="mono">${fmt(d.rep)}</td><td class="mono">${fmt(d.maj)}</td><td class="mono">${fmt(d.min)}</td><td class="mono">${fmt(d.npu)}</td><td class="mono">${fD(d.cost)}</td><td class="mono">${fmt(m.yearlySold[yr]||0)}</td></tr>`;});h+=`</tbody></table>`;}
-  h+=`<button class="export-btn" onclick="exportCSV('dtR')">📥 Export CSV</button>`;return h;
+  h+=`<button class="export-btn" onclick="exportCSV('dtW')">📥 Export Warranty Codes</button> <button class="export-btn" onclick="exportCSV('dtR')">📥 Export Repairs</button>`;
+  return h;
 }
 
 function destroyCharts(){charts.forEach(c=>{try{c.destroy();}catch(e){}});charts=[];}
 
 function render(){
   destroyCharts();const{sy,ey}=getDR();
-  // Collect only valid years
-  const aYrs=new Set();allMD.forEach(m=>{Object.keys(m.yearlySold).forEach(y=>{if(isValidYear(y))aYrs.add(y);});Object.keys(m.yearlyRepairs).forEach(y=>{if(isValidYear(y))aYrs.add(y);});});
-  const salesYrs=[...aYrs].sort();const rYrs=[...new Set([...allMD.flatMap(m=>Object.keys(m.yearlyRepairs).filter(isValidYear))])].sort();
+  const aYrs=new Set();allMD.forEach(m=>{Object.keys(m.yearlySold).forEach(y=>{if(vY(y))aYrs.add(y);});Object.keys(m.yearlyRepairs).forEach(y=>{if(vY(y))aYrs.add(y);});});
+  const salesYrs=[...aYrs].sort();const rYrs=[...new Set([...allMD.flatMap(m=>Object.keys(m.yearlyRepairs).filter(vY))])].sort();
   let tSold=0,tRep=0,tCost=0,tEst=0,tAcc=0,tInW=0,tOutW=0,tWRev=0,tRRev=0;
   const ytS={},ytR={},ytC={},ytWR={};
   allMD.forEach(m=>{tSold+=m.sold;tRep+=m.total;tCost+=m.actualCost;tEst+=m.estimatedCost;tAcc+=m.accidental;tInW+=m.inWarranty;tOutW+=m.outWarranty;tWRev+=m.warrantyRevenue;tRRev+=m.repairRevenue;
-    Object.entries(m.yearlySold).forEach(([y,q])=>{if(isValidYear(y))ytS[y]=(ytS[y]||0)+q;});Object.entries(m.yearlyRepairs).forEach(([y,d])=>{if(isValidYear(y)){ytR[y]=(ytR[y]||0)+d.rep;ytC[y]=(ytC[y]||0)+d.cost;}});Object.entries(m.yearlyWarrantyRevenue).forEach(([y,r])=>{if(isValidYear(y))ytWR[y]=(ytWR[y]||0)+r;});});
+    Object.entries(m.yearlySold).forEach(([y,q])=>{if(vY(y))ytS[y]=(ytS[y]||0)+q;});Object.entries(m.yearlyRepairs).forEach(([y,d])=>{if(vY(y)){ytR[y]=(ytR[y]||0)+d.rep;ytC[y]=(ytC[y]||0)+d.cost;}});Object.entries(m.yearlyWarrantyRevenue).forEach(([y,r])=>{if(vY(y))ytWR[y]=(ytWR[y]||0)+r;});});
   const oRate=tSold>0?(tRep/tSold*100):null,accP=tRep>0?(tAcc/tRep*100):0,inWP=(tInW+tOutW)>0?(tInW/(tInW+tOutW)*100):0,nPL=tWRev+tRRev-tCost;
-
-  // Store KPI data for click modals
   _kpi={tSold,tRep,tCost,tEst,tAcc,tInW,tOutW,tWRev,tRRev,oRate,accP,inWP,nPL,ytS,ytR,ytC,ytWR,salesYrs,rYrs};
 
   document.getElementById('kpiRow').innerHTML=`
-    <div class="kpi-card cyan" onclick="showKpiDetail('sold')"><div class="kpi-label">Units Sold (All Years)</div><div class="kpi-value">${fmt(tSold)}</div></div>
-    <div class="kpi-card yellow" onclick="showKpiDetail('repairs')"><div class="kpi-label">Total Repairs</div><div class="kpi-value">${fmt(tRep)}</div><div class="kpi-sub">${sy}–${ey}</div></div>
-    <div class="kpi-card red" onclick="showKpiDetail('rate')"><div class="kpi-label">Repair Rate</div><div class="kpi-value">${oRate!=null?fP(oRate):'N/A'}</div></div>
-    <div class="kpi-card orange" onclick="showKpiDetail('cost')"><div class="kpi-label">Repair Cost</div><div class="kpi-value">${fD(tCost)}</div><div class="kpi-sub">Est: ${fD(tEst)}</div></div>
-    <div class="kpi-card purple" onclick="showKpiDetail('accidental')"><div class="kpi-label">Accidental %</div><div class="kpi-value">${fP(accP)}</div></div>
-    <div class="kpi-card green" onclick="showKpiDetail('warranty')"><div class="kpi-label">In Warranty %</div><div class="kpi-value">${fP(inWP)}</div></div>
-    <div class="kpi-card blue" onclick="showKpiDetail('revenue')"><div class="kpi-label">Warranty Revenue</div><div class="kpi-value">${fD(tWRev)}</div></div>
-    <div class="kpi-card ${nPL>=0?'green':'red'}" onclick="showKpiDetail('pl')"><div class="kpi-label">Net P/L</div><div class="kpi-value" style="color:${nPL>=0?'var(--positive)':'var(--negative)'}">${fD(nPL)}</div></div>`;
+    <div class="kpi-card cyan" onclick="showKD('sold')"><div class="kpi-label">Units Sold (All Years)</div><div class="kpi-value">${fmt(tSold)}</div></div>
+    <div class="kpi-card yellow" onclick="showKD('repairs')"><div class="kpi-label">Total Repairs</div><div class="kpi-value">${fmt(tRep)}</div><div class="kpi-sub">${sy}–${ey}</div></div>
+    <div class="kpi-card red" onclick="showKD('rate')"><div class="kpi-label">Repair Rate</div><div class="kpi-value">${oRate!=null?fP(oRate):'N/A'}</div></div>
+    <div class="kpi-card orange" onclick="showKD('cost')"><div class="kpi-label">Repair Cost</div><div class="kpi-value">${fD(tCost)}</div><div class="kpi-sub">Est: ${fD(tEst)}</div></div>
+    <div class="kpi-card purple" onclick="showKD('accidental')"><div class="kpi-label">Accidental %</div><div class="kpi-value">${fP(accP)}</div></div>
+    <div class="kpi-card green" onclick="showKD('warranty')"><div class="kpi-label">In Warranty %</div><div class="kpi-value">${fP(inWP)}</div></div>
+    <div class="kpi-card blue" onclick="showKD('revenue')"><div class="kpi-label">Warranty Revenue</div><div class="kpi-value">${fD(tWRev)}</div></div>
+    <div class="kpi-card ${nPL>=0?'green':'red'}" onclick="showKD('pl')"><div class="kpi-label">Net P/L</div><div class="kpi-value" style="color:${nPL>=0?'var(--positive)':'var(--negative)'}">${fD(nPL)}</div></div>`;
 
-  // Chart 1: Sold by Year
-  charts.push(new Chart(document.getElementById('chSold'),{type:'bar',data:{labels:salesYrs,datasets:[{label:'Units Sold',data:salesYrs.map(y=>ytS[y]||0),backgroundColor:salesYrs.map((_,i)=>CC[i%CC.length]),borderRadius:6,barPercentage:.6}]},options:{responsive:true,onClick:(e,el)=>{if(el.length)showYrDet(salesYrs[el[0].index],'sold');},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)+' units'}}},scales:{y:{ticks:{color:'#8899b0',callback:v=>fmt(v)},grid:{color:'#1e3050'}},x:{ticks:{color:'#8899b0'},grid:{display:false}}}}}));
+  // Charts
+  charts.push(new Chart(document.getElementById('chSold'),{type:'bar',data:{labels:salesYrs,datasets:[{label:'Units Sold',data:salesYrs.map(y=>ytS[y]||0),backgroundColor:salesYrs.map((_,i)=>CC[i%CC.length]),borderRadius:6,barPercentage:.6}]},options:{responsive:true,onClick:(e,el)=>{if(el.length)showYD(salesYrs[el[0].index],'sold');},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)+' units'}}},scales:{y:{ticks:{color:'#8899b0',callback:v=>fmt(v)},grid:{color:'#1e3050'}},x:{ticks:{color:'#8899b0'},grid:{display:false}}}}}));
+  charts.push(new Chart(document.getElementById('chRev'),{type:'bar',data:{labels:salesYrs,datasets:[{label:'Revenue',data:salesYrs.map(y=>ytWR[y]||0),backgroundColor:salesYrs.map((_,i)=>CC[(i+3)%CC.length]),borderRadius:6,barPercentage:.6}]},options:{responsive:true,onClick:(e,el)=>{if(el.length)showYD(salesYrs[el[0].index],'rev');},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fD(c.raw)}}},scales:{y:{ticks:{color:'#8899b0',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#1e3050'}},x:{ticks:{color:'#8899b0'},grid:{display:false}}}}}));
 
-  // Chart 2: Revenue by Year
-  charts.push(new Chart(document.getElementById('chRev'),{type:'bar',data:{labels:salesYrs,datasets:[{label:'Revenue',data:salesYrs.map(y=>ytWR[y]||0),backgroundColor:salesYrs.map((_,i)=>CC[(i+3)%CC.length]),borderRadius:6,barPercentage:.6}]},options:{responsive:true,onClick:(e,el)=>{if(el.length)showYrDet(salesYrs[el[0].index],'rev');},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fD(c.raw)}}},scales:{y:{ticks:{color:'#8899b0',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#1e3050'}},x:{ticks:{color:'#8899b0'},grid:{display:false}}}}}));
-
-  // Chart 3: Claim Freq
-  _ca={};allMD.forEach(m=>{Object.entries(m.warrantyCodeRepairs).forEach(([c,d])=>{if(!_ca[c])_ca[c]={cnt:0,cost:0,qS:0,wR:0,models:[]};_ca[c].cnt+=d.cnt||0;_ca[c].cost+=d.cost||0;_ca[c].qS+=d.qS||0;_ca[c].wR+=d.wR||0;if(d.cnt>0)_ca[c].models.push({n:m.shortName,cnt:d.cnt,cost:d.cost});});});
+  // Code agg — now includes itemNumber
+  _ca={};allMD.forEach(m=>{Object.entries(m.warrantyCodeRepairs).forEach(([c,d])=>{if(!_ca[c])_ca[c]={cnt:0,cost:0,qS:0,wR:0,models:[]};_ca[c].cnt+=d.cnt||0;_ca[c].cost+=d.cost||0;_ca[c].qS+=d.qS||0;_ca[c].wR+=d.wR||0;if(d.cnt>0)_ca[c].models.push({n:m.shortName,item:m.itemNumber,cnt:d.cnt,cost:d.cost});});});
   const tCodes=Object.entries(_ca).filter(([c])=>c).sort((a,b)=>b[1].cnt-a[1].cnt).slice(0,15);
-  charts.push(new Chart(document.getElementById('chFreq'),{type:'bar',data:{labels:tCodes.map(([c])=>c),datasets:[{label:'Claims',data:tCodes.map(([,d])=>d.cnt),backgroundColor:tCodes.map((_,i)=>CC[i%CC.length]),borderRadius:4}]},options:{indexAxis:'y',responsive:true,onClick:(e,el)=>{if(el.length)showCodeDet(tCodes[el[0].index][0]);},plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},y:{ticks:{color:'#8899b0',font:{size:10,family:'Space Mono'}},grid:{display:false}}}}}));
+  charts.push(new Chart(document.getElementById('chFreq'),{type:'bar',data:{labels:tCodes.map(([c])=>c),datasets:[{label:'Claims',data:tCodes.map(([,d])=>d.cnt),backgroundColor:tCodes.map((_,i)=>CC[i%CC.length]),borderRadius:4}]},options:{indexAxis:'y',responsive:true,onClick:(e,el)=>{if(el.length)showCD(tCodes[el[0].index][0]);},plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},y:{ticks:{color:'#8899b0',font:{size:10,family:'Space Mono'}},grid:{display:false}}}}}));
 
-  // Chart 4: Severity
   let tMaj=0,tMin=0,tNPU=0;allMD.forEach(m=>{tMaj+=m.major;tMin+=m.minor;tNPU+=m.npu;});
-  charts.push(new Chart(document.getElementById('chSev'),{type:'doughnut',data:{labels:['Major','Minor','NPU/NPF'],datasets:[{data:[tMaj,tMin,tNPU],backgroundColor:['#ef4444','#fbbf24','#4aa3df'],borderWidth:0}]},options:{responsive:true,cutout:'55%',onClick:(e,el)=>{if(el.length)showSevDet(['Major','Minor','NPU/NPF'][el[0].index]);},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:16}},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)+' ('+((c.raw/tRep)*100).toFixed(1)+'%)'}}}}}));
+  charts.push(new Chart(document.getElementById('chSev'),{type:'doughnut',data:{labels:['Major','Minor','NPU/NPF'],datasets:[{data:[tMaj,tMin,tNPU],backgroundColor:['#ef4444','#fbbf24','#4aa3df'],borderWidth:0}]},options:{responsive:true,cutout:'55%',onClick:(e,el)=>{if(el.length)showSD(['Major','Minor','NPU/NPF'][el[0].index]);},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:16}},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)+' ('+((c.raw/tRep)*100).toFixed(1)+'%)'}}}}}));
 
-  // Chart 5: Breakage Trends (COUNTS)
   const topR=allMD.filter(m=>m.sold>0).sort((a,b)=>b.total-a.total).slice(0,10);
   const aQ=new Set();topR.forEach(m=>Object.keys(m.quarterlyData).forEach(q=>aQ.add(q)));
   for(let yr=sy;yr<=ey;yr++)for(let q=1;q<=4;q++)aQ.add(`${yr} Q${q}`);
   const sQ=[...aQ].sort();
-  charts.push(new Chart(document.getElementById('chTrend'),{type:'line',data:{labels:sQ,datasets:topR.map((m,i)=>({label:m.shortName,data:sQ.map(q=>m.quarterlyData[q]?.rep||0),borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'20',tension:.3,pointRadius:3,pointHoverRadius:6,borderWidth:2.5,fill:false}))},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length){const m=topR[el[0].datasetIndex];if(m)openDM(m.model,modelHTML(m));}},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,font:{size:11,family:'Space Mono'},usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+' repairs'}}},scales:{y:{title:{display:true,text:'Repairs/Quarter',color:'#8899b0'},ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{color:'#1e305030'}}}}}));
+  charts.push(new Chart(document.getElementById('chTrend'),{type:'line',data:{labels:sQ,datasets:topR.map((m,i)=>({label:m.shortName,data:sQ.map(q=>m.quarterlyData[q]?.rep||0),borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'20',tension:.3,pointRadius:3,pointHoverRadius:6,borderWidth:2.5,fill:false}))},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length){const m=topR[el[0].datasetIndex];if(m){_modalStack=[];openDM(m.model,modelHTML(m));}}},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,font:{size:11,family:'Space Mono'},usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+' repairs'}}},scales:{y:{title:{display:true,text:'Repairs/Quarter',color:'#8899b0'},ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{color:'#1e305030'}}}}}));
 
-  // Chart 6: Cost Distribution
   _cc=[];Object.entries(_ca).forEach(([c,d])=>{if(d.cnt>0)_cc.push({code:c,avgC:d.cost/d.cnt,cnt:d.cnt,qS:d.qS,wR:d.wR});});_cc.sort((a,b)=>a.avgC-b.avgC);
   const cVals=_cc.map(c=>c.avgC),mnC=Math.min(...cVals,0),mxC=Math.max(...cVals,200),bs=20;
   _bins=[];for(let b=Math.floor(mnC/bs)*bs;b<=mxC+bs;b+=bs)_bins.push({min:b,max:b+bs,label:`$${b}-${b+bs}`,codes:[],n:0});
   _cc.forEach(c=>{const bin=_bins.find(b=>c.avgC>=b.min&&c.avgC<b.max);if(bin){bin.codes.push(c);bin.n++;}});
   const oAvgR=Object.values(_ca).reduce((s,d)=>s+(d.wR||0),0)/Math.max(Object.values(_ca).reduce((s,d)=>s+(d.qS||0),0),1);
-  charts.push(new Chart(document.getElementById('chDist'),{type:'bar',data:{labels:_bins.map(b=>b.label),datasets:[{type:'bar',label:'Warranty Codes',data:_bins.map(b=>b.n),backgroundColor:'rgba(167,139,250,.5)',borderColor:'#a78bfa',borderWidth:1,borderRadius:4,yAxisID:'y'},{type:'line',label:`Avg Rev/Warranty: ${fD(oAvgR)}`,data:_bins.map(()=>oAvgR),borderColor:'#34d399',borderWidth:2.5,borderDash:[8,4],pointRadius:0,fill:false,yAxisID:'y1'}]},options:{responsive:true,onClick:(e,el)=>{if(el.length&&el[0].datasetIndex===0)showBinDet(_bins[el[0].index]);},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:16}},tooltip:{callbacks:{label:c=>c.datasetIndex===0?c.raw+' codes':'Avg Rev: '+fD(c.raw)}}},scales:{y:{title:{display:true,text:'# Codes',color:'#8899b0'},ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},y1:{position:'right',title:{display:true,text:'Revenue ($)',color:'#34d399'},ticks:{color:'#34d399',callback:v=>'$'+v.toFixed(0)},grid:{display:false},min:0},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{display:false}}}}}));
+  charts.push(new Chart(document.getElementById('chDist'),{type:'bar',data:{labels:_bins.map(b=>b.label),datasets:[{type:'bar',label:'Warranty Codes',data:_bins.map(b=>b.n),backgroundColor:'rgba(167,139,250,.5)',borderColor:'#a78bfa',borderWidth:1,borderRadius:4,yAxisID:'y'},{type:'line',label:`Avg Rev/Warranty: ${fD(oAvgR)}`,data:_bins.map(()=>oAvgR),borderColor:'#34d399',borderWidth:2.5,borderDash:[8,4],pointRadius:0,fill:false,yAxisID:'y1'}]},options:{responsive:true,onClick:(e,el)=>{if(el.length&&el[0].datasetIndex===0)showBD(_bins[el[0].index]);},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:16}},tooltip:{callbacks:{label:c=>c.datasetIndex===0?c.raw+' codes':'Avg Rev: '+fD(c.raw)}}},scales:{y:{title:{display:true,text:'# Codes',color:'#8899b0'},ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},y1:{position:'right',title:{display:true,text:'Revenue ($)',color:'#34d399'},ticks:{color:'#34d399',callback:v=>'$'+v.toFixed(0)},grid:{display:false},min:0},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{display:false}}}}}));
 
-  // Charts 7&8: Parts & Labor
   _qa={};allMD.forEach(m=>{Object.entries(m.quarterlyData).forEach(([q,d])=>{if(!_qa[q])_qa[q]={pC:0,lC:0,tC:0,pR:0,lR:0,tR:0};const a=_qa[q];a.pC+=d.pC;a.lC+=d.lC;a.tC+=d.tC;a.pR+=d.pR;a.lR+=d.lR;a.tR+=d.rep;});});
   for(let yr=sy;yr<=ey;yr++)for(let q=1;q<=4;q++){const k=`${yr} Q${q}`;if(!_qa[k])_qa[k]={pC:0,lC:0,tC:0,pR:0,lR:0,tR:0};}
   const sQA=Object.keys(_qa).sort();
-  charts.push(new Chart(document.getElementById('chParts'),{type:'line',data:{labels:sQA,datasets:[{label:'Total Parts Cost',data:sQA.map(q=>_qa[q].pC),borderColor:'#f97316',backgroundColor:'#f9731620',fill:true,tension:.3,borderWidth:2.5,pointRadius:4,yAxisID:'y'},{label:'Avg/Repair',data:sQA.map(q=>{const d=_qa[q];return d.pR>0?Math.round(d.pC/d.pR):null;}),borderColor:'#fbbf24',backgroundColor:'transparent',borderDash:[6,3],tension:.3,borderWidth:2,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length)showQDet(sQA[el[0].index],'parts');},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fD(c.raw)}}},scales:{y:{title:{display:true,text:'Total Cost',color:'#f97316'},ticks:{color:'#f97316',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#1e3050'}},y1:{position:'right',title:{display:true,text:'Avg/Repair',color:'#fbbf24'},ticks:{color:'#fbbf24',callback:v=>'$'+v},grid:{display:false}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{display:false}}}}}));
+  charts.push(new Chart(document.getElementById('chParts'),{type:'line',data:{labels:sQA,datasets:[{label:'Total Parts Cost',data:sQA.map(q=>_qa[q].pC),borderColor:'#f97316',backgroundColor:'#f9731620',fill:true,tension:.3,borderWidth:2.5,pointRadius:4,yAxisID:'y'},{label:'Avg/Repair',data:sQA.map(q=>{const d=_qa[q];return d.pR>0?Math.round(d.pC/d.pR):null;}),borderColor:'#fbbf24',backgroundColor:'transparent',borderDash:[6,3],tension:.3,borderWidth:2,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length)showQD(sQA[el[0].index],'parts');},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fD(c.raw)}}},scales:{y:{title:{display:true,text:'Total Cost',color:'#f97316'},ticks:{color:'#f97316',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#1e3050'}},y1:{position:'right',title:{display:true,text:'Avg/Repair',color:'#fbbf24'},ticks:{color:'#fbbf24',callback:v=>'$'+v},grid:{display:false}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{display:false}}}}}));
+  charts.push(new Chart(document.getElementById('chLabor'),{type:'line',data:{labels:sQA,datasets:[{label:'Total Labor Cost',data:sQA.map(q=>_qa[q].lC),borderColor:'#a78bfa',backgroundColor:'#a78bfa20',fill:true,tension:.3,borderWidth:2.5,pointRadius:4,yAxisID:'y'},{label:'Avg/Repair',data:sQA.map(q=>{const d=_qa[q];return d.lR>0?Math.round(d.lC/d.lR):null;}),borderColor:'#f472b6',backgroundColor:'transparent',borderDash:[6,3],tension:.3,borderWidth:2,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length)showQD(sQA[el[0].index],'labor');},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fD(c.raw)}}},scales:{y:{title:{display:true,text:'Total Cost',color:'#a78bfa'},ticks:{color:'#a78bfa',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#1e3050'}},y1:{position:'right',title:{display:true,text:'Avg/Repair',color:'#f472b6'},ticks:{color:'#f472b6',callback:v=>'$'+v},grid:{display:false}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{display:false}}}}}));
 
-  charts.push(new Chart(document.getElementById('chLabor'),{type:'line',data:{labels:sQA,datasets:[{label:'Total Labor Cost',data:sQA.map(q=>_qa[q].lC),borderColor:'#a78bfa',backgroundColor:'#a78bfa20',fill:true,tension:.3,borderWidth:2.5,pointRadius:4,yAxisID:'y'},{label:'Avg/Repair',data:sQA.map(q=>{const d=_qa[q];return d.lR>0?Math.round(d.lC/d.lR):null;}),borderColor:'#f472b6',backgroundColor:'transparent',borderDash:[6,3],tension:.3,borderWidth:2,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length)showQDet(sQA[el[0].index],'labor');},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fD(c.raw)}}},scales:{y:{title:{display:true,text:'Total Cost',color:'#a78bfa'},ticks:{color:'#a78bfa',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#1e3050'}},y1:{position:'right',title:{display:true,text:'Avg/Repair',color:'#f472b6'},ticks:{color:'#f472b6',callback:v=>'$'+v},grid:{display:false}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{display:false}}}}}));
-
-  // Chart 9: Product in Field with HIGHLIGHT
   const topS=allMD.filter(m=>m.sold>100&&m.earliestSaleYear).sort((a,b)=>b.sold-a.sold).slice(0,10);
   let mxMo=0;topS.forEach(m=>Object.keys(m.monthlyRepairs).forEach(mo=>{mxMo=Math.max(mxMo,parseInt(mo));}));
   const bSz=3,bLbls=[];for(let i=0;i<=mxMo;i+=bSz)bLbls.push(`${i}-${i+bSz} mo`);
   charts.push(new Chart(document.getElementById('chField'),{type:'line',data:{labels:bLbls,datasets:topS.map((m,i)=>({label:m.shortName,data:bLbls.map((_,idx)=>{let s=0;for(let mo=idx*bSz;mo<(idx+1)*bSz;mo++)s+=m.monthlyRepairs[mo]||0;return s||null;}),borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'30',tension:.35,pointRadius:3,pointHoverRadius:7,borderWidth:2.5,fill:false,spanGaps:true}))},options:{
     responsive:true,interaction:{mode:'index',intersect:false},
-    onClick:(e,el)=>{if(el.length){const m=topS[el[0].datasetIndex];if(m)openDM(m.model,modelHTML(m));}},
+    onClick:(e,el)=>{if(el.length){const m=topS[el[0].datasetIndex];if(m){_modalStack=[];openDM(m.model,modelHTML(m));}}},
     onHover:(evt,ae,ch)=>{if(ae.length>0){const hi=ae[0].datasetIndex;ch.data.datasets.forEach((ds,i)=>{ds.borderWidth=i===hi?5:1.5;ds.pointRadius=i===hi?6:1;ds.borderColor=CC[i%CC.length]+(i===hi?'':'44');});}else{ch.data.datasets.forEach((ds,i)=>{ds.borderWidth=2.5;ds.pointRadius=3;ds.borderColor=CC[i%CC.length];});}ch.update('none');},
     plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,font:{size:11,family:'Space Mono'},usePointStyle:true,pointStyle:'circle'}},
       tooltip:{backgroundColor:'rgba(17,26,46,.95)',borderColor:'#2a5a8f',borderWidth:1,padding:12,titleFont:{size:13,weight:'bold'},bodyFont:{size:12,family:'Space Mono'},itemSort:(a,b)=>(b.raw||0)-(a.raw||0),
@@ -426,106 +410,104 @@ function render(){
   renderInsights(rYrs);renderSummary();
 }
 
-// ========== KPI DETAIL MODALS ==========
-function showKpiDetail(type){
-  const k=_kpi;const top=allMD.filter(m=>m.sold>0).sort((a,b)=>b.sold-a.sold).slice(0,20);
-  let h='';
+// ===== KPI DETAIL MODALS — all model rows clickable =====
+function showKD(type){
+  _modalStack=[];const k=_kpi;let h='';
   if(type==='sold'){
-    h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Total Units Sold</div><div class="value">${fmt(k.tSold)}</div></div><div class="detail-stat"><div class="label">Valid Years</div><div class="value">${MIN_YEAR}–${MAX_YEAR}</div></div><div class="detail-stat"><div class="label">Models</div><div class="value">${allMD.length}</div></div></div>`;
+    h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Total Units Sold</div><div class="value">${fmt(k.tSold)}</div></div><div class="detail-stat"><div class="label">Valid Years</div><div class="value">${MIN_YR}–${MAX_YR}</div></div><div class="detail-stat"><div class="label">Unique Models</div><div class="value">${allMD.length}</div></div></div>`;
     h+=`<div class="section-label">Sales by Year</div><table id="dtK"><thead><tr><th>Year</th><th>Units Sold</th><th>% of Total</th></tr></thead><tbody>`;
     k.salesYrs.forEach(y=>{const v=k.ytS[y]||0;h+=`<tr><td>${y}</td><td class="mono">${fmt(v)}</td><td class="mono">${k.tSold>0?fP(v/k.tSold*100):'—'}</td></tr>`;});
-    h+=`</tbody></table>`;
-    h+=`<div class="section-label">Top Models by Units Sold</div><table><thead><tr><th>Model</th><th>Units Sold</th><th>% of Total</th></tr></thead><tbody>`;
-    top.forEach(m=>{h+=`<tr><td>${m.shortName}</td><td class="mono">${fmt(m.sold)}</td><td class="mono">${fP(m.sold/k.tSold*100)}</td></tr>`;});
-    h+=`</tbody></table>`;
-    openDM('Units Sold — Detail',h+'<button class="export-btn" onclick="exportCSV(\'dtK\')">📥 Export</button>');
+    h+=`</tbody></table><div class="section-label">Top Models (click for detail)</div><table><thead><tr><th>Model</th><th>Units Sold</th><th>Warranty Rev</th><th>Repair Cost</th></tr></thead><tbody>`;
+    allMD.filter(m=>m.sold>0).sort((a,b)=>b.sold-a.sold).slice(0,25).forEach(m=>{h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fmt(m.sold)}</td><td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fD(m.actualCost)}</td></tr>`;});
+    h+=`</tbody></table>`;openDM('Units Sold — Detail',h+xBtn());
   } else if(type==='repairs'){
     h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Total Repairs</div><div class="value">${fmt(k.tRep)}</div></div></div>`;
     h+=`<div class="section-label">Repairs by Year</div><table id="dtK"><thead><tr><th>Year</th><th>Repairs</th><th>Cost</th></tr></thead><tbody>`;
     k.rYrs.forEach(y=>{h+=`<tr><td>${y}</td><td class="mono">${fmt(k.ytR[y]||0)}</td><td class="mono">${fD(k.ytC[y]||0)}</td></tr>`;});
-    h+=`</tbody></table>`;
-    h+=`<div class="section-label">Top Models by Repair Count</div><table><thead><tr><th>Model</th><th>Repairs</th><th>Rate</th><th>Cost</th></tr></thead><tbody>`;
-    allMD.sort((a,b)=>b.total-a.total).slice(0,20).forEach(m=>{h+=`<tr><td>${m.shortName}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${m.repairRate!=null?fP(m.repairRate):'N/A'}</td><td class="mono">${fD(m.actualCost)}</td></tr>`;});
-    h+=`</tbody></table>`;openDM('Total Repairs — Detail',h+'<button class="export-btn" onclick="exportCSV(\'dtK\')">📥 Export</button>');
+    h+=`</tbody></table><div class="section-label">Top Models (click for detail)</div><table><thead><tr><th>Model</th><th>Repairs</th><th>Rate</th><th>Cost</th><th>Warranty Rev</th></tr></thead><tbody>`;
+    allMD.sort((a,b)=>b.total-a.total).slice(0,25).forEach(m=>{h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fmt(m.total)}</td><td class="mono">${m.repairRate!=null?fP(m.repairRate):'N/A'}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono">${fD(m.warrantyRevenue)}</td></tr>`;});
+    h+=`</tbody></table>`;openDM('Total Repairs — Detail',h+xBtn());
   } else if(type==='rate'){
-    h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Overall Rate</div><div class="value">${fP(k.oRate)}</div></div><div class="detail-stat"><div class="label">Formula</div><div class="value" style="font-size:12px">${fmt(k.tRep)} ÷ ${fmt(k.tSold)}</div></div></div>`;
-    h+=`<div class="section-label">Models by Repair Rate (highest first)</div><table id="dtK"><thead><tr><th>Model</th><th>Rate</th><th>Repairs</th><th>Sold</th></tr></thead><tbody>`;
-    allMD.filter(m=>m.repairRate!=null).sort((a,b)=>b.repairRate-a.repairRate).slice(0,25).forEach(m=>{h+=`<tr><td>${m.shortName}</td><td class="mono">${fP(m.repairRate)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${fmt(m.sold)}</td></tr>`;});
-    h+=`</tbody></table>`;openDM('Repair Rate — Detail',h+'<button class="export-btn" onclick="exportCSV(\'dtK\')">📥 Export</button>');
+    h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Overall Repair Rate</div><div class="value">${fP(k.oRate)}</div></div><div class="detail-stat"><div class="label">Total Repairs ÷ Total Sold</div><div class="value" style="font-size:14px">${fmt(k.tRep)} repairs ÷ ${fmt(k.tSold)} sold</div></div></div>`;
+    h+=`<div class="section-label">Models by Repair Rate (click for detail)</div><table id="dtK"><thead><tr><th>Model</th><th>Rate</th><th>Repairs</th><th>Sold</th><th>Cost</th><th>Warranty Rev</th></tr></thead><tbody>`;
+    allMD.filter(m=>m.repairRate!=null).sort((a,b)=>b.repairRate-a.repairRate).slice(0,25).forEach(m=>{h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fP(m.repairRate)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${fmt(m.sold)}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono">${fD(m.warrantyRevenue)}</td></tr>`;});
+    h+=`</tbody></table>`;openDM('Repair Rate — Detail',h+xBtn());
   } else if(type==='cost'){
     h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Actual Cost</div><div class="value">${fD(k.tCost)}</div></div><div class="detail-stat"><div class="label">Estimated</div><div class="value">${fD(k.tEst)}</div></div><div class="detail-stat"><div class="label">Avg/Repair</div><div class="value">${k.tRep>0?fD(k.tCost/k.tRep):'—'}</div></div></div>`;
     h+=`<div class="section-label">Cost by Year</div><table id="dtK"><thead><tr><th>Year</th><th>Cost</th><th>Repairs</th><th>Avg</th></tr></thead><tbody>`;
     k.rYrs.forEach(y=>{const c=k.ytC[y]||0,r=k.ytR[y]||0;h+=`<tr><td>${y}</td><td class="mono">${fD(c)}</td><td class="mono">${fmt(r)}</td><td class="mono">${r>0?fD(c/r):'—'}</td></tr>`;});
-    h+=`</tbody></table>`;
-    h+=`<div class="section-label">Top Models by Cost</div><table><thead><tr><th>Model</th><th>Cost</th><th>Repairs</th><th>Avg</th></tr></thead><tbody>`;
-    [...allMD].sort((a,b)=>b.actualCost-a.actualCost).slice(0,20).forEach(m=>{h+=`<tr><td>${m.shortName}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${m.total>0?fD(m.actualCost/m.total):'—'}</td></tr>`;});
-    h+=`</tbody></table>`;openDM('Repair Cost — Detail',h+'<button class="export-btn" onclick="exportCSV(\'dtK\')">📥 Export</button>');
+    h+=`</tbody></table><div class="section-label">Top Models (click for detail)</div><table><thead><tr><th>Model</th><th>Cost</th><th>Repairs</th><th>Warranty Rev</th><th>Net P/L</th></tr></thead><tbody>`;
+    [...allMD].sort((a,b)=>b.actualCost-a.actualCost).slice(0,25).forEach(m=>{h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fD(m.actualCost)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fD(m.netPL)}</td></tr>`;});
+    h+=`</tbody></table>`;openDM('Repair Cost — Detail',h+xBtn());
   } else if(type==='accidental'){
     h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Accidental</div><div class="value">${fmt(k.tAcc)}</div></div><div class="detail-stat"><div class="label">% of Repairs</div><div class="value">${fP(k.accP)}</div></div></div>`;
-    h+=`<div class="section-label">Models by Accidental %</div><table id="dtK"><thead><tr><th>Model</th><th>Accidental</th><th>Total</th><th>%</th></tr></thead><tbody>`;
-    allMD.filter(m=>m.accidental>0).sort((a,b)=>(b.accidental/b.total)-(a.accidental/a.total)).slice(0,25).forEach(m=>{h+=`<tr><td>${m.shortName}</td><td class="mono">${fmt(m.accidental)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${fP(m.accidental/m.total*100)}</td></tr>`;});
-    h+=`</tbody></table>`;openDM('Accidental Damage — Detail',h+'<button class="export-btn" onclick="exportCSV(\'dtK\')">📥 Export</button>');
+    h+=`<div class="section-label">Models by Accidental % (click for detail)</div><table id="dtK"><thead><tr><th>Model</th><th>Accidental</th><th>Total</th><th>%</th><th>Warranty Rev</th></tr></thead><tbody>`;
+    allMD.filter(m=>m.accidental>0).sort((a,b)=>(b.accidental/b.total)-(a.accidental/a.total)).slice(0,25).forEach(m=>{h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fmt(m.accidental)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${fP(m.accidental/m.total*100)}</td><td class="mono">${fD(m.warrantyRevenue)}</td></tr>`;});
+    h+=`</tbody></table>`;openDM('Accidental Damage — Detail',h+xBtn());
   } else if(type==='warranty'){
     h=`<div class="detail-stats"><div class="detail-stat"><div class="label">In Warranty</div><div class="value">${fmt(k.tInW)}</div></div><div class="detail-stat"><div class="label">Out of Warranty</div><div class="value">${fmt(k.tOutW)}</div></div><div class="detail-stat"><div class="label">In Warranty %</div><div class="value">${fP(k.inWP)}</div></div></div>`;
-    h+=`<div class="section-label">Models by In-Warranty %</div><table id="dtK"><thead><tr><th>Model</th><th>In W</th><th>Out W</th><th>%</th></tr></thead><tbody>`;
-    allMD.filter(m=>(m.inWarranty+m.outWarranty)>0).sort((a,b)=>(b.inWarranty/(b.inWarranty+b.outWarranty))-(a.inWarranty/(a.inWarranty+a.outWarranty))).slice(0,25).forEach(m=>{const t=m.inWarranty+m.outWarranty;h+=`<tr><td>${m.shortName}</td><td class="mono">${fmt(m.inWarranty)}</td><td class="mono">${fmt(m.outWarranty)}</td><td class="mono">${fP(m.inWarranty/t*100)}</td></tr>`;});
-    h+=`</tbody></table>`;openDM('Warranty Status — Detail',h+'<button class="export-btn" onclick="exportCSV(\'dtK\')">📥 Export</button>');
+    h+=`<div class="section-label">Models (click for detail)</div><table id="dtK"><thead><tr><th>Model</th><th>In W</th><th>Out W</th><th>% In</th><th>Cost</th></tr></thead><tbody>`;
+    allMD.filter(m=>(m.inWarranty+m.outWarranty)>0).sort((a,b)=>(b.inWarranty/(b.inWarranty+b.outWarranty))-(a.inWarranty/(a.inWarranty+a.outWarranty))).slice(0,25).forEach(m=>{const t=m.inWarranty+m.outWarranty;h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fmt(m.inWarranty)}</td><td class="mono">${fmt(m.outWarranty)}</td><td class="mono">${fP(m.inWarranty/t*100)}</td><td class="mono">${fD(m.actualCost)}</td></tr>`;});
+    h+=`</tbody></table>`;openDM('Warranty Status — Detail',h+xBtn());
   } else if(type==='revenue'){
     h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Total Warranty Rev</div><div class="value">${fD(k.tWRev)}</div></div></div>`;
     h+=`<div class="section-label">Revenue by Year</div><table id="dtK"><thead><tr><th>Year</th><th>Revenue</th></tr></thead><tbody>`;
     k.salesYrs.forEach(y=>{h+=`<tr><td>${y}</td><td class="mono">${fD(k.ytWR[y]||0)}</td></tr>`;});
-    h+=`</tbody></table>`;
-    h+=`<div class="section-label">Top Models by Revenue</div><table><thead><tr><th>Model</th><th>Revenue</th><th>Sold</th></tr></thead><tbody>`;
-    [...allMD].sort((a,b)=>b.warrantyRevenue-a.warrantyRevenue).slice(0,20).forEach(m=>{h+=`<tr><td>${m.shortName}</td><td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fmt(m.sold)}</td></tr>`;});
-    h+=`</tbody></table>`;openDM('Warranty Revenue — Detail',h+'<button class="export-btn" onclick="exportCSV(\'dtK\')">📥 Export</button>');
+    h+=`</tbody></table><div class="section-label">Top Models (click for detail)</div><table><thead><tr><th>Model</th><th>Revenue</th><th>Sold</th><th>Cost</th><th>Net P/L</th></tr></thead><tbody>`;
+    [...allMD].sort((a,b)=>b.warrantyRevenue-a.warrantyRevenue).slice(0,25).forEach(m=>{h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fmt(m.sold)}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fD(m.netPL)}</td></tr>`;});
+    h+=`</tbody></table>`;openDM('Warranty Revenue — Detail',h+xBtn());
   } else if(type==='pl'){
     h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Warranty Rev</div><div class="value">${fD(k.tWRev)}</div></div><div class="detail-stat"><div class="label">Repair Rev</div><div class="value">${fD(k.tRRev)}</div></div><div class="detail-stat"><div class="label">Total Cost</div><div class="value">${fD(k.tCost)}</div></div><div class="detail-stat"><div class="label">Net P/L</div><div class="value" style="color:${k.nPL>=0?'var(--positive)':'var(--negative)'}">${fD(k.nPL)}</div></div></div>`;
-    h+=`<div class="section-label">P/L by Model</div><table id="dtK"><thead><tr><th>Model</th><th>W.Rev</th><th>Cost</th><th>Net P/L</th></tr></thead><tbody>`;
-    [...allMD].sort((a,b)=>b.netPL-a.netPL).slice(0,25).forEach(m=>{h+=`<tr><td>${m.shortName}</td><td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fD(m.netPL)}</td></tr>`;});
-    h+=`</tbody></table>`;openDM('Net P/L — Detail',h+'<button class="export-btn" onclick="exportCSV(\'dtK\')">📥 Export</button>');
+    h+=`<div class="section-label">P/L by Model (click for detail)</div><table id="dtK"><thead><tr><th>Model</th><th>W.Rev</th><th>Cost</th><th>Net P/L</th></tr></thead><tbody>`;
+    [...allMD].sort((a,b)=>b.netPL-a.netPL).slice(0,25).forEach(m=>{h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fD(m.netPL)}</td></tr>`;});
+    h+=`</tbody></table>`;openDM('Net P/L — Detail',h+xBtn());
   }
 }
+function xBtn(){return '<button class="export-btn" onclick="exportCSV(\'dtK\')">📥 Export</button>';}
 
-// ========== CHART DETAIL MODALS ==========
-function showYrDet(yr,type){
+// ===== CHART DETAIL MODALS — all model rows clickable =====
+function showYD(yr,type){
+  _modalStack=[];
   const ms=allMD.filter(m=>(type==='sold'?m.yearlySold[yr]:m.yearlyWarrantyRevenue[yr])).sort((a,b)=>(type==='sold'?(b.yearlySold[yr]||0)-(a.yearlySold[yr]||0):(b.yearlyWarrantyRevenue[yr]||0)-(a.yearlyWarrantyRevenue[yr]||0))).slice(0,25);
   const tot=type==='sold'?ms.reduce((s,m)=>s+(m.yearlySold[yr]||0),0):ms.reduce((s,m)=>s+(m.yearlyWarrantyRevenue[yr]||0),0);
   let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Year</div><div class="value">${yr}</div></div><div class="detail-stat"><div class="label">${type==='sold'?'Total Sold':'Total Rev'}</div><div class="value">${type==='sold'?fmt(tot):fD(tot)}</div></div></div>`;
-  h+=`<table id="dtY"><thead><tr><th>Model</th><th>${type==='sold'?'Sold':'Revenue'}</th><th>%</th></tr></thead><tbody>`;
-  ms.forEach(m=>{const v=type==='sold'?(m.yearlySold[yr]||0):(m.yearlyWarrantyRevenue[yr]||0);h+=`<tr><td>${m.shortName}</td><td class="mono">${type==='sold'?fmt(v):fD(v)}</td><td class="mono">${tot>0?fP(v/tot*100):'—'}</td></tr>`;});
+  h+=`<div class="section-label">Click model for warranty &amp; cost detail</div><table id="dtY"><thead><tr><th>Model</th><th>${type==='sold'?'Sold':'Revenue'}</th><th>%</th><th>Warranty Rev</th><th>Repair Cost</th></tr></thead><tbody>`;
+  ms.forEach(m=>{const v=type==='sold'?(m.yearlySold[yr]||0):(m.yearlyWarrantyRevenue[yr]||0);h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${type==='sold'?fmt(v):fD(v)}</td><td class="mono">${tot>0?fP(v/tot*100):'—'}</td><td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fD(m.actualCost)}</td></tr>`;});
   h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtY')">📥 Export</button>`;openDM(`${yr} — ${type==='sold'?'Units Sold':'Revenue'}`,h);
 }
-function showCodeDet(code){
-  const d=_ca[code];if(!d)return;const ms=(d.models||[]).sort((a,b)=>b.cnt-a.cnt);
+function showCD(code){
+  _modalStack=[];const d=_ca[code];if(!d)return;const ms=(d.models||[]).sort((a,b)=>b.cnt-a.cnt);
   let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Code</div><div class="value" style="font-size:16px">${code}</div></div><div class="detail-stat"><div class="label">Claims</div><div class="value">${fmt(d.cnt)}</div></div><div class="detail-stat"><div class="label">Cost</div><div class="value">${fD(d.cost)}</div></div><div class="detail-stat"><div class="label">Sold</div><div class="value">${fmt(d.qS)}</div></div><div class="detail-stat"><div class="label">Revenue</div><div class="value">${fD(d.wR)}</div></div></div>`;
-  if(ms.length){h+=`<table id="dtC"><thead><tr><th>Model</th><th>Claims</th><th>Cost</th><th>%</th></tr></thead><tbody>`;ms.forEach(m=>{h+=`<tr><td>${m.n}</td><td class="mono">${fmt(m.cnt)}</td><td class="mono">${fD(m.cost)}</td><td class="mono">${d.cnt>0?fP(m.cnt/d.cnt*100):'—'}</td></tr>`;});h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtC')">📥 Export</button>`;}
+  if(ms.length){h+=`<div class="section-label">Click model for full detail</div><table id="dtC"><thead><tr><th>Model</th><th>Claims</th><th>Cost</th><th>%</th></tr></thead><tbody>`;
+    ms.forEach(m=>{h+=`<tr class="clickable-row">${mL(m.n,m.item)}<td class="mono">${fmt(m.cnt)}</td><td class="mono">${fD(m.cost)}</td><td class="mono">${d.cnt>0?fP(m.cnt/d.cnt*100):'—'}</td></tr>`;});
+    h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtC')">📥 Export</button>`;}
   openDM(`${code} — Detail`,h);
 }
-function showSevDet(type){
-  let ms;if(type==='Major')ms=allMD.filter(m=>m.major>0).sort((a,b)=>b.major-a.major).slice(0,25);else if(type==='Minor')ms=allMD.filter(m=>m.minor>0).sort((a,b)=>b.minor-a.minor).slice(0,25);else ms=allMD.filter(m=>m.npu>0).sort((a,b)=>b.npu-a.npu).slice(0,25);
+function showSD(type){
+  _modalStack=[];let ms;if(type==='Major')ms=allMD.filter(m=>m.major>0).sort((a,b)=>b.major-a.major).slice(0,25);else if(type==='Minor')ms=allMD.filter(m=>m.minor>0).sort((a,b)=>b.minor-a.minor).slice(0,25);else ms=allMD.filter(m=>m.npu>0).sort((a,b)=>b.npu-a.npu).slice(0,25);
   const tot=type==='Major'?ms.reduce((s,m)=>s+m.major,0):type==='Minor'?ms.reduce((s,m)=>s+m.minor,0):ms.reduce((s,m)=>s+m.npu,0);
   let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">${type}</div><div class="value">${fmt(tot)}</div></div></div>`;
-  h+=`<table id="dtS"><thead><tr><th>Model</th><th>${type}</th><th>Total</th><th>%</th></tr></thead><tbody>`;
-  ms.forEach(m=>{const c=type==='Major'?m.major:type==='Minor'?m.minor:m.npu;h+=`<tr><td>${m.shortName}</td><td class="mono">${fmt(c)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${fP(c/m.total*100)}</td></tr>`;});
+  h+=`<div class="section-label">Click model for full detail</div><table id="dtS"><thead><tr><th>Model</th><th>${type}</th><th>Total</th><th>%</th><th>Cost</th></tr></thead><tbody>`;
+  ms.forEach(m=>{const c=type==='Major'?m.major:type==='Minor'?m.minor:m.npu;h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fmt(c)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${fP(c/m.total*100)}</td><td class="mono">${fD(m.actualCost)}</td></tr>`;});
   h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtS')">📥 Export</button>`;openDM(`${type} Repairs`,h);
 }
-function showBinDet(bin){
-  let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Range</div><div class="value" style="font-size:16px">${bin.label}</div></div><div class="detail-stat"><div class="label">Codes</div><div class="value">${bin.n}</div></div></div>`;
+function showBD(bin){
+  _modalStack=[];let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Range</div><div class="value" style="font-size:16px">${bin.label}</div></div><div class="detail-stat"><div class="label">Codes</div><div class="value">${bin.n}</div></div></div>`;
   if(bin.codes.length){h+=`<table id="dtB"><thead><tr><th>Code</th><th>Claims</th><th>Avg Cost</th><th>Sold</th><th>Revenue</th></tr></thead><tbody>`;
     bin.codes.sort((a,b)=>b.cnt-a.cnt).forEach(c=>{h+=`<tr><td>${c.code}</td><td class="mono">${fmt(c.cnt)}</td><td class="mono">${fD(c.avgC)}</td><td class="mono">${fmt(c.qS)}</td><td class="mono">${fD(c.wR)}</td></tr>`;});
     h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtB')">📥 Export</button>`;}
   openDM(`Cost: ${bin.label}`,h);
 }
-function showQDet(q,type){
-  const d=_qa[q];if(!d)return;const lb=type==='parts'?'Parts':'Labor',tc=type==='parts'?d.pC:d.lC,tr=type==='parts'?d.pR:d.lR;
-  const mb=[];allMD.forEach(m=>{const qd=m.quarterlyData[q];if(qd){const c=type==='parts'?qd.pC:qd.lC,r=type==='parts'?qd.pR:qd.lR;if(r>0)mb.push({n:m.shortName,c,r});}});mb.sort((a,b)=>b.c-a.c);
+function showQD(q,type){
+  _modalStack=[];const d=_qa[q];if(!d)return;const lb=type==='parts'?'Parts':'Labor',tc=type==='parts'?d.pC:d.lC,tr=type==='parts'?d.pR:d.lR;
+  const mb=[];allMD.forEach(m=>{const qd=m.quarterlyData[q];if(qd){const c=type==='parts'?qd.pC:qd.lC,r=type==='parts'?qd.pR:qd.lR;if(r>0)mb.push({n:m.shortName,item:m.itemNumber,c,r});}});mb.sort((a,b)=>b.c-a.c);
   let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Quarter</div><div class="value">${q}</div></div><div class="detail-stat"><div class="label">${lb} Cost</div><div class="value">${fD(tc)}</div></div><div class="detail-stat"><div class="label">Repairs</div><div class="value">${fmt(tr)}</div></div><div class="detail-stat"><div class="label">Avg</div><div class="value">${tr>0?fD(tc/tr):'—'}</div></div></div>`;
-  h+=`<table id="dtQ"><thead><tr><th>Model</th><th>Repairs</th><th>Cost</th><th>Avg</th></tr></thead><tbody>`;
-  mb.slice(0,20).forEach(m=>{h+=`<tr><td>${m.n}</td><td class="mono">${fmt(m.r)}</td><td class="mono">${fD(m.c)}</td><td class="mono">${fD(m.c/m.r)}</td></tr>`;});
+  h+=`<div class="section-label">Click model for full detail</div><table id="dtQ"><thead><tr><th>Model</th><th>Repairs</th><th>Cost</th><th>Avg</th></tr></thead><tbody>`;
+  mb.slice(0,25).forEach(m=>{h+=`<tr class="clickable-row">${mL(m.n,m.item)}<td class="mono">${fmt(m.r)}</td><td class="mono">${fD(m.c)}</td><td class="mono">${fD(m.c/m.r)}</td></tr>`;});
   h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtQ')">📥 Export</button>`;openDM(`${q} — ${lb}`,h);
 }
 
-// ========== INSIGHTS (clickable) ==========
+// ===== INSIGHTS =====
 function renderInsights(yrs){
   const g=document.getElementById('insightGrid');
   const rByY=yrs.map(y=>{let r=0;allMD.forEach(m=>{r+=m.yearlyRepairs[y]?.rep||0;});return r;});
@@ -535,20 +517,20 @@ function renderInsights(yrs){
   const hC=[...allMD].sort((a,b)=>b.actualCost-a.actualCost)[0];
   const tw=allMD.reduce((s,m)=>s+m.warrantyRevenue,0),tc=allMD.reduce((s,m)=>s+m.actualCost,0),tr=allMD.reduce((s,m)=>s+m.repairRevenue,0),n=tw+tr-tc;
   let h='';
-  h+=`<div class="insight-card" onclick="showKpiDetail('repairs')"><div class="insight-title">Repair Volume Trend</div>Repair count is <span class="trend-indicator trend-${rT.c}">${rT.t}</span>. ${yrs.map((y,i)=>`${y}: <strong>${fmt(rByY[i])}</strong>`).join(' → ')}</div>`;
-  h+=`<div class="insight-card" onclick="showKpiDetail('cost')"><div class="insight-title">Cost Trend</div>Total cost is <span class="trend-indicator trend-${cT.c}">${cT.t}</span>. ${yrs.map((y,i)=>`${y}: <strong>${fD(cByY[i])}</strong>`).join(' → ')}</div>`;
-  if(hR)h+=`<div class="insight-card" onclick='openDM("${hR.model.replace(/'/g,"\\'")}",modelHTML(allMD.find(x=>x.itemNumber==="${hR.itemNumber}")))'><div class="insight-title">Highest Repair Rate</div><strong>${hR.shortName}</strong> at <strong>${fP(hR.repairRate)}</strong> (${fmt(hR.total)} / ${fmt(hR.sold)} sold)</div>`;
-  if(lR)h+=`<div class="insight-card" onclick='openDM("${lR.model.replace(/'/g,"\\'")}",modelHTML(allMD.find(x=>x.itemNumber==="${lR.itemNumber}")))'><div class="insight-title">Most Reliable (50+ sold)</div><strong>${lR.shortName}</strong> at <strong>${fP(lR.repairRate)}</strong> (${fmt(lR.total)} / ${fmt(lR.sold)} sold)</div>`;
-  if(hC)h+=`<div class="insight-card" onclick='openDM("${hC.model.replace(/'/g,"\\'")}",modelHTML(allMD.find(x=>x.itemNumber==="${hC.itemNumber}")))'><div class="insight-title">Highest Cost Model</div><strong>${hC.shortName}</strong>: <strong>${fD(hC.actualCost)}</strong> across ${fmt(hC.total)} repairs</div>`;
-  h+=`<div class="insight-card" onclick="showKpiDetail('pl')"><div class="insight-title">Net P/L</div>Rev <strong>${fD(tw)}</strong> + Repair Rev <strong>${fD(tr)}</strong> − Cost <strong>${fD(tc)}</strong> = <strong style="color:${n>=0?'var(--positive)':'var(--negative)'}">${fD(n)}</strong></div>`;
+  h+=`<div class="insight-card" onclick="showKD('repairs')"><div class="insight-title">Repair Volume Trend</div>Count is <span class="trend-indicator trend-${rT.c}">${rT.t}</span>. ${yrs.map((y,i)=>`${y}: <strong>${fmt(rByY[i])}</strong>`).join(' → ')}</div>`;
+  h+=`<div class="insight-card" onclick="showKD('cost')"><div class="insight-title">Cost Trend</div>Total cost is <span class="trend-indicator trend-${cT.c}">${cT.t}</span>. ${yrs.map((y,i)=>`${y}: <strong>${fD(cByY[i])}</strong>`).join(' → ')}</div>`;
+  if(hR)h+=`<div class="insight-card" onclick="_modalStack=[];openDM('${hR.model.replace(/'/g,"\\'")}',modelHTML(allMD.find(x=>x.itemNumber==='${hR.itemNumber}')))"><div class="insight-title">Highest Repair Rate</div><strong>${hR.shortName}</strong> at <strong>${fP(hR.repairRate)}</strong> (${fmt(hR.total)}/${fmt(hR.sold)})</div>`;
+  if(lR)h+=`<div class="insight-card" onclick="_modalStack=[];openDM('${lR.model.replace(/'/g,"\\'")}',modelHTML(allMD.find(x=>x.itemNumber==='${lR.itemNumber}')))"><div class="insight-title">Most Reliable (50+ sold)</div><strong>${lR.shortName}</strong> at <strong>${fP(lR.repairRate)}</strong> (${fmt(lR.total)}/${fmt(lR.sold)})</div>`;
+  if(hC)h+=`<div class="insight-card" onclick="_modalStack=[];openDM('${hC.model.replace(/'/g,"\\'")}',modelHTML(allMD.find(x=>x.itemNumber==='${hC.itemNumber}')))"><div class="insight-title">Highest Cost Model</div><strong>${hC.shortName}</strong>: <strong>${fD(hC.actualCost)}</strong> across ${fmt(hC.total)} repairs</div>`;
+  h+=`<div class="insight-card" onclick="showKD('pl')"><div class="insight-title">Net P/L</div>Rev <strong>${fD(tw)}</strong> + Repair Rev <strong>${fD(tr)}</strong> − Cost <strong>${fD(tc)}</strong> = <strong style="color:${n>=0?'var(--positive)':'var(--negative)'}">${fD(n)}</strong></div>`;
   g.innerHTML=h;
 }
 function renderSummary(){
   const b=document.getElementById('summaryBody');const{sy,ey}=getDR();const yrs=[];for(let y=sy;y<=ey;y++)yrs.push(y.toString());
   const top=allMD.filter(m=>m.sold>0).sort((a,b)=>b.sold-a.sold).slice(0,20);
   b.innerHTML=top.map(m=>{const rv=yrs.map(y=>m.yearlyRepairs[y]?.rep||0);const t=trd(rv);
-    return`<tr style="cursor:pointer" onclick='openDM("${m.model.replace(/'/g,"\\'")}",modelHTML(allMD.find(x=>x.itemNumber==="${m.itemNumber}")))'>
-      <td>${m.shortName}</td><td class="mono">${fmt(m.sold)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${m.repairRate!=null?fP(m.repairRate):'N/A'}</td><td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fD(m.netPL)}</td><td><span class="trend-indicator trend-${t.c}">${t.t}</span></td></tr>`;}).join('');
+    return`<tr class="clickable-row" onclick="_modalStack=[];openDM('${m.model.replace(/'/g,"\\'")}',modelHTML(allMD.find(x=>x.itemNumber==='${m.itemNumber}')))">
+      <td><span class="m-link">${m.shortName}</span></td><td class="mono">${fmt(m.sold)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${m.repairRate!=null?fP(m.repairRate):'N/A'}</td><td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fD(m.netPL)}</td><td><span class="trend-indicator trend-${t.c}">${t.t}</span></td></tr>`;}).join('');
 }
 
 document.getElementById('pwInput').focus();
