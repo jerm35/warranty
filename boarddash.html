@@ -164,7 +164,7 @@ tr.clickable-row:hover td{background:rgba(34,211,238,.06)}
   <div class="section-header"><h2>Claim Frequency &amp; Severity</h2><span class="badge badge-yellow">Claims Analysis</span></div>
   <div class="chart-grid">
     <div class="chart-card" data-clickable><h3>Claim Frequency by Warranty Code</h3><div class="chart-subtitle">Claims per warranty program</div><canvas id="chFreq"></canvas></div>
-    <div class="chart-card" data-clickable><h3>Claim Severity</h3><div class="chart-subtitle">Major vs Minor vs NPU/NPF</div><canvas id="chSev"></canvas></div>
+    <div class="chart-card" data-clickable><h3>Claim Severity</h3><div class="chart-subtitle">Major vs Minor vs NPU vs NPF</div><canvas id="chSev"></canvas></div>
   </div>
   <div class="section-header"><h2>Breakage Rate Trends</h2><span class="badge badge-red">3-Year Trend</span></div>
   <div class="chart-grid">
@@ -299,23 +299,23 @@ function go(){
   const grp={};filt.forEach(r=>{const it=(r['Item Number']||'').trim();if(!grp[it])grp[it]=[];grp[it].push(r);});
   allMD=[];
   Object.entries(grp).forEach(([itemN,rows])=>{
-    const model=rows[0]['Model Name'].trim();let tot=rows.length,maj=0,min=0,npu=0,acc=0,aC=0,eC=0,rR=0,inW=0,outW=0;
+    const model=rows[0]['Model Name'].trim();let tot=rows.length,maj=0,min=0,npu=0,npf=0,acc=0,aC=0,eC=0,rR=0,inW=0,outW=0;
     const yR={},rTC={},qD={},wCR={};
     rows.forEach(r=>{
-      const rep=(r['Repair']||'').trim(),isMaj=(r['Major Repairs']||'').trim().toLowerCase()==='yes',isNPU=/npu|npf/i.test(rep);
+      const rep=(r['Repair']||'').trim(),isMaj=(r['Major Repairs']||'').trim().toLowerCase()==='yes',isNPU=/^npu$/i.test(rep),isNPF=/^npf$/i.test(rep),isNPX=isNPU||isNPF;
       const isAcc=['yes','liquid'].includes((r['Accidental Damage']||'').trim().toLowerCase());
       const cost=(parseFloat(r['Costs'])||0)+SHIP,est=EC[rep]||50,rev=parseFloat(r['Repair Revenue'])||0;
       const ws=(r['Warranty Status']||'').trim(),wc=(r['Warranty Code']||'').trim();
       const d=pD(r['Order Received Date']),yr=d?d.getFullYear().toString():'?',qt=d?qL(d):'?';
-      if(isNPU)npu++;else if(isMaj)maj++;else min++;if(isAcc)acc++;aC+=cost;eC+=est;rR+=rev;
+      if(isNPU)npu++;else if(isNPF)npf++;else if(isMaj)maj++;else min++;if(isAcc)acc++;aC+=cost;eC+=est;rR+=rev;
       if(ws==='In Warranty')inW++;else if(ws==='Out of Warranty')outW++;rTC[rep]=(rTC[rep]||0)+1;
-      if(!yR[yr])yR[yr]={rep:0,cost:0,est:0,rRev:0,maj:0,min:0,npu:0,acc:0,inW:0,outW:0};
-      const y=yR[yr];y.rep++;y.cost+=cost;y.est+=est;y.rRev+=rev;if(isNPU)y.npu++;else if(isMaj)y.maj++;else y.min++;if(isAcc)y.acc++;if(ws==='In Warranty')y.inW++;else if(ws==='Out of Warranty')y.outW++;
+      if(!yR[yr])yR[yr]={rep:0,cost:0,est:0,rRev:0,maj:0,min:0,npu:0,npf:0,acc:0,inW:0,outW:0};
+      const y=yR[yr];y.rep++;y.cost+=cost;y.est+=est;y.rRev+=rev;if(isNPU)y.npu++;else if(isNPF)y.npf++;else if(isMaj)y.maj++;else y.min++;if(isAcc)y.acc++;if(ws==='In Warranty')y.inW++;else if(ws==='Out of Warranty')y.outW++;
       if(!qD[qt])qD[qt]={rep:0,pC:0,lC:0,tC:0,labActual:0,labAssumed:0};const q=qD[qt];q.rep++;q.tC+=cost;
       const oid=(r['Order Id']||'').trim(),cEntry=costsLU[oid];
       let labC;
       if(cEntry&&cEntry.isLabor){labC=cEntry.laborRate;q.labActual++;}
-      else{const isOS=/os issue/i.test(rep);labC=isNPU||isOS?10:isMaj?30:15;q.labAssumed++;}
+      else{const isOS=/os issue/i.test(rep);labC=isNPX||isOS?10:isMaj?30:15;q.labAssumed++;}
       q.lC+=labC;q.pC+=Math.max(0,cost-labC);
       if(wc){if(!wCR[wc])wCR[wc]={cnt:0,cost:0,est:0};wCR[wc].cnt++;wCR[wc].cost+=cost;wCR[wc].est+=est;}
     });
@@ -328,7 +328,7 @@ function go(){
     const sn=model.replace(/^CTL Chromebook /i,'').replace(/^CTL /i,'').substring(0,30);
     let eY=null;Object.keys(yS).forEach(yr=>{const y=parseInt(yr);if(vY(yr)&&(!eY||y<eY))eY=y;});
     const mR={};if(eY)rows.forEach(r=>{const d=pD(r['Order Received Date']);if(!d)return;const mo=(d.getFullYear()-eY)*12+d.getMonth();if(mo>=0)mR[mo]=(mR[mo]||0)+1;});
-    allMD.push({model,itemNumber:itemN,shortName:sn,total:tot,major:maj,minor:min,npu,accidental:acc,actualCost:aC,estimatedCost:eC,repairRevenue:rR,inWarranty:inW,outWarranty:outW,sold,warrantyRevenue:wRev,repairRate:rr,netPL:nPL,yearlyRepairs:yR,yearlySold:yS,yearlyWarrantyRevenue:yWR,quarterlyData:qD,repairTypeCounts:rTC,warrantyCodeRepairs:wCR,monthlyRepairs:mR,earliestSaleYear:eY});
+    allMD.push({model,itemNumber:itemN,shortName:sn,total:tot,major:maj,minor:min,npu,npf,accidental:acc,actualCost:aC,estimatedCost:eC,repairRevenue:rR,inWarranty:inW,outWarranty:outW,sold,warrantyRevenue:wRev,repairRate:rr,netPL:nPL,yearlyRepairs:yR,yearlySold:yS,yearlyWarrantyRevenue:yWR,quarterlyData:qD,repairTypeCounts:rTC,warrantyCodeRepairs:wCR,monthlyRepairs:mR,earliestSaleYear:eY});
   });
   allMD.sort((a,b)=>b.total-a.total);
   document.getElementById('dateLabel').textContent=`Repairs: ${document.getElementById('startDate').value} — ${document.getElementById('endDate').value} | Sales: All (${MIN_YR}–${MAX_YR})`;
@@ -351,7 +351,7 @@ function modelHTML(m){
     <div class="detail-stat"><div class="label">Total Cost</div><div class="value">${fD(m.actualCost)}</div></div>
     <div class="detail-stat"><div class="label">Warranty Rev</div><div class="value">${fD(m.warrantyRevenue)}</div></div>
     <div class="detail-stat"><div class="label">Net P/L</div><div class="value" style="color:${m.netPL>=0?'var(--positive)':'var(--negative)'}">${fD(m.netPL)}</div></div>
-    <div class="detail-stat"><div class="label">Maj/Min/NPU</div><div class="value" style="font-size:14px">${fmt(m.major)}/${fmt(m.minor)}/${fmt(m.npu)}</div></div>
+    <div class="detail-stat"><div class="label">Maj/Min/NPU/NPF</div><div class="value" style="font-size:14px">${fmt(m.major)}/${fmt(m.minor)}/${fmt(m.npu)}/${fmt(m.npf)}</div></div>
     <div class="detail-stat"><div class="label">Accidental %</div><div class="value">${m.total>0?fP(m.accidental/m.total*100):'N/A'}</div></div>
   </div>`;
   if(wC.length){h+=`<div class="section-label">Warranty Codes — Revenue &amp; Cost</div><table id="dtW"><thead><tr><th>Code</th><th>Units Sold</th><th>Revenue</th><th>Price/Unit</th><th>Repairs</th><th>Repair Cost</th><th>Net</th></tr></thead><tbody>`;
@@ -359,8 +359,8 @@ function modelHTML(m){
   h+=`<div class="section-label">Top Repair Types</div><table id="dtR"><thead><tr><th>Repair</th><th>Count</th><th>%</th></tr></thead><tbody>`;
   tR.forEach(([r,c])=>{h+=`<tr><td>${r}</td><td class="mono">${fmt(c)}</td><td class="mono">${fP(c/m.total*100)}</td></tr>`;});h+=`</tbody></table>`;
   const yrs=Object.keys(m.yearlyRepairs).sort();
-  if(yrs.length){h+=`<div class="section-label">Year-by-Year</div><table><thead><tr><th>Year</th><th>Repairs</th><th>Major</th><th>Minor</th><th>NPU</th><th>Cost</th><th>Units Sold</th></tr></thead><tbody>`;
-    yrs.forEach(yr=>{const d=m.yearlyRepairs[yr];h+=`<tr><td>${yr}</td><td class="mono">${fmt(d.rep)}</td><td class="mono">${fmt(d.maj)}</td><td class="mono">${fmt(d.min)}</td><td class="mono">${fmt(d.npu)}</td><td class="mono">${fD(d.cost)}</td><td class="mono">${fmt(m.yearlySold[yr]||0)}</td></tr>`;});h+=`</tbody></table>`;}
+  if(yrs.length){h+=`<div class="section-label">Year-by-Year</div><table><thead><tr><th>Year</th><th>Repairs</th><th>Major</th><th>Minor</th><th>NPU</th><th>NPF</th><th>Cost</th><th>Units Sold</th></tr></thead><tbody>`;
+    yrs.forEach(yr=>{const d=m.yearlyRepairs[yr];h+=`<tr><td>${yr}</td><td class="mono">${fmt(d.rep)}</td><td class="mono">${fmt(d.maj)}</td><td class="mono">${fmt(d.min)}</td><td class="mono">${fmt(d.npu)}</td><td class="mono">${fmt(d.npf||0)}</td><td class="mono">${fD(d.cost)}</td><td class="mono">${fmt(m.yearlySold[yr]||0)}</td></tr>`;});h+=`</tbody></table>`;}
   h+=`<button class="export-btn" onclick="exportCSV('dtW')">📥 Export Warranty Codes</button> <button class="export-btn" onclick="exportCSV('dtR')">📥 Export Repairs</button>`;
   return h;
 }
@@ -398,8 +398,8 @@ function render(){
   const tCodes=Object.entries(_ca).filter(([c])=>c).sort((a,b)=>b[1].cnt-a[1].cnt).slice(0,15);
   charts.push(new Chart(document.getElementById('chFreq'),{type:'bar',data:{labels:tCodes.map(([c])=>c),datasets:[{label:'Claims',data:tCodes.map(([,d])=>d.cnt),backgroundColor:tCodes.map((_,i)=>CC[i%CC.length]),borderRadius:4}]},options:{indexAxis:'y',responsive:true,onClick:(e,el)=>{if(el.length)showCD(tCodes[el[0].index][0]);},plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},y:{ticks:{color:'#8899b0',font:{size:10,family:'Space Mono'}},grid:{display:false}}}}}));
 
-  let tMaj=0,tMin=0,tNPU=0;allMD.forEach(m=>{tMaj+=m.major;tMin+=m.minor;tNPU+=m.npu;});
-  charts.push(new Chart(document.getElementById('chSev'),{type:'doughnut',data:{labels:['Major','Minor','NPU/NPF'],datasets:[{data:[tMaj,tMin,tNPU],backgroundColor:['#ef4444','#fbbf24','#4aa3df'],borderWidth:0}]},options:{responsive:true,cutout:'55%',onClick:(e,el)=>{if(el.length)showSD(['Major','Minor','NPU/NPF'][el[0].index]);},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:16}},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)+' ('+((c.raw/tRep)*100).toFixed(1)+'%)'}}}}}));
+  let tMaj=0,tMin=0,tNPU=0,tNPF=0;allMD.forEach(m=>{tMaj+=m.major;tMin+=m.minor;tNPU+=m.npu;tNPF+=m.npf;});
+  charts.push(new Chart(document.getElementById('chSev'),{type:'doughnut',data:{labels:['Major','Minor','NPU','NPF'],datasets:[{data:[tMaj,tMin,tNPU,tNPF],backgroundColor:['#ef4444','#fbbf24','#4aa3df','#a78bfa'],borderWidth:0}]},options:{responsive:true,cutout:'55%',onClick:(e,el)=>{if(el.length)showSD(['Major','Minor','NPU','NPF'][el[0].index]);},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:16}},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)+' ('+((c.raw/tRep)*100).toFixed(1)+'%)'}}}}}));
 
   _trendTopR=allMD.filter(m=>m.sold>0).sort((a,b)=>b.total-a.total).slice(0,10);
   const aQ=new Set();_trendTopR.forEach(m=>Object.keys(m.quarterlyData).forEach(q=>aQ.add(q)));
@@ -518,11 +518,15 @@ function showCD(code){
   openDM(`${code} — Detail`,h);
 }
 function showSD(type){
-  _modalStack=[];let ms;if(type==='Major')ms=allMD.filter(m=>m.major>0).sort((a,b)=>b.major-a.major).slice(0,25);else if(type==='Minor')ms=allMD.filter(m=>m.minor>0).sort((a,b)=>b.minor-a.minor).slice(0,25);else ms=allMD.filter(m=>m.npu>0).sort((a,b)=>b.npu-a.npu).slice(0,25);
-  const tot=type==='Major'?ms.reduce((s,m)=>s+m.major,0):type==='Minor'?ms.reduce((s,m)=>s+m.minor,0):ms.reduce((s,m)=>s+m.npu,0);
+  _modalStack=[];let ms,getC;
+  if(type==='Major'){ms=allMD.filter(m=>m.major>0).sort((a,b)=>b.major-a.major).slice(0,25);getC=m=>m.major;}
+  else if(type==='Minor'){ms=allMD.filter(m=>m.minor>0).sort((a,b)=>b.minor-a.minor).slice(0,25);getC=m=>m.minor;}
+  else if(type==='NPU'){ms=allMD.filter(m=>m.npu>0).sort((a,b)=>b.npu-a.npu).slice(0,25);getC=m=>m.npu;}
+  else{ms=allMD.filter(m=>m.npf>0).sort((a,b)=>b.npf-a.npf).slice(0,25);getC=m=>m.npf;}
+  const tot=ms.reduce((s,m)=>s+getC(m),0);
   let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">${type}</div><div class="value">${fmt(tot)}</div></div></div>`;
   h+=`<div class="section-label">Click model for full detail</div><table id="dtS"><thead><tr><th>Model</th><th>${type}</th><th>Total</th><th>%</th><th>Cost</th></tr></thead><tbody>`;
-  ms.forEach(m=>{const c=type==='Major'?m.major:type==='Minor'?m.minor:m.npu;h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fmt(c)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${fP(c/m.total*100)}</td><td class="mono">${fD(m.actualCost)}</td></tr>`;});
+  ms.forEach(m=>{const c=getC(m);h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fmt(c)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${fP(c/m.total*100)}</td><td class="mono">${fD(m.actualCost)}</td></tr>`;});
   h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtS')">📥 Export</button>`;openDM(`${type} Repairs`,h);
 }
 function showBD(bin){
