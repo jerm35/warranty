@@ -52,6 +52,11 @@ body{font-family:var(--font-main);background:var(--bg-primary);color:var(--text-
 .kpi-card:hover{border-color:var(--border-glow);transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,.3)}
 .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .kpi-card.blue::before{background:var(--accent-blue)}.kpi-card.cyan::before{background:var(--accent-cyan)}.kpi-card.green::before{background:var(--accent-green)}.kpi-card.yellow::before{background:var(--accent-yellow)}.kpi-card.red::before{background:var(--accent-red)}.kpi-card.purple::before{background:var(--accent-purple)}.kpi-card.orange::before{background:var(--accent-orange)}
+th.sortable{cursor:pointer;user-select:none;position:relative;padding-right:18px!important;white-space:nowrap}
+th.sortable:hover{color:var(--accent-cyan)}
+th.sortable::after{content:'⇅';position:absolute;right:2px;top:50%;transform:translateY(-50%);opacity:.3;font-size:11px}
+th.sortable.asc::after{content:'↑';opacity:.8;color:var(--accent-cyan)}
+th.sortable.desc::after{content:'↓';opacity:.8;color:var(--accent-cyan)}
 .kpi-label{font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px}
 .kpi-value{font-size:24px;font-weight:700;margin-top:6px;font-family:var(--font-mono)}
 .kpi-sub{font-size:11px;color:var(--text-muted);margin-top:4px}
@@ -182,7 +187,7 @@ tr.clickable-row:hover td{background:rgba(34,211,238,.06)}
   <div class="section-header"><h2>Key Insights</h2><span class="badge badge-green">Auto-Generated</span></div>
   <div class="insight-grid" id="insightGrid"></div>
   <div class="data-table-container"><h3>Top Models Summary</h3>
-    <table><thead><tr><th>Model</th><th>Units Sold</th><th>Repairs</th><th>Repair Rate</th><th>Warranty Rev</th><th>Total Cost</th><th>Net P/L</th><th>Trend</th></tr></thead><tbody id="summaryBody"></tbody></table>
+    <table id="summaryTable"><thead><tr><th class="sortable" data-col="model" onclick="sortSummary('model')">Model</th><th class="sortable" data-col="sold" onclick="sortSummary('sold')">Units Sold</th><th class="sortable" data-col="repairs" onclick="sortSummary('repairs')">Repairs</th><th class="sortable" data-col="rate" onclick="sortSummary('rate')">Repair Rate</th><th class="sortable" data-col="wrev" onclick="sortSummary('wrev')">Warranty Rev</th><th class="sortable" data-col="cost" onclick="sortSummary('cost')">Total Cost</th><th class="sortable" data-col="pl" onclick="sortSummary('pl')">Net P/L</th><th class="sortable" data-col="trend" onclick="sortSummary('trend')">Trend</th></tr></thead><tbody id="summaryBody"></tbody></table>
   </div>
   <div class="assumptions-section">
     <button class="assumptions-toggle" id="assumToggle" onclick="toggleAssumptions()"><span>📋 Data Assumptions &amp; Methodology</span><span class="arrow">▼</span></button>
@@ -233,7 +238,7 @@ const fmt=n=>n==null?'N/A':n.toLocaleString('en-US');
 const fD=n=>n==null?'N/A':'$'+Math.round(n).toLocaleString('en-US');
 const fP=n=>n==null?'N/A':n.toFixed(2)+'%';
 function vY(y){const n=parseInt(y);return!isNaN(n)&&n>=MIN_YR&&n<=MAX_YR;}
-function trd(v){const f=v.filter(x=>x!=null);if(f.length<2)return{t:'N/A',c:'flat'};const a=f[0],b=f[f.length-1];if(!a&&!b)return{t:'FLAT',c:'flat'};if(!a)return{t:'↑ UP',c:'up'};const p=((b-a)/Math.abs(a))*100;if(p>10)return{t:`↑ +${p.toFixed(0)}%`,c:'up'};if(p<-10)return{t:`↓ ${p.toFixed(0)}%`,c:'down'};return{t:'→ FLAT',c:'flat'};}
+function trd(v){const f=v.filter(x=>x!=null);if(f.length<2)return{t:'N/A',c:'flat',v:0};const a=f[0],b=f[f.length-1];if(!a&&!b)return{t:'FLAT',c:'flat',v:0};if(!a)return{t:'↑ UP',c:'up',v:100};const p=((b-a)/Math.abs(a))*100;if(p>10)return{t:`↑ +${p.toFixed(0)}%`,c:'up',v:p};if(p<-10)return{t:`↓ ${p.toFixed(0)}%`,c:'down',v:p};return{t:'→ FLAT',c:'flat',v:p};}
 
 // ===== CLICKABLE MODEL HELPER =====
 // Returns HTML for a clickable model name cell
@@ -381,6 +386,7 @@ function render(){
     <div class="kpi-card purple" onclick="showKD('accidental')"><div class="kpi-label">Accidental %</div><div class="kpi-value">${fP(accP)}</div></div>
     <div class="kpi-card green" onclick="showKD('warranty')"><div class="kpi-label">In Warranty %</div><div class="kpi-value">${fP(inWP)}</div></div>
     <div class="kpi-card blue" onclick="showKD('revenue')"><div class="kpi-label">Warranty Revenue</div><div class="kpi-value">${fD(tWRev)}</div></div>
+    <div class="kpi-card cyan" onclick="showKD('reprev')"><div class="kpi-label">Repair Rev (OOW)</div><div class="kpi-value">${fD(tRRev)}</div></div>
     <div class="kpi-card ${nPL>=0?'green':'red'}" onclick="showKD('pl')"><div class="kpi-label">Net P/L</div><div class="kpi-value" style="color:${nPL>=0?'var(--positive)':'var(--negative)'}">${fD(nPL)}</div></div>`;
 
   // Charts
@@ -479,6 +485,11 @@ function showKD(type){
     h+=`</tbody></table><div class="section-label">Top Models (click for detail)</div><table><thead><tr><th>Model</th><th>Revenue</th><th>Sold</th><th>Cost</th><th>Net P/L</th></tr></thead><tbody>`;
     [...allMD].sort((a,b)=>b.warrantyRevenue-a.warrantyRevenue).slice(0,25).forEach(m=>{h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fmt(m.sold)}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fD(m.netPL)}</td></tr>`;});
     h+=`</tbody></table>`;openDM('Warranty Revenue — Detail',h+xBtn());
+  } else if(type==='reprev'){
+    h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Repair Rev (OOW)</div><div class="value">${fD(k.tRRev)}</div></div><div class="detail-stat"><div class="label">Avg/Repair</div><div class="value">${k.tRep>0?fD(k.tRRev/k.tRep):'—'}</div></div></div>`;
+    h+=`<div class="section-label">Top Models by Repair Revenue (click for detail)</div><table id="dtK"><thead><tr><th>Model</th><th>Repair Rev</th><th>Repairs</th><th>Warranty Rev</th><th>Net P/L</th></tr></thead><tbody>`;
+    [...allMD].sort((a,b)=>b.repairRevenue-a.repairRevenue).filter(m=>m.repairRevenue>0).slice(0,25).forEach(m=>{h+=`<tr class="clickable-row">${mL(m.shortName,m.itemNumber)}<td class="mono">${fD(m.repairRevenue)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fD(m.netPL)}</td></tr>`;});
+    h+=`</tbody></table>`;openDM('Repair Revenue (OOW) — Detail',h+xBtn());
   } else if(type==='pl'){
     h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Warranty Rev</div><div class="value">${fD(k.tWRev)}</div></div><div class="detail-stat"><div class="label">Repair Rev</div><div class="value">${fD(k.tRRev)}</div></div><div class="detail-stat"><div class="label">Total Cost</div><div class="value">${fD(k.tCost)}</div></div><div class="detail-stat"><div class="label">Net P/L</div><div class="value" style="color:${k.nPL>=0?'var(--positive)':'var(--negative)'}">${fD(k.nPL)}</div></div></div>`;
     h+=`<div class="section-label">P/L by Model (click for detail)</div><table id="dtK"><thead><tr><th>Model</th><th>W.Rev</th><th>Cost</th><th>Net P/L</th></tr></thead><tbody>`;
@@ -548,12 +559,37 @@ function renderInsights(yrs){
   h+=`<div class="insight-card" onclick="showKD('pl')"><div class="insight-title">Net P/L</div>Rev <strong>${fD(tw)}</strong> + Repair Rev <strong>${fD(tr)}</strong> − Cost <strong>${fD(tc)}</strong> = <strong style="color:${n>=0?'var(--positive)':'var(--negative)'}">${fD(n)}</strong></div>`;
   g.innerHTML=h;
 }
+let _summarySort={col:'sold',dir:'desc'};
+function sortSummary(col){
+  if(_summarySort.col===col)_summarySort.dir=_summarySort.dir==='desc'?'asc':'desc';
+  else{_summarySort={col,dir:'desc'};}
+  renderSummary();
+}
 function renderSummary(){
   const b=document.getElementById('summaryBody');const{sy,ey}=getDR();const yrs=[];for(let y=sy;y<=ey;y++)yrs.push(y.toString());
-  const top=allMD.filter(m=>m.sold>0).sort((a,b)=>b.sold-a.sold).slice(0,20);
-  b.innerHTML=top.map(m=>{const rv=yrs.map(y=>m.yearlyRepairs[y]?.rep||0);const t=trd(rv);
+  let top=allMD.filter(m=>m.sold>0);
+  // compute trend values for sorting
+  top.forEach(m=>{const rv=yrs.map(y=>m.yearlyRepairs[y]?.rep||0);m._trd=trd(rv);});
+  const sc=_summarySort.col,sd=_summarySort.dir==='asc'?1:-1;
+  top.sort((a,b)=>{
+    let av,bv;
+    if(sc==='model'){av=a.shortName.toLowerCase();bv=b.shortName.toLowerCase();return av<bv?-sd:av>bv?sd:0;}
+    if(sc==='sold'){av=a.sold;bv=b.sold;}
+    else if(sc==='repairs'){av=a.total;bv=b.total;}
+    else if(sc==='rate'){av=a.repairRate||0;bv=b.repairRate||0;}
+    else if(sc==='wrev'){av=a.warrantyRevenue;bv=b.warrantyRevenue;}
+    else if(sc==='cost'){av=a.actualCost;bv=b.actualCost;}
+    else if(sc==='pl'){av=a.netPL;bv=b.netPL;}
+    else if(sc==='trend'){av=a._trd.v;bv=b._trd.v;}
+    else{av=a.sold;bv=b.sold;}
+    return (av-bv)*sd;
+  });
+  top=top.slice(0,20);
+  b.innerHTML=top.map(m=>{const t=m._trd;
     return`<tr class="clickable-row" onclick="_modalStack=[];openDM('${m.model.replace(/'/g,"\\'")}',modelHTML(allMD.find(x=>x.itemNumber==='${m.itemNumber}')))">
       <td><span class="m-link">${m.shortName}</span></td><td class="mono">${fmt(m.sold)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${m.repairRate!=null?fP(m.repairRate):'N/A'}</td><td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fD(m.netPL)}</td><td><span class="trend-indicator trend-${t.c}">${t.t}</span></td></tr>`;}).join('');
+  // update header sort indicators
+  document.querySelectorAll('#summaryTable th.sortable').forEach(th=>{th.classList.remove('asc','desc');if(th.dataset.col===_summarySort.col)th.classList.add(_summarySort.dir);});
 }
 
 let _fieldCycleIdx=-1;
