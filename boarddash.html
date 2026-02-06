@@ -163,7 +163,7 @@ tr.clickable-row:hover td{background:rgba(34,211,238,.06)}
   </div>
   <div class="section-header"><h2>Breakage Rate Trends</h2><span class="badge badge-red">3-Year Trend</span></div>
   <div class="chart-grid">
-    <div class="chart-card chart-full tall" data-clickable><h3>Quarterly Repair Count — Top Models</h3><div class="chart-subtitle">Repair volume per quarter (click point for model detail)</div><canvas id="chTrend"></canvas></div>
+    <div class="chart-card chart-full tall" data-clickable><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h3 style="margin:0;display:inline">Quarterly Repairs — Top Models</h3><div style="display:inline-flex;margin-left:14px;border:1px solid var(--border);border-radius:6px;overflow:hidden" id="trendModeToggle"><button class="fld-mode active" onclick="setTrendMode('count')">Repair Count</button><button class="fld-mode" onclick="setTrendMode('pct')">% of Sold</button></div></div><div style="display:flex;gap:6px" id="trendBtns"><button class="btn btn-secondary" onclick="trendToggle('all')" title="Show all">All On</button><button class="btn btn-secondary" onclick="trendToggle('none')" title="Hide all">All Off</button><button class="btn btn-secondary" onclick="trendToggle('prev')" title="Previous model">◂ Prev</button><button class="btn btn-primary" onclick="trendToggle('cycle')" title="Next model">Next ▸</button></div></div><div class="chart-subtitle">Repair volume per quarter. Toggle between count and % of units sold.</div><canvas id="chTrend"></canvas></div>
   </div>
   <div class="section-header"><h2>Warranty Cost Distribution</h2><span class="badge badge-purple">Distribution</span></div>
   <div class="chart-grid">
@@ -224,6 +224,7 @@ let rawR=null,rawS=null,allMD=[],sL={},charts=[];
 let _ca={},_qa={},_bins=[],_cc=[],_kpi={};
 let _modalStack=[];
 let _fieldTopS=[],_fieldBLbls=[],_fieldCountData=[],_fieldPctData=[],_fieldMode='count';
+let _trendTopR=[],_trendQLbls=[],_trendCountData=[],_trendPctData=[],_trendMode='count',_trendCycleIdx=-1;
 
 const fmt=n=>n==null?'N/A':n.toLocaleString('en-US');
 const fD=n=>n==null?'N/A':'$'+Math.round(n).toLocaleString('en-US');
@@ -377,11 +378,16 @@ function render(){
   let tMaj=0,tMin=0,tNPU=0;allMD.forEach(m=>{tMaj+=m.major;tMin+=m.minor;tNPU+=m.npu;});
   charts.push(new Chart(document.getElementById('chSev'),{type:'doughnut',data:{labels:['Major','Minor','NPU/NPF'],datasets:[{data:[tMaj,tMin,tNPU],backgroundColor:['#ef4444','#fbbf24','#4aa3df'],borderWidth:0}]},options:{responsive:true,cutout:'55%',onClick:(e,el)=>{if(el.length)showSD(['Major','Minor','NPU/NPF'][el[0].index]);},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:16}},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)+' ('+((c.raw/tRep)*100).toFixed(1)+'%)'}}}}}));
 
-  const topR=allMD.filter(m=>m.sold>0).sort((a,b)=>b.total-a.total).slice(0,10);
-  const aQ=new Set();topR.forEach(m=>Object.keys(m.quarterlyData).forEach(q=>aQ.add(q)));
+  _trendTopR=allMD.filter(m=>m.sold>0).sort((a,b)=>b.total-a.total).slice(0,10);
+  const aQ=new Set();_trendTopR.forEach(m=>Object.keys(m.quarterlyData).forEach(q=>aQ.add(q)));
   for(let yr=sy;yr<=ey;yr++)for(let q=1;q<=4;q++)aQ.add(`${yr} Q${q}`);
-  const sQ=[...aQ].sort();
-  charts.push(new Chart(document.getElementById('chTrend'),{type:'line',data:{labels:sQ,datasets:topR.map((m,i)=>({label:m.shortName,data:sQ.map(q=>m.quarterlyData[q]?.rep||0),borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'20',tension:.3,pointRadius:3,pointHoverRadius:6,borderWidth:2.5,fill:false}))},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length){const m=topR[el[0].datasetIndex];if(m){_modalStack=[];openDM(m.model,modelHTML(m));}}},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,font:{size:11,family:'Space Mono'},usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+' repairs'}}},scales:{y:{title:{display:true,text:'Repairs/Quarter',color:'#8899b0'},ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{color:'#1e305030'}}}}}));
+  _trendQLbls=[...aQ].sort();
+  _trendCountData=_trendTopR.map(m=>_trendQLbls.map(q=>m.quarterlyData[q]?.rep||0));
+  _trendPctData=_trendTopR.map(m=>_trendQLbls.map(q=>{const r=m.quarterlyData[q]?.rep||0;return m.sold>0?parseFloat(((r/m.sold)*100).toFixed(4)):null;}));
+  _trendMode='count';_trendCycleIdx=-1;
+  const tmBtn=document.querySelector('#trendBtns .btn-primary');if(tmBtn)tmBtn.textContent='Next ▸';
+  document.querySelectorAll('#trendModeToggle .fld-mode').forEach(b=>{b.classList.remove('active');if(b.textContent==='Repair Count')b.classList.add('active');});
+  buildTrendChart();
 
   _cc=[];Object.entries(_ca).forEach(([c,d])=>{if(d.cnt>0)_cc.push({code:c,avgC:d.cost/d.cnt,cnt:d.cnt,qS:d.qS,wR:d.wR});});_cc.sort((a,b)=>a.avgC-b.avgC);
   const cVals=_cc.map(c=>c.avgC),mnC=Math.min(...cVals,0),mxC=Math.max(...cVals,200),bs=20;
@@ -534,6 +540,42 @@ function renderSummary(){
 }
 
 let _fieldCycleIdx=-1;
+
+// ===== TREND CHART (Quarterly Repairs) =====
+function buildTrendChart(){
+  if(window._trendChartRef){try{window._trendChartRef.destroy();}catch(e){} const idx=charts.indexOf(window._trendChartRef);if(idx>-1)charts.splice(idx,1);}
+  const isPct=_trendMode==='pct';
+  const dataArr=isPct?_trendPctData:_trendCountData;
+  const topR=_trendTopR,qLbls=_trendQLbls;
+  const ch=new Chart(document.getElementById('chTrend'),{type:'line',data:{labels:qLbls,datasets:topR.map((m,i)=>({label:m.shortName,data:dataArr[i],borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'20',tension:.3,pointRadius:3,pointHoverRadius:6,borderWidth:2.5,fill:false}))},options:{
+    responsive:true,interaction:{mode:'index',intersect:false},
+    onClick:(e,el)=>{if(el.length){const m=topR[el[0].datasetIndex];if(m){_modalStack=[];openDM(m.model,modelHTML(m));}}},
+    onHover:(evt,ae,c)=>{if(ae.length>0){const hi=ae[0].datasetIndex;c.data.datasets.forEach((ds,i)=>{ds.borderWidth=i===hi?5:1.5;ds.pointRadius=i===hi?6:1;ds.borderColor=CC[i%CC.length]+(i===hi?'':'44');});}else{c.data.datasets.forEach((ds,i)=>{ds.borderWidth=2.5;ds.pointRadius=3;ds.borderColor=CC[i%CC.length];});}c.update('none');},
+    plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,font:{size:11,family:'Space Mono'},usePointStyle:true,pointStyle:'circle'}},
+      tooltip:{backgroundColor:'rgba(17,26,46,.95)',borderColor:'#2a5a8f',borderWidth:1,padding:12,titleFont:{size:13,weight:'bold'},bodyFont:{size:12,family:'Space Mono'},itemSort:(a,b)=>(b.raw||0)-(a.raw||0),
+        callbacks:{label:c=>c.dataset.label+': '+(isPct?((c.raw||0).toFixed(4)+'% of sold'):(c.raw||0)+' repairs'),labelTextColor:c=>{const ae=c.chart.getActiveElements();if(ae.length>0)return c.datasetIndex===ae[0].datasetIndex?'#ffffff':'#555566';return'#8899b0';}}}
+    },
+    scales:{y:{title:{display:true,text:isPct?'% of Units Sold':'Repairs / Quarter',color:'#8899b0'},ticks:{color:'#8899b0',callback:isPct?(v=>v.toFixed(2)+'%'):undefined},grid:{color:'#1e3050'}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{color:'#1e305030'}}}
+  }});
+  charts.push(ch);window._trendChartRef=ch;
+  if(_trendCycleIdx>=0){ch.data.datasets.forEach((_,i)=>{ch.setDatasetVisibility(i,i===_trendCycleIdx);});ch.update();}
+}
+function setTrendMode(mode){
+  _trendMode=mode;
+  document.querySelectorAll('#trendModeToggle .fld-mode').forEach(b=>{b.classList.toggle('active',b.textContent===(mode==='count'?'Repair Count':'% of Sold'));});
+  buildTrendChart();
+}
+function trendToggle(mode){
+  const ch=window._trendChartRef;if(!ch)return;
+  const ds=ch.data.datasets;const nBtn=document.querySelector('#trendBtns .btn-primary');const pBtn=document.querySelectorAll('#trendBtns .btn-secondary')[2];
+  if(mode==='all'){ds.forEach((_,i)=>{ch.setDatasetVisibility(i,true);});_trendCycleIdx=-1;if(nBtn)nBtn.textContent='Next ▸';if(pBtn)pBtn.textContent='◂ Prev';}
+  else if(mode==='none'){ds.forEach((_,i)=>{ch.setDatasetVisibility(i,false);});_trendCycleIdx=-1;if(nBtn)nBtn.textContent='Next ▸';if(pBtn)pBtn.textContent='◂ Prev';}
+  else if(mode==='cycle'){_trendCycleIdx=(_trendCycleIdx+1)%ds.length;ds.forEach((_,i)=>{ch.setDatasetVisibility(i,i===_trendCycleIdx);});if(nBtn)nBtn.textContent=ds[_trendCycleIdx].label+' ▸';if(pBtn)pBtn.textContent='◂ '+ds[_trendCycleIdx].label;}
+  else if(mode==='prev'){_trendCycleIdx=_trendCycleIdx<=0?ds.length-1:_trendCycleIdx-1;ds.forEach((_,i)=>{ch.setDatasetVisibility(i,i===_trendCycleIdx);});if(nBtn)nBtn.textContent=ds[_trendCycleIdx].label+' ▸';if(pBtn)pBtn.textContent='◂ '+ds[_trendCycleIdx].label;}
+  ch.update();
+}
+
+// ===== FIELD CHART (Product Age) =====
 function buildFieldChart(){
   // Remove old field chart from charts array (it's always the last one added in render)
   // We track it separately
