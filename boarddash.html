@@ -174,7 +174,7 @@ tr.clickable-row:hover td{background:rgba(34,211,238,.06)}
   </div>
   <div class="section-header"><h2>Claims vs. Product Age</h2><span class="badge badge-blue">Field Analysis</span></div>
   <div class="chart-grid">
-    <div class="chart-card chart-full tall" data-clickable><h3>Claims by Product Age — Top Models</h3><div class="chart-subtitle">Hover highlights model. Click for detail.</div><canvas id="chField"></canvas></div>
+    <div class="chart-card chart-full tall" data-clickable><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Claims by Product Age — Top Models</h3><div style="display:flex;gap:6px" id="fieldBtns"><button class="btn btn-secondary" onclick="fieldToggle('all')" title="Show all models">All On</button><button class="btn btn-secondary" onclick="fieldToggle('none')" title="Hide all models">All Off</button><button class="btn btn-primary" onclick="fieldToggle('cycle')" title="Cycle through models one at a time">Next ▸</button></div></div><div class="chart-subtitle">Hover highlights model. Click for detail.</div><canvas id="chField"></canvas></div>
   </div>
   <div class="section-header"><h2>Key Insights</h2><span class="badge badge-green">Auto-Generated</span></div>
   <div class="insight-grid" id="insightGrid"></div>
@@ -531,6 +531,19 @@ function renderSummary(){
   b.innerHTML=top.map(m=>{const rv=yrs.map(y=>m.yearlyRepairs[y]?.rep||0);const t=trd(rv);
     return`<tr class="clickable-row" onclick="_modalStack=[];openDM('${m.model.replace(/'/g,"\\'")}',modelHTML(allMD.find(x=>x.itemNumber==='${m.itemNumber}')))">
       <td><span class="m-link">${m.shortName}</span></td><td class="mono">${fmt(m.sold)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${m.repairRate!=null?fP(m.repairRate):'N/A'}</td><td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fD(m.netPL)}</td><td><span class="trend-indicator trend-${t.c}">${t.t}</span></td></tr>`;}).join('');
+}
+
+let _fieldCycleIdx=-1;
+function fieldToggle(mode){
+  // The field chart is the last one pushed to charts[]
+  const ch=charts[charts.length-1];if(!ch)return;
+  const ds=ch.data.datasets;
+  if(mode==='all'){ds.forEach((_,i)=>{ch.setDatasetVisibility(i,true);});_fieldCycleIdx=-1;const btn=document.querySelector('#fieldBtns .btn-primary');if(btn)btn.textContent='Next ▸';}
+  else if(mode==='none'){ds.forEach((_,i)=>{ch.setDatasetVisibility(i,false);});_fieldCycleIdx=-1;const btn=document.querySelector('#fieldBtns .btn-primary');if(btn)btn.textContent='Next ▸';}
+  else if(mode==='cycle'){_fieldCycleIdx=(_fieldCycleIdx+1)%ds.length;ds.forEach((_,i)=>{ch.setDatasetVisibility(i,i===_fieldCycleIdx);});
+    // Update button text to show which model
+    const btn=document.querySelector('#fieldBtns .btn-primary');if(btn)btn.textContent=ds[_fieldCycleIdx].label+' ▸';}
+  ch.update();
 }
 
 document.getElementById('pwInput').focus();
