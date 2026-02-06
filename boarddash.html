@@ -118,6 +118,9 @@ tr.clickable-row:hover td{background:rgba(34,211,238,.06)}
 /* Back button in nested modals */
 .back-btn{background:none;border:1px solid var(--border);color:var(--accent-cyan);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;margin-right:12px;transition:all .15s}
 .back-btn:hover{background:rgba(34,211,238,.1)}
+.fld-mode{background:var(--bg-card-alt);border:none;color:var(--text-muted);padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font-main);transition:all .15s}
+.fld-mode:hover{color:var(--text-primary)}
+.fld-mode.active{background:var(--accent-blue);color:#fff}
 @media(max-width:900px){.chart-grid{grid-template-columns:1fr}.header{flex-direction:column}}
 </style>
 </head>
@@ -174,7 +177,7 @@ tr.clickable-row:hover td{background:rgba(34,211,238,.06)}
   </div>
   <div class="section-header"><h2>Claims vs. Product Age</h2><span class="badge badge-blue">Field Analysis</span></div>
   <div class="chart-grid">
-    <div class="chart-card chart-full tall" data-clickable><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><h3 style="margin:0">Claims by Product Age — Top Models</h3><div style="display:flex;gap:6px" id="fieldBtns"><button class="btn btn-secondary" onclick="fieldToggle('all')" title="Show all models">All On</button><button class="btn btn-secondary" onclick="fieldToggle('none')" title="Hide all models">All Off</button><button class="btn btn-primary" onclick="fieldToggle('cycle')" title="Cycle through models one at a time">Next ▸</button></div></div><div class="chart-subtitle">Hover highlights model. Click for detail.</div><canvas id="chField"></canvas></div>
+    <div class="chart-card chart-full tall" data-clickable><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><h3 style="margin:0;display:inline">Claims by Product Age — Top Models</h3><div style="display:inline-flex;margin-left:14px;border:1px solid var(--border);border-radius:6px;overflow:hidden" id="fieldModeToggle"><button class="fld-mode active" onclick="setFieldMode('count')">Claim Count</button><button class="fld-mode" onclick="setFieldMode('pct')">% of Sold</button></div></div><div style="display:flex;gap:6px" id="fieldBtns"><button class="btn btn-secondary" onclick="fieldToggle('all')" title="Show all">All On</button><button class="btn btn-secondary" onclick="fieldToggle('none')" title="Hide all">All Off</button><button class="btn btn-secondary" onclick="fieldToggle('prev')" title="Previous model">◂ Prev</button><button class="btn btn-primary" onclick="fieldToggle('cycle')" title="Next model">Next ▸</button></div></div><div class="chart-subtitle">Hover highlights model. Click for detail. Toggle between raw claim count and % of units sold.</div><canvas id="chField"></canvas></div>
   </div>
   <div class="section-header"><h2>Key Insights</h2><span class="badge badge-green">Auto-Generated</span></div>
   <div class="insight-grid" id="insightGrid"></div>
@@ -219,8 +222,8 @@ const PARTS=new Set(['Panel','Mainboard','Battery','Storage','Keyboard','Keyboar
 const CC=['#22d3ee','#4aa3df','#a78bfa','#f472b6','#fbbf24','#34d399','#f97316','#ef4444','#818cf8','#2dd4bf','#fb923c','#c084fc'];
 let rawR=null,rawS=null,allMD=[],sL={},charts=[];
 let _ca={},_qa={},_bins=[],_cc=[],_kpi={};
-// Modal history stack for back navigation
 let _modalStack=[];
+let _fieldTopS=[],_fieldBLbls=[],_fieldCountData=[],_fieldPctData=[],_fieldMode='count';
 
 const fmt=n=>n==null?'N/A':n.toLocaleString('en-US');
 const fD=n=>n==null?'N/A':'$'+Math.round(n).toLocaleString('en-US');
@@ -393,19 +396,16 @@ function render(){
   charts.push(new Chart(document.getElementById('chParts'),{type:'line',data:{labels:sQA,datasets:[{label:'Total Parts Cost',data:sQA.map(q=>_qa[q].pC),borderColor:'#f97316',backgroundColor:'#f9731620',fill:true,tension:.3,borderWidth:2.5,pointRadius:4,yAxisID:'y'},{label:'Avg/Repair',data:sQA.map(q=>{const d=_qa[q];return d.pR>0?Math.round(d.pC/d.pR):null;}),borderColor:'#fbbf24',backgroundColor:'transparent',borderDash:[6,3],tension:.3,borderWidth:2,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length)showQD(sQA[el[0].index],'parts');},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fD(c.raw)}}},scales:{y:{title:{display:true,text:'Total Cost',color:'#f97316'},ticks:{color:'#f97316',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#1e3050'}},y1:{position:'right',title:{display:true,text:'Avg/Repair',color:'#fbbf24'},ticks:{color:'#fbbf24',callback:v=>'$'+v},grid:{display:false}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{display:false}}}}}));
   charts.push(new Chart(document.getElementById('chLabor'),{type:'line',data:{labels:sQA,datasets:[{label:'Total Labor Cost',data:sQA.map(q=>_qa[q].lC),borderColor:'#a78bfa',backgroundColor:'#a78bfa20',fill:true,tension:.3,borderWidth:2.5,pointRadius:4,yAxisID:'y'},{label:'Avg/Repair',data:sQA.map(q=>{const d=_qa[q];return d.lR>0?Math.round(d.lC/d.lR):null;}),borderColor:'#f472b6',backgroundColor:'transparent',borderDash:[6,3],tension:.3,borderWidth:2,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length)showQD(sQA[el[0].index],'labor');},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fD(c.raw)}}},scales:{y:{title:{display:true,text:'Total Cost',color:'#a78bfa'},ticks:{color:'#a78bfa',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#1e3050'}},y1:{position:'right',title:{display:true,text:'Avg/Repair',color:'#f472b6'},ticks:{color:'#f472b6',callback:v=>'$'+v},grid:{display:false}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{display:false}}}}}));
 
-  const topS=allMD.filter(m=>m.sold>100&&m.earliestSaleYear).sort((a,b)=>b.sold-a.sold).slice(0,10);
-  let mxMo=0;topS.forEach(m=>Object.keys(m.monthlyRepairs).forEach(mo=>{mxMo=Math.max(mxMo,parseInt(mo));}));
-  const bSz=3,bLbls=[];for(let i=0;i<=mxMo;i+=bSz)bLbls.push(`${i}-${i+bSz} mo`);
-  charts.push(new Chart(document.getElementById('chField'),{type:'line',data:{labels:bLbls,datasets:topS.map((m,i)=>({label:m.shortName,data:bLbls.map((_,idx)=>{let s=0;for(let mo=idx*bSz;mo<(idx+1)*bSz;mo++)s+=m.monthlyRepairs[mo]||0;return s||null;}),borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'30',tension:.35,pointRadius:3,pointHoverRadius:7,borderWidth:2.5,fill:false,spanGaps:true}))},options:{
-    responsive:true,interaction:{mode:'index',intersect:false},
-    onClick:(e,el)=>{if(el.length){const m=topS[el[0].datasetIndex];if(m){_modalStack=[];openDM(m.model,modelHTML(m));}}},
-    onHover:(evt,ae,ch)=>{if(ae.length>0){const hi=ae[0].datasetIndex;ch.data.datasets.forEach((ds,i)=>{ds.borderWidth=i===hi?5:1.5;ds.pointRadius=i===hi?6:1;ds.borderColor=CC[i%CC.length]+(i===hi?'':'44');});}else{ch.data.datasets.forEach((ds,i)=>{ds.borderWidth=2.5;ds.pointRadius=3;ds.borderColor=CC[i%CC.length];});}ch.update('none');},
-    plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,font:{size:11,family:'Space Mono'},usePointStyle:true,pointStyle:'circle'}},
-      tooltip:{backgroundColor:'rgba(17,26,46,.95)',borderColor:'#2a5a8f',borderWidth:1,padding:12,titleFont:{size:13,weight:'bold'},bodyFont:{size:12,family:'Space Mono'},itemSort:(a,b)=>(b.raw||0)-(a.raw||0),
-        callbacks:{label:c=>c.dataset.label+': '+(c.raw||0)+' claims',labelTextColor:c=>{const ae=c.chart.getActiveElements();if(ae.length>0)return c.datasetIndex===ae[0].datasetIndex?'#ffffff':'#555566';return'#8899b0';}}}
-    },
-    scales:{y:{title:{display:true,text:'# Claims',color:'#8899b0'},ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},x:{title:{display:true,text:'Months Since First Sale Year',color:'#8899b0'},ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{color:'#1e305030'}}}
-  }}));
+  _fieldTopS=allMD.filter(m=>m.sold>100&&m.earliestSaleYear).sort((a,b)=>b.sold-a.sold).slice(0,10);
+  let mxMo=0;_fieldTopS.forEach(m=>Object.keys(m.monthlyRepairs).forEach(mo=>{mxMo=Math.max(mxMo,parseInt(mo));}));
+  const bSz=3;_fieldBLbls=[];for(let i=0;i<=mxMo;i+=bSz)_fieldBLbls.push(`${i}-${i+bSz} mo`);
+  // Precompute both data modes
+  _fieldCountData=_fieldTopS.map(m=>_fieldBLbls.map((_,idx)=>{let s=0;for(let mo=idx*bSz;mo<(idx+1)*bSz;mo++)s+=m.monthlyRepairs[mo]||0;return s||null;}));
+  _fieldPctData=_fieldTopS.map(m=>_fieldBLbls.map((_,idx)=>{let s=0;for(let mo=idx*bSz;mo<(idx+1)*bSz;mo++)s+=m.monthlyRepairs[mo]||0;return m.sold>0?parseFloat(((s/m.sold)*100).toFixed(3)):null;}));
+  _fieldMode='count';_fieldCycleIdx=-1;
+  const fmBtn=document.querySelector('#fieldBtns .btn-primary');if(fmBtn)fmBtn.textContent='Next ▸';
+  document.querySelectorAll('.fld-mode').forEach(b=>{b.classList.remove('active');if(b.textContent==='Claim Count')b.classList.add('active');});
+  buildFieldChart();
 
   renderInsights(rYrs);renderSummary();
 }
@@ -534,15 +534,39 @@ function renderSummary(){
 }
 
 let _fieldCycleIdx=-1;
+function buildFieldChart(){
+  // Remove old field chart from charts array (it's always the last one added in render)
+  // We track it separately
+  if(window._fieldChartRef){try{window._fieldChartRef.destroy();}catch(e){} const idx=charts.indexOf(window._fieldChartRef);if(idx>-1)charts.splice(idx,1);}
+  const isPct=_fieldMode==='pct';
+  const dataArr=isPct?_fieldPctData:_fieldCountData;
+  const topS=_fieldTopS,bLbls=_fieldBLbls;
+  const ch=new Chart(document.getElementById('chField'),{type:'line',data:{labels:bLbls,datasets:topS.map((m,i)=>({label:m.shortName,data:dataArr[i],borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'30',tension:.35,pointRadius:3,pointHoverRadius:7,borderWidth:2.5,fill:false,spanGaps:true}))},options:{
+    responsive:true,interaction:{mode:'index',intersect:false},
+    onClick:(e,el)=>{if(el.length){const m=topS[el[0].datasetIndex];if(m){_modalStack=[];openDM(m.model,modelHTML(m));}}},
+    onHover:(evt,ae,c)=>{if(ae.length>0){const hi=ae[0].datasetIndex;c.data.datasets.forEach((ds,i)=>{ds.borderWidth=i===hi?5:1.5;ds.pointRadius=i===hi?6:1;ds.borderColor=CC[i%CC.length]+(i===hi?'':'44');});}else{c.data.datasets.forEach((ds,i)=>{ds.borderWidth=2.5;ds.pointRadius=3;ds.borderColor=CC[i%CC.length];});}c.update('none');},
+    plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,font:{size:11,family:'Space Mono'},usePointStyle:true,pointStyle:'circle'}},
+      tooltip:{backgroundColor:'rgba(17,26,46,.95)',borderColor:'#2a5a8f',borderWidth:1,padding:12,titleFont:{size:13,weight:'bold'},bodyFont:{size:12,family:'Space Mono'},itemSort:(a,b)=>(b.raw||0)-(a.raw||0),
+        callbacks:{label:c=>c.dataset.label+': '+(isPct?((c.raw||0).toFixed(3)+'% of sold'):(c.raw||0)+' claims'),labelTextColor:c=>{const ae=c.chart.getActiveElements();if(ae.length>0)return c.datasetIndex===ae[0].datasetIndex?'#ffffff':'#555566';return'#8899b0';}}}
+    },
+    scales:{y:{title:{display:true,text:isPct?'% of Units Sold':'# Claims',color:'#8899b0'},ticks:{color:'#8899b0',callback:isPct?(v=>v.toFixed(2)+'%'):undefined},grid:{color:'#1e3050'}},x:{title:{display:true,text:'Months Since First Sale Year',color:'#8899b0'},ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{color:'#1e305030'}}}
+  }});
+  charts.push(ch);window._fieldChartRef=ch;
+  // Restore cycle visibility if active
+  if(_fieldCycleIdx>=0){ch.data.datasets.forEach((_,i)=>{ch.setDatasetVisibility(i,i===_fieldCycleIdx);});ch.update();}
+}
+function setFieldMode(mode){
+  _fieldMode=mode;
+  document.querySelectorAll('.fld-mode').forEach(b=>{b.classList.toggle('active',b.textContent===(mode==='count'?'Claim Count':'% of Sold'));});
+  buildFieldChart();
+}
 function fieldToggle(mode){
-  // The field chart is the last one pushed to charts[]
-  const ch=charts[charts.length-1];if(!ch)return;
-  const ds=ch.data.datasets;
-  if(mode==='all'){ds.forEach((_,i)=>{ch.setDatasetVisibility(i,true);});_fieldCycleIdx=-1;const btn=document.querySelector('#fieldBtns .btn-primary');if(btn)btn.textContent='Next ▸';}
-  else if(mode==='none'){ds.forEach((_,i)=>{ch.setDatasetVisibility(i,false);});_fieldCycleIdx=-1;const btn=document.querySelector('#fieldBtns .btn-primary');if(btn)btn.textContent='Next ▸';}
-  else if(mode==='cycle'){_fieldCycleIdx=(_fieldCycleIdx+1)%ds.length;ds.forEach((_,i)=>{ch.setDatasetVisibility(i,i===_fieldCycleIdx);});
-    // Update button text to show which model
-    const btn=document.querySelector('#fieldBtns .btn-primary');if(btn)btn.textContent=ds[_fieldCycleIdx].label+' ▸';}
+  const ch=window._fieldChartRef;if(!ch)return;
+  const ds=ch.data.datasets;const nBtn=document.querySelector('#fieldBtns .btn-primary');const pBtn=document.querySelectorAll('#fieldBtns .btn-secondary')[2];
+  if(mode==='all'){ds.forEach((_,i)=>{ch.setDatasetVisibility(i,true);});_fieldCycleIdx=-1;if(nBtn)nBtn.textContent='Next ▸';if(pBtn)pBtn.textContent='◂ Prev';}
+  else if(mode==='none'){ds.forEach((_,i)=>{ch.setDatasetVisibility(i,false);});_fieldCycleIdx=-1;if(nBtn)nBtn.textContent='Next ▸';if(pBtn)pBtn.textContent='◂ Prev';}
+  else if(mode==='cycle'){_fieldCycleIdx=(_fieldCycleIdx+1)%ds.length;ds.forEach((_,i)=>{ch.setDatasetVisibility(i,i===_fieldCycleIdx);});if(nBtn)nBtn.textContent=ds[_fieldCycleIdx].label+' ▸';if(pBtn)pBtn.textContent='◂ '+ds[_fieldCycleIdx].label;}
+  else if(mode==='prev'){_fieldCycleIdx=_fieldCycleIdx<=0?ds.length-1:_fieldCycleIdx-1;ds.forEach((_,i)=>{ch.setDatasetVisibility(i,i===_fieldCycleIdx);});if(nBtn)nBtn.textContent=ds[_fieldCycleIdx].label+' ▸';if(pBtn)pBtn.textContent='◂ '+ds[_fieldCycleIdx].label;}
   ch.update();
 }
 
