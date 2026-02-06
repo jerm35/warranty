@@ -205,8 +205,8 @@ tr.clickable-row:hover td{background:rgba(34,211,238,.06)}
       <h4>Parts vs. Labor Cost Split</h4><ul>
         <li>Every repair has an actual total cost from the <code>Costs</code> column (+ $10 shipping).</li>
         <li>The <strong>Costs CSV</strong> (third data source) provides per-order Product codes, which may include explicit labor codes.</li>
-        <li><strong>If LABOR15, LABOR30, or LABOR60</strong> code is found for an order: labor cost = $15, $30, or $60 respectively (actual data).</li>
-        <li><strong>If no LABOR code</strong> is present: assumed labor rates apply — Major = $30, Minor = $15, NPU/NPF/OS = $10.</li>
+        <li><strong>If LABOR15, LABOR30, or LABOR60</strong> code is found for an order: labor cost = $7.50, $15, or $30 respectively (actual data).</li>
+        <li><strong>If no LABOR code</strong> is present: assumed labor rates apply — Major = $30, Minor = $15, NPU/NPF/OS = $7.50.</li>
         <li><strong>Parts cost</strong> = Total repair cost − labor cost (minimum $0).</li>
         <li>This means every repair contributes to <em>both</em> parts and labor totals.</li></ul>
       <h4>Product-in-Field</h4><ul>
@@ -272,7 +272,7 @@ function buildCostsLU(){
   costsLU={};if(!rawC)return;
   rawC.forEach(r=>{
     const oid=(r['Order Id']||'').trim(),prod=(r['Product']||'').trim().toUpperCase(),cost=parseFloat(r['Cost'])||0;
-    if(oid)costsLU[oid]={product:prod,cost:cost,isLabor:/^LABOR\d+/.test(prod),laborRate:prod==='LABOR15'?15:prod==='LABOR30'?30:prod==='LABOR60'?60:0};
+    if(oid)costsLU[oid]={product:prod,cost:cost,isLabor:/^LABOR\d+/.test(prod),laborRate:prod==='LABOR15'?7.5:prod==='LABOR30'?15:prod==='LABOR60'?30:0};
   });
 }
 function refresh(){document.getElementById('loadingOverlay').classList.remove('hidden');rawR=rawS=rawC=null;fetchAll();}
@@ -315,7 +315,7 @@ function go(){
       const oid=(r['Order Id']||'').trim(),cEntry=costsLU[oid];
       let labC;
       if(cEntry&&cEntry.isLabor){labC=cEntry.laborRate;q.labActual++;}
-      else{const isOS=/os issue/i.test(rep);labC=isNPX||isOS?10:isMaj?30:15;q.labAssumed++;}
+      else{const isOS=/os issue/i.test(rep);labC=isNPX||isOS?7.5:isMaj?30:15;q.labAssumed++;}
       q.lC+=labC;q.pC+=Math.max(0,cost-labC);
       if(wc){if(!wCR[wc])wCR[wc]={cnt:0,cost:0,est:0};wCR[wc].cnt++;wCR[wc].cost+=cost;wCR[wc].est+=est;}
     });
