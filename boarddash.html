@@ -158,8 +158,8 @@ tr.clickable-row:hover td{background:rgba(34,211,238,.06)}
   <div class="kpi-row" id="kpiRow"></div>
   <div class="section-header"><h2>Warranties Sold &amp; Revenue</h2><span class="badge badge-blue">Sales Overview</span></div>
   <div class="chart-grid">
-    <div class="chart-card" data-clickable><h3>Warranty Units Sold by Year</h3><div class="chart-subtitle">Full history (2015–2025)</div><canvas id="chSold"></canvas></div>
-    <div class="chart-card" data-clickable><h3>Warranty Revenue by Year</h3><div class="chart-subtitle">Full history (2015–2025)</div><canvas id="chRev"></canvas></div>
+    <div class="chart-card" data-clickable><h3>Warranty Units Sold by Year</h3><div class="chart-subtitle">Full history (2018–2030)</div><canvas id="chSold"></canvas></div>
+    <div class="chart-card" data-clickable><h3>Warranty Revenue by Year</h3><div class="chart-subtitle">Full history (2018–2030)</div><canvas id="chRev"></canvas></div>
   </div>
   <div class="section-header"><h2>Claim Frequency &amp; Severity</h2><span class="badge badge-yellow">Claims Analysis</span></div>
   <div class="chart-grid">
@@ -195,7 +195,7 @@ tr.clickable-row:hover td{background:rgba(34,211,238,.06)}
       <h4>Data Sources</h4><ul>
         <li><strong>Repair Data:</strong> Google Sheets CSV (NetSuite). One row per repair. Filtered by <code>Order Received Date</code> within selected range.</li>
         <li><strong>Sales Data:</strong> Google Sheets CSV. Not date-filtered — full history used for accurate rates.</li>
-        <li><strong>Year Filter:</strong> Years restricted to 2015–2025 to exclude erroneous dates in source data.</li></ul>
+        <li><strong>Year Filter:</strong> Years restricted to 2018–2030 to exclude erroneous dates in source data.</li></ul>
       <h4>Key Calculations</h4><ul>
         <li><strong>Units Sold:</strong> Sum of <code>Total Sales Qty</code> across all warranty codes per item, all valid years.</li>
         <li><strong>Repair Rate:</strong> <code>Total Repairs ÷ Units Sold × 100</code>. Full sales history as denominator.</li>
@@ -218,11 +218,11 @@ tr.clickable-row:hover td{background:rgba(34,211,238,.06)}
         <li>Accidental Damage includes "Yes" and "Liquid" values.</li></ul>
     </div></div>
   </div>
-  <div class="footer">CTL Warranty Board Report &bull; <span>Live from Google Sheets</span><br>Sales: full history (2015–2025) &bull; Repairs: filtered by date range</div>
+  <div class="footer">CTL Warranty Board Report &bull; <span>Live from Google Sheets</span><br>Sales: full history (2018–2030) &bull; Repairs: filtered by date range</div>
 </div>
 
 <script>
-const PW='CTLdata2026',SHIP=10,MIN_YR=2015,MAX_YR=2025;
+const PW='CTLdata2026',SHIP=10,MIN_YR=2018,MAX_YR=2030;
 const RU='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=986703446&single=true&output=csv';
 const SU='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=235319241&single=true&output=csv';
 const CU='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=151668355&single=true&output=csv';
@@ -497,6 +497,7 @@ function showKD(type){
     h+=`</tbody></table>`;openDM('Net P/L — Detail',h+xBtn());
   }
 }
+function openModelByItem(itemN){_modalStack=[];const m=allMD.find(x=>x.itemNumber===itemN);if(m)openDM(m.model,modelHTML(m));}
 function xBtn(){return '<button class="export-btn" onclick="exportCSV(\'dtK\')">📥 Export</button>';}
 
 // ===== CHART DETAIL MODALS — all model rows clickable =====
@@ -590,7 +591,7 @@ function renderSummary(){
   });
   top=top.slice(0,20);
   b.innerHTML=top.map(m=>{const t=m._trd;
-    return`<tr class="clickable-row" onclick="_modalStack=[];openDM('${m.model.replace(/'/g,"\\'")}',modelHTML(allMD.find(x=>x.itemNumber==='${m.itemNumber}')))">
+    return`<tr class="clickable-row" data-item="${m.itemNumber}" onclick="openModelByItem(this.dataset.item)">
       <td><span class="m-link">${m.shortName}</span></td><td class="mono">${fmt(m.sold)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${m.repairRate!=null?fP(m.repairRate):'N/A'}</td><td class="mono">${fD(m.warrantyRevenue)}</td><td class="mono">${fD(m.actualCost)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fD(m.netPL)}</td><td><span class="trend-indicator trend-${t.c}">${t.t}</span></td></tr>`;}).join('');
   // update header sort indicators
   document.querySelectorAll('#summaryTable th.sortable').forEach(th=>{th.classList.remove('asc','desc');if(th.dataset.col===_summarySort.col)th.classList.add(_summarySort.dir);});
