@@ -8,1270 +8,455 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Mono:wght@400;700&display=swap');
-
-:root {
-  --bg-primary: #0c1220;
-  --bg-card: #111a2e;
-  --bg-card-alt: #152036;
-  --border: #1e3050;
-  --border-glow: #2a5a8f;
-  --text-primary: #e8edf5;
-  --text-secondary: #8899b0;
-  --text-muted: #5a6a80;
-  --accent-blue: #4aa3df;
-  --accent-cyan: #22d3ee;
-  --accent-green: #34d399;
-  --accent-yellow: #fbbf24;
-  --accent-orange: #f97316;
-  --accent-red: #ef4444;
-  --accent-purple: #a78bfa;
-  --accent-pink: #f472b6;
-  --positive: #34d399;
-  --negative: #ef4444;
-  --font-main: 'DM Sans', sans-serif;
-  --font-mono: 'Space Mono', monospace;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-  font-family: var(--font-main);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Password Overlay */
-.password-overlay {
-  position: fixed; inset: 0; z-index: 1000;
-  background: var(--bg-primary);
-  display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: 24px;
-}
-.password-overlay.hidden { display: none; }
-.password-overlay h1 {
-  font-size: 28px; font-weight: 600; letter-spacing: -0.5px;
-  color: var(--accent-cyan);
-}
-.password-overlay p { color: var(--text-secondary); font-size: 14px; }
-.password-overlay input {
-  background: var(--bg-card); border: 1px solid var(--border);
-  color: var(--text-primary); padding: 12px 20px; border-radius: 8px;
-  font-size: 16px; width: 280px; text-align: center;
-  font-family: var(--font-mono);
-}
-.password-overlay input:focus { outline: none; border-color: var(--accent-cyan); }
-.password-overlay button {
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
-  border: none; color: #fff; padding: 10px 32px; border-radius: 8px;
-  cursor: pointer; font-size: 14px; font-weight: 600;
-  transition: transform 0.15s;
-}
-.password-overlay button:hover { transform: scale(1.03); }
-.pw-error { color: var(--accent-red); font-size: 13px; min-height: 18px; }
-
-/* Loading */
-.loading-overlay {
-  position: fixed; inset: 0; z-index: 999;
-  background: rgba(12,18,32,0.95);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 16px;
-}
-.loading-overlay.hidden { display: none; }
-.spinner {
-  width: 40px; height: 40px; border-radius: 50%;
-  border: 3px solid var(--border); border-top-color: var(--accent-cyan);
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-overlay p { color: var(--text-secondary); font-size: 14px; }
-
-/* Dashboard Container */
-.dashboard { max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
-.dashboard.hidden { display: none; }
-
-/* Header */
-.header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  flex-wrap: wrap; gap: 16px; margin-bottom: 32px;
-  padding-bottom: 24px; border-bottom: 1px solid var(--border);
-}
-.header-left h1 {
-  font-size: 26px; font-weight: 700; letter-spacing: -0.5px;
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-.header-left .subtitle { color: var(--text-secondary); font-size: 13px; margin-top: 6px; }
-.header-left .subtitle span { color: var(--accent-cyan); }
-.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.header-right label { color: var(--text-secondary); font-size: 12px; font-weight: 500; }
-.header-right input[type="date"] {
-  background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary);
-  padding: 6px 10px; border-radius: 6px; font-size: 13px; font-family: var(--font-mono);
-}
-.btn {
-  padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer;
-  font-size: 12px; font-weight: 600; transition: all 0.15s;
-}
-.btn-primary { background: var(--accent-blue); color: #fff; }
-.btn-secondary { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border); }
-.btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
-.date-range-label { color: var(--text-muted); font-size: 11px; font-family: var(--font-mono); }
-
-/* Section Headers */
-.section-header {
-  display: flex; align-items: center; gap: 12px;
-  margin: 40px 0 20px; padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-}
-.section-header h2 { font-size: 18px; font-weight: 600; color: var(--text-primary); }
-.section-header .badge {
-  font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
-  padding: 3px 10px; border-radius: 20px; font-family: var(--font-mono);
-}
-.badge-blue { background: rgba(74,163,223,0.15); color: var(--accent-blue); }
-.badge-green { background: rgba(52,211,153,0.15); color: var(--accent-green); }
-.badge-yellow { background: rgba(251,191,36,0.15); color: var(--accent-yellow); }
-.badge-red { background: rgba(239,68,68,0.15); color: var(--accent-red); }
-.badge-purple { background: rgba(167,139,250,0.15); color: var(--accent-purple); }
-
-/* KPI Row */
-.kpi-row {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px; margin-bottom: 32px;
-}
-.kpi-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 10px; padding: 18px 16px; position: relative; overflow: hidden;
-}
-.kpi-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-}
-.kpi-card.blue::before { background: var(--accent-blue); }
-.kpi-card.cyan::before { background: var(--accent-cyan); }
-.kpi-card.green::before { background: var(--accent-green); }
-.kpi-card.yellow::before { background: var(--accent-yellow); }
-.kpi-card.red::before { background: var(--accent-red); }
-.kpi-card.purple::before { background: var(--accent-purple); }
-.kpi-card.orange::before { background: var(--accent-orange); }
-.kpi-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-.kpi-value { font-size: 24px; font-weight: 700; margin-top: 6px; font-family: var(--font-mono); }
-.kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-.kpi-trend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; }
-.kpi-trend.up { color: var(--accent-green); }
-.kpi-trend.down { color: var(--accent-red); }
-.kpi-trend.flat { color: var(--accent-yellow); }
-
-/* Chart Grid */
-.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-.chart-full { grid-column: 1 / -1; }
-.chart-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 10px; padding: 20px; position: relative;
-}
-.chart-card h3 {
-  font-size: 14px; font-weight: 600; color: var(--text-primary);
-  margin-bottom: 4px;
-}
-.chart-card .chart-subtitle {
-  font-size: 11px; color: var(--text-muted); margin-bottom: 16px;
-}
-.chart-card canvas { max-height: 380px; }
-.chart-card.tall canvas { max-height: 500px; }
-
-/* Insight Cards */
-.insight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-bottom: 32px; }
-.insight-card {
-  background: var(--bg-card-alt); border: 1px solid var(--border); border-radius: 10px;
-  padding: 18px; font-size: 13px; line-height: 1.6; color: var(--text-secondary);
-}
-.insight-card .insight-title {
-  font-size: 12px; font-weight: 700; color: var(--accent-cyan);
-  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
-}
-.insight-card strong { color: var(--text-primary); }
-.insight-card .trend-indicator {
-  display: inline-block; padding: 2px 8px; border-radius: 12px;
-  font-size: 11px; font-weight: 700; font-family: var(--font-mono);
-}
-.trend-up { background: rgba(52,211,153,0.15); color: var(--accent-green); }
-.trend-down { background: rgba(239,68,68,0.15); color: var(--accent-red); }
-.trend-flat { background: rgba(251,191,36,0.15); color: var(--accent-yellow); }
-
-/* Table */
-.data-table-container {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 10px; overflow: hidden; margin-bottom: 24px;
-}
-.data-table-container h3 {
-  font-size: 14px; font-weight: 600; padding: 16px 20px 12px;
-  border-bottom: 1px solid var(--border);
-}
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th {
-  text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 600;
-  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--border); background: var(--bg-card-alt);
-}
-td { padding: 10px 16px; border-bottom: 1px solid rgba(30,48,80,0.4); color: var(--text-secondary); }
-tr:hover td { background: rgba(42,90,143,0.08); }
-td.mono { font-family: var(--font-mono); font-size: 12px; }
-td.positive { color: var(--accent-green); }
-td.negative { color: var(--accent-red); }
-
-/* Footer */
-.footer {
-  text-align: center; padding: 24px; margin-top: 40px;
-  border-top: 1px solid var(--border);
-  color: var(--text-muted); font-size: 11px;
-}
-.footer span { color: var(--accent-cyan); }
-
-/* Responsive */
-@media (max-width: 900px) {
-  .chart-grid { grid-template-columns: 1fr; }
-  .header { flex-direction: column; }
-}
-
-/* Note about data limitations */
-.data-note {
-  background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2);
-  border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;
-  font-size: 12px; color: var(--accent-yellow); line-height: 1.5;
-}
-.data-note strong { color: var(--accent-yellow); }
+:root{--bg-primary:#0c1220;--bg-card:#111a2e;--bg-card-alt:#152036;--border:#1e3050;--border-glow:#2a5a8f;--text-primary:#e8edf5;--text-secondary:#8899b0;--text-muted:#5a6a80;--accent-blue:#4aa3df;--accent-cyan:#22d3ee;--accent-green:#34d399;--accent-yellow:#fbbf24;--accent-orange:#f97316;--accent-red:#ef4444;--accent-purple:#a78bfa;--accent-pink:#f472b6;--positive:#34d399;--negative:#ef4444;--font-main:'DM Sans',sans-serif;--font-mono:'Space Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-main);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;overflow-x:hidden}
+.password-overlay{position:fixed;inset:0;z-index:1000;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px}
+.password-overlay.hidden{display:none}
+.password-overlay h1{font-size:28px;font-weight:600;color:var(--accent-cyan)}
+.password-overlay p{color:var(--text-secondary);font-size:14px}
+.password-overlay input{background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);padding:12px 20px;border-radius:8px;font-size:16px;width:280px;text-align:center;font-family:var(--font-mono)}
+.password-overlay input:focus{outline:none;border-color:var(--accent-cyan)}
+.password-overlay button{background:linear-gradient(135deg,var(--accent-blue),var(--accent-cyan));border:none;color:#fff;padding:10px 32px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;transition:transform .15s}
+.password-overlay button:hover{transform:scale(1.03)}
+.pw-error{color:var(--accent-red);font-size:13px;min-height:18px}
+.loading-overlay{position:fixed;inset:0;z-index:999;background:rgba(12,18,32,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.loading-overlay.hidden{display:none}
+.spinner{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--accent-cyan);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay p{color:var(--text-secondary);font-size:14px}
+.dashboard{max-width:1400px;margin:0 auto;padding:32px 24px}
+.dashboard.hidden{display:none}
+.header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.header-left h1{font-size:26px;font-weight:700;letter-spacing:-.5px;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-left .subtitle{color:var(--text-secondary);font-size:13px;margin-top:6px}
+.header-left .subtitle span{color:var(--accent-cyan)}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.header-right label{color:var(--text-secondary);font-size:12px;font-weight:500}
+.header-right input[type="date"]{background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);padding:6px 10px;border-radius:6px;font-size:13px;font-family:var(--font-mono)}
+.btn{padding:7px 16px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
+.btn-primary{background:var(--accent-blue);color:#fff}
+.btn-secondary{background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border)}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.1)}
+.date-range-label{color:var(--text-muted);font-size:11px;font-family:var(--font-mono)}
+.section-header{display:flex;align-items:center;gap:12px;margin:40px 0 20px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.section-header h2{font-size:18px;font-weight:600}
+.badge{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 10px;border-radius:20px;font-family:var(--font-mono)}
+.badge-blue{background:rgba(74,163,223,.15);color:var(--accent-blue)}
+.badge-green{background:rgba(52,211,153,.15);color:var(--accent-green)}
+.badge-yellow{background:rgba(251,191,36,.15);color:var(--accent-yellow)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--accent-red)}
+.badge-purple{background:rgba(167,139,250,.15);color:var(--accent-purple)}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:32px}
+.kpi-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:18px 16px;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-card.blue::before{background:var(--accent-blue)}.kpi-card.cyan::before{background:var(--accent-cyan)}.kpi-card.green::before{background:var(--accent-green)}.kpi-card.yellow::before{background:var(--accent-yellow)}.kpi-card.red::before{background:var(--accent-red)}.kpi-card.purple::before{background:var(--accent-purple)}.kpi-card.orange::before{background:var(--accent-orange)}
+.kpi-label{font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px}
+.kpi-value{font-size:24px;font-weight:700;margin-top:6px;font-family:var(--font-mono)}
+.kpi-sub{font-size:11px;color:var(--text-muted);margin-top:4px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+.chart-full{grid-column:1/-1}
+.chart-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:20px;position:relative}
+.chart-card h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.chart-card .chart-subtitle{font-size:11px;color:var(--text-muted);margin-bottom:16px}
+.chart-card canvas{max-height:380px}
+.chart-card.tall canvas{max-height:500px}
+.chart-card[data-clickable]::after{content:'Click data for details';position:absolute;bottom:8px;right:14px;font-size:10px;color:var(--text-muted);font-style:italic;opacity:.6}
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:32px}
+.insight-card{background:var(--bg-card-alt);border:1px solid var(--border);border-radius:10px;padding:18px;font-size:13px;line-height:1.6;color:var(--text-secondary)}
+.insight-card .insight-title{font-size:12px;font-weight:700;color:var(--accent-cyan);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.insight-card strong{color:var(--text-primary)}
+.trend-indicator{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;font-family:var(--font-mono)}
+.trend-up{background:rgba(52,211,153,.15);color:var(--accent-green)}
+.trend-down{background:rgba(239,68,68,.15);color:var(--accent-red)}
+.trend-flat{background:rgba(251,191,36,.15);color:var(--accent-yellow)}
+.data-table-container{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px}
+.data-table-container h3{font-size:14px;font-weight:600;padding:16px 20px 12px;border-bottom:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 16px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);background:var(--bg-card-alt)}
+td{padding:10px 16px;border-bottom:1px solid rgba(30,48,80,.4);color:var(--text-secondary)}
+tr:hover td{background:rgba(42,90,143,.08)}
+td.mono{font-family:var(--font-mono);font-size:12px}
+td.positive{color:var(--accent-green)}
+td.negative{color:var(--accent-red)}
+.detail-modal-overlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.detail-modal-overlay.active{opacity:1;pointer-events:all}
+.detail-modal{background:var(--bg-card);border:1px solid var(--border-glow);border-radius:12px;max-width:900px;width:95%;max-height:80vh;overflow-y:auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.detail-modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg-card);z-index:2}
+.detail-modal-header h3{font-size:16px;font-weight:600}
+.close-btn{background:none;border:1px solid var(--border);color:var(--text-secondary);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.close-btn:hover{background:var(--bg-card-alt);color:var(--text-primary)}
+.detail-modal-body{padding:20px 24px}
+.detail-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.detail-stat{background:var(--bg-card-alt);border-radius:8px;padding:12px}
+.detail-stat .label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.detail-stat .value{font-size:18px;font-weight:700;font-family:var(--font-mono);margin-top:4px}
+.section-label{font-size:12px;font-weight:600;color:var(--accent-cyan);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
+.export-btn{background:var(--bg-card-alt);border:1px solid var(--border);color:var(--accent-green);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px;margin-top:12px;transition:all .15s}
+.export-btn:hover{background:rgba(52,211,153,.1)}
+.data-note{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--accent-yellow);line-height:1.5}
+.footer{text-align:center;padding:24px;margin-top:40px;border-top:1px solid var(--border);color:var(--text-muted);font-size:11px}
+.footer span{color:var(--accent-cyan)}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr}.header{flex-direction:column}}
 </style>
 </head>
 <body>
-
-<!-- Password Overlay -->
 <div class="password-overlay" id="pwOverlay">
-  <h1>CTL Warranty Board Report</h1>
-  <p>Enter password to access the dashboard</p>
+  <h1>CTL Warranty Board Report</h1><p>Enter password to access the dashboard</p>
   <input type="password" id="pwInput" placeholder="Password" onkeydown="if(event.key==='Enter')checkPassword()">
   <button onclick="checkPassword()">Access Dashboard</button>
   <div class="pw-error" id="pwError"></div>
 </div>
-
-<!-- Loading -->
-<div class="loading-overlay hidden" id="loadingOverlay">
-  <div class="spinner"></div>
-  <p id="loadingMsg">Fetching warranty data...</p>
+<div class="loading-overlay hidden" id="loadingOverlay"><div class="spinner"></div><p id="loadingMsg">Fetching warranty data...</p></div>
+<div class="detail-modal-overlay" id="detailOverlay" onclick="if(event.target===this)closeDetailModal()">
+  <div class="detail-modal"><div class="detail-modal-header"><h3 id="detailTitle">Detail</h3><button class="close-btn" onclick="closeDetailModal()">&times;</button></div><div class="detail-modal-body" id="detailBody"></div></div>
 </div>
-
-<!-- Dashboard -->
 <div class="dashboard hidden" id="dashboard">
-
-  <!-- Header -->
   <div class="header">
     <div class="header-left">
       <h1>CTL Warranty Board Report</h1>
       <div class="subtitle">Data Analysis Dashboard &mdash; <span>Board & Leadership Review</span></div>
-      <div class="subtitle" style="margin-top:2px;">Unit Sales &amp; Warranty Revenue by year &bull; Repairs by exact date</div>
+      <div class="subtitle" style="margin-top:2px">Repairs filtered by date range &bull; Unit sales use full history for accurate rates</div>
     </div>
     <div class="header-right">
-      <div>
-        <label>From</label><br>
-        <input type="date" id="startDate" value="2023-01-01">
-      </div>
-      <div>
-        <label>To</label><br>
-        <input type="date" id="endDate" value="2025-12-31">
-      </div>
+      <div><label>Repairs From</label><br><input type="date" id="startDate" value="2023-01-01"></div>
+      <div><label>Repairs To</label><br><input type="date" id="endDate" value="2025-12-31"></div>
       <button class="btn btn-primary" onclick="applyDateFilter()">Apply</button>
       <button class="btn btn-secondary" onclick="refreshData()">Refresh</button>
       <div class="date-range-label" id="dateLabel"></div>
     </div>
   </div>
-
-  <!-- KPI Summary -->
   <div class="kpi-row" id="kpiRow"></div>
 
-  <!-- Section 1: Warranties Sold & Revenue -->
-  <div class="section-header">
-    <h2>Warranties Sold &amp; Revenue</h2>
-    <span class="badge badge-blue">Sales Overview</span>
-  </div>
+  <div class="section-header"><h2>Warranties Sold &amp; Revenue</h2><span class="badge badge-blue">Sales Overview</span></div>
   <div class="chart-grid">
-    <div class="chart-card">
-      <h3>Warranty Units Sold by Year</h3>
-      <div class="chart-subtitle">Annual volume of warranty units sold</div>
-      <canvas id="chartSoldByYear"></canvas>
-    </div>
-    <div class="chart-card">
-      <h3>Warranty Revenue by Year</h3>
-      <div class="chart-subtitle">Annual warranty revenue generated</div>
-      <canvas id="chartRevByYear"></canvas>
-    </div>
+    <div class="chart-card" data-clickable><h3>Warranty Units Sold by Year</h3><div class="chart-subtitle">Full history — not filtered by repair date range</div><canvas id="chartSoldByYear"></canvas></div>
+    <div class="chart-card" data-clickable><h3>Warranty Revenue by Year</h3><div class="chart-subtitle">Full history — not filtered by repair date range</div><canvas id="chartRevByYear"></canvas></div>
   </div>
 
-  <!-- Section 2: Frequency & Severity -->
-  <div class="section-header">
-    <h2>Claim Frequency &amp; Severity</h2>
-    <span class="badge badge-yellow">Claims Analysis</span>
-  </div>
+  <div class="section-header"><h2>Claim Frequency &amp; Severity</h2><span class="badge badge-yellow">Claims Analysis</span></div>
   <div class="chart-grid">
-    <div class="chart-card">
-      <h3>Claim Frequency by Warranty Code</h3>
-      <div class="chart-subtitle">Number of claims filed per warranty program</div>
-      <canvas id="chartClaimFreq"></canvas>
-    </div>
-    <div class="chart-card">
-      <h3>Claim Severity: Repair Type Breakdown</h3>
-      <div class="chart-subtitle">Major vs Minor vs NPU/NPF repairs</div>
-      <canvas id="chartSeverity"></canvas>
-    </div>
+    <div class="chart-card" data-clickable><h3>Claim Frequency by Warranty Code</h3><div class="chart-subtitle">Number of claims per warranty program</div><canvas id="chartClaimFreq"></canvas></div>
+    <div class="chart-card" data-clickable><h3>Claim Severity: Repair Type Breakdown</h3><div class="chart-subtitle">Major vs Minor vs NPU/NPF</div><canvas id="chartSeverity"></canvas></div>
   </div>
 
-  <!-- Section 3: Breakage Rate Trends (Chart A style) -->
-  <div class="section-header">
-    <h2>Breakage Rate Trends</h2>
-    <span class="badge badge-red">3-Year Trend</span>
-  </div>
+  <div class="section-header"><h2>Breakage Rate Trends</h2><span class="badge badge-red">3-Year Trend</span></div>
   <div class="chart-grid">
-    <div class="chart-card chart-full tall">
-      <h3>Repair Rate Trends by Top Models &mdash; 3 Year View</h3>
-      <div class="chart-subtitle">Colorful multi-line chart showing breakage rates over time for top CTL units</div>
+    <div class="chart-card chart-full tall" data-clickable>
+      <h3>Quarterly Repair Count Trends — Top Models</h3>
+      <div class="chart-subtitle">Repair volume per quarter for top CTL units (click a point for model detail)</div>
       <canvas id="chartBreakageTrends"></canvas>
     </div>
   </div>
 
-  <!-- Section 4: Cost Distribution (Chart B style) -->
-  <div class="section-header">
-    <h2>Warranty Cost Distribution</h2>
-    <span class="badge badge-purple">Distribution Analysis</span>
-  </div>
+  <div class="section-header"><h2>Warranty Cost Distribution</h2><span class="badge badge-purple">Distribution Analysis</span></div>
   <div class="chart-grid">
-    <div class="chart-card chart-full">
+    <div class="chart-card chart-full" data-clickable>
       <h3>Distribution of Avg Repair Cost per Warranty Code</h3>
-      <div class="chart-subtitle">Bell-curve distribution of average cost per claim, with average revenue per warranty overlaid</div>
+      <div class="chart-subtitle">Click any bar to see the warranty codes in that cost range. Green dashed line = avg revenue per warranty.</div>
       <canvas id="chartCostDistribution"></canvas>
     </div>
   </div>
 
-  <!-- Section 5: Parts & Labor Cost Trends -->
-  <div class="section-header">
-    <h2>Cost Trends: Parts &amp; Labor</h2>
-    <span class="badge badge-green">Cost Tracking</span>
-  </div>
-  <div class="data-note">
-    <strong>Note:</strong> Parts vs. Labor cost split is estimated based on repair type classification. Parts-intensive repairs include Panel, Mainboard, Battery, Storage, Keyboard, etc. Labor-intensive repairs include NPU/NPF diagnostics, OS issues, tear-downs, and declined repairs. Actual parts/labor breakdowns are not in the source data.
-  </div>
+  <div class="section-header"><h2>Cost Trends: Parts &amp; Labor</h2><span class="badge badge-green">Cost Tracking</span></div>
+  <div class="data-note"><strong>Note:</strong> Parts vs. Labor split is estimated by repair type classification. Actual breakdowns are not in the source data.</div>
   <div class="chart-grid">
-    <div class="chart-card">
-      <h3>Parts Cost Trend by Quarter</h3>
-      <div class="chart-subtitle">Estimated parts cost trend over time</div>
-      <canvas id="chartPartsTrend"></canvas>
-    </div>
-    <div class="chart-card">
-      <h3>Labor Cost Trend by Quarter</h3>
-      <div class="chart-subtitle">Estimated labor/diagnostic cost trend over time</div>
-      <canvas id="chartLaborTrend"></canvas>
-    </div>
+    <div class="chart-card" data-clickable><h3>Parts Cost Trend by Quarter</h3><div class="chart-subtitle">Estimated parts cost over time</div><canvas id="chartPartsTrend"></canvas></div>
+    <div class="chart-card" data-clickable><h3>Labor Cost Trend by Quarter</h3><div class="chart-subtitle">Estimated labor/diagnostic cost over time</div><canvas id="chartLaborTrend"></canvas></div>
   </div>
 
-  <!-- Section 6: Product in Field (Nicholas's request) -->
-  <div class="section-header">
-    <h2>Claims vs. Product Age in Field</h2>
-    <span class="badge badge-blue">Field Analysis</span>
-  </div>
+  <div class="section-header"><h2>Claims vs. Product Age in Field</h2><span class="badge badge-blue">Field Analysis</span></div>
   <div class="chart-grid">
-    <div class="chart-card chart-full tall">
-      <h3>Warranty Claims by Length of Product in Field &mdash; Top CTL Models</h3>
-      <div class="chart-subtitle">For top 5-10 units sold: # of warranty claims (Y) vs months since earliest sale year (X)</div>
+    <div class="chart-card chart-full tall" data-clickable>
+      <h3>Warranty Claims by Length of Product in Field — Top CTL Models</h3>
+      <div class="chart-subtitle">Hover highlights the specific model line. Click a point for full model detail.</div>
       <canvas id="chartProductInField"></canvas>
     </div>
   </div>
 
-  <!-- Trend Insights -->
-  <div class="section-header">
-    <h2>Key Insights</h2>
-    <span class="badge badge-green">Auto-Generated</span>
-  </div>
+  <div class="section-header"><h2>Key Insights</h2><span class="badge badge-green">Auto-Generated</span></div>
   <div class="insight-grid" id="insightGrid"></div>
 
-  <!-- Summary Table -->
-  <div class="data-table-container">
-    <h3>Top Models Summary</h3>
-    <table id="summaryTable">
-      <thead>
-        <tr>
-          <th>Model</th><th>Units Sold</th><th>Repairs</th><th>Repair Rate</th>
-          <th>Warranty Rev</th><th>Total Cost</th><th>Net P/L</th><th>Trend</th>
-        </tr>
-      </thead>
-      <tbody id="summaryBody"></tbody>
-    </table>
+  <div class="data-table-container"><h3>Top Models Summary</h3>
+    <table><thead><tr><th>Model</th><th>Units Sold</th><th>Repairs</th><th>Repair Rate</th><th>Warranty Rev</th><th>Total Cost</th><th>Net P/L</th><th>Trend</th></tr></thead><tbody id="summaryBody"></tbody></table>
   </div>
 
-  <!-- Footer -->
-  <div class="footer">
-    CTL Warranty Board Report &bull; <span>Live from Google Sheets</span><br>
-    All models with repairs shown &bull; Repair Rate requires sold &gt; 0
-  </div>
+  <div class="footer">CTL Warranty Board Report &bull; <span>Live from Google Sheets</span><br>All models with repairs shown &bull; Sales use full history &bull; Repairs filtered by date</div>
 </div>
 
 <script>
-// ========== CONSTANTS ==========
-const PASSWORD = 'CTLdata2026';
-const SHIPPING_COST_PER_REPAIR = 10;
-const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=986703446&single=true&output=csv';
-const SALES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=235319241&single=true&output=csv';
+const PASSWORD='CTLdata2026',SHIPPING=10;
+const REPAIR_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=986703446&single=true&output=csv';
+const SALES_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=235319241&single=true&output=csv';
+const EST_COSTS={'AC Adapter':50,Accidental:100,Battery:100,Camera:50,Daughterboard:50,'DC Port':50,Declined:50,'Headphone Port':50,Hinge:50,'Hinge Cover':50,Keyboard:50,'Keyboard Keys':50,'LTE Module':50,LVDS:50,Mainboard:100,NPF:20,NPU:20,'OS Issue':50,Other:50,Panel:100,Plastics:50,'Please Select':20,Replacement:100,Storage:100,'Tear Down':50,Touchpad:50,'USB Port':50,'USB-C Port':50,'Wifi Module':50};
+const PARTS=new Set(['Panel','Mainboard','Battery','Storage','Keyboard','Keyboard Keys','Daughterboard','Camera','LTE Module','LVDS','AC Adapter','Wifi Module','Touchpad','DC Port','USB Port','USB-C Port','Headphone Port','Hinge','Hinge Cover','Plastics','Replacement','Accidental']);
+const CC=['#22d3ee','#4aa3df','#a78bfa','#f472b6','#fbbf24','#34d399','#f97316','#ef4444','#818cf8','#2dd4bf','#fb923c','#c084fc'];
+let rawR=null,rawS=null,allMD=[],sLookup={},charts=[];
+let _codeAgg={},_qAgg={},_bins=[],_codeCosts=[];
 
-const ESTIMATED_REPAIR_COSTS = {
-  'AC Adapter':50,'Accidental':100,'Battery':100,'Camera':50,
-  'Daughterboard':50,'DC Port':50,'Declined':50,'Headphone Port':50,
-  'Hinge':50,'Hinge Cover':50,'Keyboard':50,'Keyboard Keys':50,
-  'LTE Module':50,'LVDS':50,'Mainboard':100,'NPF':20,'NPU':20,
-  'OS Issue':50,'Other':50,'Panel':100,'Plastics':50,
-  'Please Select':20,'Replacement':100,'Storage':100,
-  'Tear Down':50,'Touchpad':50,'USB Port':50,'USB-C Port':50,
-  'Wifi Module':50
-};
+const fmt=n=>n==null?'N/A':n.toLocaleString('en-US');
+const fmtD=n=>n==null?'N/A':'$'+Math.round(n).toLocaleString('en-US');
+const fmtP=n=>n==null?'N/A':n.toFixed(2)+'%';
+function trend(v){const f=v.filter(x=>x!=null);if(f.length<2)return{t:'N/A',c:'flat'};const a=f[0],b=f[f.length-1];if(!a&&!b)return{t:'FLAT',c:'flat'};if(!a)return{t:'↑ UP',c:'up'};const p=((b-a)/Math.abs(a))*100;if(p>10)return{t:`↑ +${p.toFixed(0)}%`,c:'up'};if(p<-10)return{t:`↓ ${p.toFixed(0)}%`,c:'down'};return{t:'→ FLAT',c:'flat'};}
 
-// Repair types that are primarily PARTS-driven (high material cost)
-const PARTS_REPAIRS = new Set(['Panel','Mainboard','Battery','Storage','Keyboard','Keyboard Keys',
-  'Daughterboard','Camera','LTE Module','LVDS','AC Adapter','Wifi Module','Touchpad',
-  'DC Port','USB Port','USB-C Port','Headphone Port','Hinge','Hinge Cover','Plastics','Replacement','Accidental']);
-// Repair types that are primarily LABOR/DIAGNOSTIC-driven
-const LABOR_REPAIRS = new Set(['NPU','NPF','OS Issue','Tear Down','Declined','Please Select','Other']);
-
-let rawRepairData = null;
-let rawSalesData = null;
-let allModelData = [];
-let salesLookup = {};
-let chartInstances = [];
-
-// ========== PASSWORD ==========
-function checkPassword() {
-  const pw = document.getElementById('pwInput').value;
-  if (pw === PASSWORD) {
-    document.getElementById('pwOverlay').classList.add('hidden');
-    document.getElementById('loadingOverlay').classList.remove('hidden');
-    fetchAllData();
-  } else {
-    document.getElementById('pwError').textContent = 'Incorrect password';
-  }
+function checkPassword(){if(document.getElementById('pwInput').value===PASSWORD){document.getElementById('pwOverlay').classList.add('hidden');document.getElementById('loadingOverlay').classList.remove('hidden');fetchAll();}else document.getElementById('pwError').textContent='Incorrect password';}
+function fetchAll(){
+  document.getElementById('loadingMsg').textContent='Fetching repair data...';
+  let rd=false,sd=false;
+  Papa.parse(REPAIR_URL,{download:true,header:true,skipEmptyLines:true,complete:r=>{rawR=r.data;rd=true;document.getElementById('loadingMsg').textContent='Fetching sales data...';if(sd)go();},error:e=>{document.getElementById('loadingMsg').textContent='Error: repair — '+(e.message||JSON.stringify(e));}});
+  Papa.parse(SALES_URL,{download:true,header:true,skipEmptyLines:true,complete:r=>{rawS=r.data;sd=true;if(rd)go();},error:e=>{document.getElementById('loadingMsg').textContent='Error: sales — '+(e.message||JSON.stringify(e));}});
 }
+function refreshData(){document.getElementById('loadingOverlay').classList.remove('hidden');rawR=rawS=null;fetchAll();}
+function applyDateFilter(){if(rawR&&rawS){document.getElementById('loadingOverlay').classList.remove('hidden');document.getElementById('loadingMsg').textContent='Reprocessing...';setTimeout(go,50);}}
 
-// ========== DATA FETCHING ==========
-function fetchAllData() {
-  document.getElementById('loadingMsg').textContent = 'Fetching repair data...';
-  let repairDone = false, salesDone = false;
+function getDR(){const s=document.getElementById('startDate').value,e=document.getElementById('endDate').value;const[sy,sm,sd]=s.split('-').map(Number),[ey,em,ed]=e.split('-').map(Number);return{start:new Date(sy,sm-1,sd),end:new Date(ey,em-1,ed,23,59,59),sy,ey};}
+function pDate(s){if(!s)return null;const d=new Date(s);if(isNaN(d))return null;return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+function qLabel(d){return`${d.getFullYear()} Q${Math.floor(d.getMonth()/3)+1}`;}
 
-  Papa.parse(GOOGLE_SHEETS_URL, {
-    download: true, header: true, skipEmptyLines: true,
-    complete: (results) => {
-      rawRepairData = results.data;
-      repairDone = true;
-      document.getElementById('loadingMsg').textContent = 'Fetching sales data...';
-      if (salesDone) processAndRender();
-    },
-    error: (err) => { document.getElementById('loadingMsg').textContent = 'Error loading repair data: ' + (err.message || JSON.stringify(err)); }
+function buildSL(data){
+  const L={};
+  data.forEach(r=>{
+    const it=(r['Item No']||'').trim(),co=(r['Warranty Code']||'').trim(),yr=(r['Year']||'').trim();
+    const qt=parseFloat(r['Total Sales Qty'])||0,pr=parseFloat((r['Price']||'').replace(/[$,]/g,''))||0;
+    let rv=parseFloat((r['Total Sales']||'').replace(/[$,]/g,''))||0;
+    if(!rv&&qt&&pr)rv=qt*pr;
+    if(!it||!co)return;
+    if(!L[it])L[it]={_byYr:{},_total:0};
+    if(!L[it][co])L[it][co]={qty:0,price:pr,rev:0,byYr:{}};
+    L[it][co].qty+=qt;L[it][co].rev+=rv;L[it]._total+=qt;
+    if(yr){if(!L[it][co].byYr[yr])L[it][co].byYr[yr]={qty:0,rev:0};L[it][co].byYr[yr].qty+=qt;L[it][co].byYr[yr].rev+=rv;L[it]._byYr[yr]=(L[it]._byYr[yr]||0)+qt;}
   });
-
-  Papa.parse(SALES_CSV_URL, {
-    download: true, header: true, skipEmptyLines: true,
-    complete: (results) => {
-      rawSalesData = results.data;
-      salesDone = true;
-      if (repairDone) processAndRender();
-    },
-    error: (err) => { document.getElementById('loadingMsg').textContent = 'Error loading sales data: ' + (err.message || JSON.stringify(err)); }
-  });
+  return L;
 }
 
-function refreshData() {
-  document.getElementById('loadingOverlay').classList.remove('hidden');
-  rawRepairData = null; rawSalesData = null;
-  fetchAllData();
-}
-
-function applyDateFilter() {
-  if (!rawRepairData || !rawSalesData) return;
-  document.getElementById('loadingOverlay').classList.remove('hidden');
-  document.getElementById('loadingMsg').textContent = 'Reprocessing...';
-  setTimeout(() => processAndRender(), 50);
-}
-
-// ========== DATE HELPERS ==========
-function getDateRange() {
-  const sv = document.getElementById('startDate').value;
-  const ev = document.getElementById('endDate').value;
-  const [sy, sm, sd] = sv.split('-').map(Number);
-  const [ey, em, ed] = ev.split('-').map(Number);
-  return {
-    start: new Date(sy, sm - 1, sd),
-    end: new Date(ey, em - 1, ed, 23, 59, 59),
-    startYear: sy, endYear: ey
-  };
-}
-
-function parseDate(str) {
-  if (!str) return null;
-  const d = new Date(str);
-  if (isNaN(d)) return null;
-  // Re-parse to avoid UTC shift
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-function getQuarterLabel(date) {
-  const q = Math.floor(date.getMonth() / 3) + 1;
-  return `${date.getFullYear()} Q${q}`;
-}
-
-// ========== SALES LOOKUP ==========
-function buildSalesLookup(data) {
-  const lookup = {};
-  data.forEach(row => {
-    const item = (row['Item No'] || '').trim();
-    const code = (row['Warranty Code'] || '').trim();
-    const year = (row['Year'] || '').trim();
-    const qty = parseFloat(row['Total Sales Qty']) || 0;
-    const price = parseFloat(row['Price']) || 0;
-    let revenue = parseFloat(row['Total Sales']) || 0;
-    if (!revenue && qty && price) revenue = qty * price;
-    if (!item || !code) return;
-    if (!lookup[item]) lookup[item] = { _soldByYear: {} };
-    if (!lookup[item][code]) lookup[item][code] = { qty: 0, price, revenue: 0, byYear: {} };
-    lookup[item][code].qty += qty;
-    lookup[item][code].revenue += revenue;
-    if (year) {
-      if (!lookup[item][code].byYear[year]) lookup[item][code].byYear[year] = { qty: 0, revenue: 0 };
-      lookup[item][code].byYear[year].qty += qty;
-      lookup[item][code].byYear[year].revenue += revenue;
-      lookup[item]._soldByYear[year] = (lookup[item]._soldByYear[year] || 0) + qty;
-    }
-  });
-  return lookup;
-}
-
-// ========== MAIN PROCESSING ==========
-function processAndRender() {
-  const { start, end, startYear, endYear } = getDateRange();
-  salesLookup = buildSalesLookup(rawSalesData);
-
-  // Filter repairs
-  const filtered = rawRepairData.filter(row => {
-    const model = (row['Model Name'] || '').trim();
-    const item = (row['Item Number'] || '').trim();
-    const dateStr = (row['Order Received Date'] || '').trim();
-    if (!dateStr || !model || model === 'No Match' || !item || item === 'No Match') return false;
-    const d = parseDate(dateStr);
-    return d && d >= start && d <= end;
-  });
-
-  // Group by Item Number
-  const groups = {};
-  filtered.forEach(row => {
-    const item = (row['Item Number'] || '').trim();
-    if (!groups[item]) groups[item] = [];
-    groups[item].push(row);
-  });
-
-  allModelData = [];
-
-  Object.entries(groups).forEach(([itemNumber, rows]) => {
-    const model = rows[0]['Model Name'].trim();
-    let total = rows.length, major = 0, minor = 0, npu = 0, accidental = 0;
-    let actualCost = 0, estimatedCost = 0, repairRevenue = 0;
-    let inWarranty = 0, outWarranty = 0;
-    const yearlyRepairs = {};
-    const repairTypeCounts = {};
-    const quarterlyData = {};
-    const warrantyCodeRepairs = {};
-
-    rows.forEach(row => {
-      const repair = (row['Repair'] || '').trim();
-      const isMajor = (row['Major Repairs'] || '').trim().toLowerCase() === 'yes';
-      const isNPU = /npu|npf/i.test(repair);
-      const isAccidental = ['yes','liquid'].includes((row['Accidental Damage'] || '').trim().toLowerCase());
-      const cost = (parseFloat(row['Costs']) || 0) + SHIPPING_COST_PER_REPAIR;
-      const estCost = ESTIMATED_REPAIR_COSTS[repair] || 50;
-      const repRev = parseFloat(row['Repair Revenue']) || 0;
-      const ws = (row['Warranty Status'] || '').trim();
-      const wCode = (row['Warranty Code'] || '').trim();
-      const d = parseDate(row['Order Received Date']);
-      const yr = d ? d.getFullYear().toString() : 'Unknown';
-      const qtr = d ? getQuarterLabel(d) : 'Unknown';
-
-      if (isNPU) npu++;
-      else if (isMajor) major++;
-      else minor++;
-      if (isAccidental) accidental++;
-      actualCost += cost;
-      estimatedCost += estCost;
-      repairRevenue += repRev;
-      if (ws === 'In Warranty') inWarranty++;
-      else if (ws === 'Out of Warranty') outWarranty++;
-
-      repairTypeCounts[repair] = (repairTypeCounts[repair] || 0) + 1;
-
-      // Yearly
-      if (!yearlyRepairs[yr]) yearlyRepairs[yr] = { repairs: 0, cost: 0, estimatedCost: 0, repairRevenue: 0, major: 0, minor: 0, npu: 0, accidental: 0, inWarranty: 0, outWarranty: 0 };
-      yearlyRepairs[yr].repairs++;
-      yearlyRepairs[yr].cost += cost;
-      yearlyRepairs[yr].estimatedCost += estCost;
-      yearlyRepairs[yr].repairRevenue += repRev;
-      if (isNPU) yearlyRepairs[yr].npu++; else if (isMajor) yearlyRepairs[yr].major++; else yearlyRepairs[yr].minor++;
-      if (isAccidental) yearlyRepairs[yr].accidental++;
-      if (ws === 'In Warranty') yearlyRepairs[yr].inWarranty++;
-      else if (ws === 'Out of Warranty') yearlyRepairs[yr].outWarranty++;
-
-      // Quarterly (for trend charts)
-      if (!quarterlyData[qtr]) quarterlyData[qtr] = { repairs: 0, partsCost: 0, laborCost: 0, totalCost: 0 };
-      quarterlyData[qtr].repairs++;
-      quarterlyData[qtr].totalCost += cost;
-      if (PARTS_REPAIRS.has(repair)) quarterlyData[qtr].partsCost += cost;
-      else quarterlyData[qtr].laborCost += cost;
-
-      // Warranty code grouping
-      if (wCode) {
-        if (!warrantyCodeRepairs[wCode]) warrantyCodeRepairs[wCode] = { count: 0, cost: 0, estimatedCost: 0 };
-        warrantyCodeRepairs[wCode].count++;
-        warrantyCodeRepairs[wCode].cost += cost;
-        warrantyCodeRepairs[wCode].estimatedCost += estCost;
-      }
+function go(){
+  const{start,end,sy,ey}=getDR();
+  sLookup=buildSL(rawS);
+  const filt=rawR.filter(r=>{const m=(r['Model Name']||'').trim(),it=(r['Item Number']||'').trim(),ds=(r['Order Received Date']||'').trim();if(!ds||!m||m==='No Match'||!it||it==='No Match')return false;const d=pDate(ds);return d&&d>=start&&d<=end;});
+  const grp={};filt.forEach(r=>{const it=(r['Item Number']||'').trim();if(!grp[it])grp[it]=[];grp[it].push(r);});
+  allMD=[];
+  Object.entries(grp).forEach(([itemN,rows])=>{
+    const model=rows[0]['Model Name'].trim();
+    let tot=rows.length,maj=0,min=0,npu=0,acc=0,aCost=0,eCost=0,rRev=0,inW=0,outW=0;
+    const yR={},rTC={},qD={},wCR={};
+    rows.forEach(r=>{
+      const rep=(r['Repair']||'').trim(),isMaj=(r['Major Repairs']||'').trim().toLowerCase()==='yes',isNPU=/npu|npf/i.test(rep);
+      const isAcc=['yes','liquid'].includes((r['Accidental Damage']||'').trim().toLowerCase());
+      const cost=(parseFloat(r['Costs'])||0)+SHIPPING,est=EST_COSTS[rep]||50,rev=parseFloat(r['Repair Revenue'])||0;
+      const ws=(r['Warranty Status']||'').trim(),wc=(r['Warranty Code']||'').trim();
+      const d=pDate(r['Order Received Date']),yr=d?d.getFullYear().toString():'?',qt=d?qLabel(d):'?';
+      if(isNPU)npu++;else if(isMaj)maj++;else min++;
+      if(isAcc)acc++;aCost+=cost;eCost+=est;rRev+=rev;
+      if(ws==='In Warranty')inW++;else if(ws==='Out of Warranty')outW++;
+      rTC[rep]=(rTC[rep]||0)+1;
+      if(!yR[yr])yR[yr]={rep:0,cost:0,est:0,rRev:0,maj:0,min:0,npu:0,acc:0,inW:0,outW:0};
+      const y=yR[yr];y.rep++;y.cost+=cost;y.est+=est;y.rRev+=rev;if(isNPU)y.npu++;else if(isMaj)y.maj++;else y.min++;if(isAcc)y.acc++;if(ws==='In Warranty')y.inW++;else if(ws==='Out of Warranty')y.outW++;
+      if(!qD[qt])qD[qt]={rep:0,pC:0,lC:0,tC:0,pR:0,lR:0};const q=qD[qt];q.rep++;q.tC+=cost;if(PARTS.has(rep)){q.pC+=cost;q.pR++;}else{q.lC+=cost;q.lR++;}
+      if(wc){if(!wCR[wc])wCR[wc]={cnt:0,cost:0,est:0};wCR[wc].cnt++;wCR[wc].cost+=cost;wCR[wc].est+=est;}
     });
+    let sold=0,wRev=0;const yS={},yWR={};const iS=sLookup[itemN];
+    if(iS){sold=iS._total||0;Object.entries(iS._byYr||{}).forEach(([yr,q])=>{yS[yr]=q;});
+      Object.entries(iS).forEach(([co,sd])=>{if(co.startsWith('_'))return;Object.entries(sd.byYr||{}).forEach(([yr,yd])=>{yWR[yr]=(yWR[yr]||0)+yd.rev;});wRev+=sd.rev;
+        if(!wCR[co])wCR[co]={cnt:0,cost:0,est:0};wCR[co].qS=sd.qty;wCR[co].wR=sd.rev;wCR[co].uP=sd.price;});
+    }
+    const rr=sold>0?(tot/sold*100):null,nPL=wRev+rRev-aCost;
+    const sn=model.replace(/^CTL Chromebook /i,'').replace(/^CTL /i,'').substring(0,30);
+    let eY=null;Object.keys(yS).forEach(yr=>{const y=parseInt(yr);if(!eY||y<eY)eY=y;});
+    const mR={};if(eY)rows.forEach(r=>{const d=pDate(r['Order Received Date']);if(!d)return;const mo=(d.getFullYear()-eY)*12+d.getMonth();if(mo>=0)mR[mo]=(mR[mo]||0)+1;});
+    allMD.push({model,itemNumber:itemN,shortName:sn,total:tot,major:maj,minor:min,npu,accidental:acc,actualCost:aCost,estimatedCost:eCost,repairRevenue:rRev,inWarranty:inW,outWarranty:outW,sold,warrantyRevenue:wRev,repairRate:rr,netPL:nPL,yearlyRepairs:yR,yearlySold:yS,yearlyWarrantyRevenue:yWR,quarterlyData:qD,repairTypeCounts:rTC,warrantyCodeRepairs:wCR,monthlyRepairs:mR,earliestSaleYear:eY});
+  });
+  allMD.sort((a,b)=>b.total-a.total);
+  document.getElementById('dateLabel').textContent=`Repairs: ${document.getElementById('startDate').value} — ${document.getElementById('endDate').value} | Sales: All Years`;
+  render();document.getElementById('loadingOverlay').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');
+}
 
-    // Sales
-    let sold = 0, warrantyRevenue = 0;
-    const yearlySold = {};
-    const yearlyWarrantyRevenue = {};
-    const itemSales = salesLookup[itemNumber];
+function openDM(title,html){document.getElementById('detailTitle').textContent=title;document.getElementById('detailBody').innerHTML=html;document.getElementById('detailOverlay').classList.add('active');}
+function closeDetailModal(){document.getElementById('detailOverlay').classList.remove('active');}
+function exportCSV(tid){const t=document.getElementById(tid);if(!t)return;const rows=[];t.querySelectorAll('tr').forEach(tr=>{const c=Array.from(tr.querySelectorAll('th,td')).map(c=>'"'+c.textContent.replace(/"/g,'""').trim()+'"');if(c.length)rows.push(c.join(','));});const b=new Blob(['\ufeff'+rows.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='export.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);}
 
-    if (itemSales) {
-      Object.entries(itemSales._soldByYear || {}).forEach(([yr, qty]) => {
-        if (parseInt(yr) >= startYear && parseInt(yr) <= endYear) {
-          sold += qty;
-          yearlySold[yr] = qty;
+function modelHTML(m){
+  const tR=Object.entries(m.repairTypeCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const wC=Object.entries(m.warrantyCodeRepairs).filter(([c])=>c).sort((a,b)=>(b[1].cnt||0)-(a[1].cnt||0));
+  let h=`<div class="detail-stats">
+    <div class="detail-stat"><div class="label">Units Sold</div><div class="value">${fmt(m.sold)}</div></div>
+    <div class="detail-stat"><div class="label">Repairs</div><div class="value">${fmt(m.total)}</div></div>
+    <div class="detail-stat"><div class="label">Repair Rate</div><div class="value">${m.repairRate!=null?fmtP(m.repairRate):'N/A'}</div></div>
+    <div class="detail-stat"><div class="label">Total Cost</div><div class="value">${fmtD(m.actualCost)}</div></div>
+    <div class="detail-stat"><div class="label">Warranty Rev</div><div class="value">${fmtD(m.warrantyRevenue)}</div></div>
+    <div class="detail-stat"><div class="label">Net P/L</div><div class="value" style="color:${m.netPL>=0?'var(--positive)':'var(--negative)'}">${fmtD(m.netPL)}</div></div>
+    <div class="detail-stat"><div class="label">Maj / Min / NPU</div><div class="value" style="font-size:14px">${fmt(m.major)} / ${fmt(m.minor)} / ${fmt(m.npu)}</div></div>
+    <div class="detail-stat"><div class="label">Accidental %</div><div class="value">${m.total>0?fmtP(m.accidental/m.total*100):'N/A'}</div></div>
+  </div>`;
+  h+=`<div class="section-label">Top Repair Types</div><table id="dtR"><thead><tr><th>Repair</th><th>Count</th><th>%</th></tr></thead><tbody>`;
+  tR.forEach(([r,c])=>{h+=`<tr><td>${r}</td><td class="mono">${fmt(c)}</td><td class="mono">${fmtP(c/m.total*100)}</td></tr>`;});h+=`</tbody></table>`;
+  if(wC.length){h+=`<div class="section-label">Warranty Codes</div><table><thead><tr><th>Code</th><th>Repairs</th><th>Sold</th><th>Cost</th><th>Revenue</th></tr></thead><tbody>`;
+    wC.forEach(([c,d])=>{h+=`<tr><td>${c}</td><td class="mono">${fmt(d.cnt)}</td><td class="mono">${fmt(d.qS||0)}</td><td class="mono">${fmtD(d.cost)}</td><td class="mono">${fmtD(d.wR||0)}</td></tr>`;});h+=`</tbody></table>`;}
+  const yrs=Object.keys(m.yearlyRepairs).sort();
+  if(yrs.length){h+=`<div class="section-label">Year-by-Year</div><table><thead><tr><th>Year</th><th>Repairs</th><th>Major</th><th>Minor</th><th>NPU</th><th>Cost</th><th>Sold</th></tr></thead><tbody>`;
+    yrs.forEach(yr=>{const d=m.yearlyRepairs[yr];h+=`<tr><td>${yr}</td><td class="mono">${fmt(d.rep)}</td><td class="mono">${fmt(d.maj)}</td><td class="mono">${fmt(d.min)}</td><td class="mono">${fmt(d.npu)}</td><td class="mono">${fmtD(d.cost)}</td><td class="mono">${fmt(m.yearlySold[yr]||0)}</td></tr>`;});h+=`</tbody></table>`;}
+  h+=`<button class="export-btn" onclick="exportCSV('dtR')">📥 Export CSV</button>`;return h;
+}
+
+function destroyCharts(){charts.forEach(c=>{try{c.destroy();}catch(e){}});charts=[];}
+
+function render(){
+  destroyCharts();const{sy,ey}=getDR();
+  const aYrs=new Set();allMD.forEach(m=>{Object.keys(m.yearlySold).forEach(y=>aYrs.add(y));Object.keys(m.yearlyRepairs).forEach(y=>aYrs.add(y));});
+  const salesYrs=[...aYrs].sort();const rYrs=[...new Set([...allMD.flatMap(m=>Object.keys(m.yearlyRepairs))])].sort();
+  let tSold=0,tRep=0,tCost=0,tEst=0,tAcc=0,tInW=0,tOutW=0,tWRev=0,tRRev=0;
+  const ytS={},ytR={},ytC={},ytWR={};
+  allMD.forEach(m=>{tSold+=m.sold;tRep+=m.total;tCost+=m.actualCost;tEst+=m.estimatedCost;tAcc+=m.accidental;tInW+=m.inWarranty;tOutW+=m.outWarranty;tWRev+=m.warrantyRevenue;tRRev+=m.repairRevenue;
+    Object.entries(m.yearlySold).forEach(([y,q])=>{ytS[y]=(ytS[y]||0)+q;});Object.entries(m.yearlyRepairs).forEach(([y,d])=>{ytR[y]=(ytR[y]||0)+d.rep;ytC[y]=(ytC[y]||0)+d.cost;});Object.entries(m.yearlyWarrantyRevenue).forEach(([y,r])=>{ytWR[y]=(ytWR[y]||0)+r;});});
+  const oRate=tSold>0?(tRep/tSold*100):null,accP=tRep>0?(tAcc/tRep*100):0,inWP=(tInW+tOutW)>0?(tInW/(tInW+tOutW)*100):0,nPL=tWRev+tRRev-tCost;
+  document.getElementById('kpiRow').innerHTML=`
+    <div class="kpi-card cyan"><div class="kpi-label">Units Sold (All Years)</div><div class="kpi-value">${fmt(tSold)}</div></div>
+    <div class="kpi-card yellow"><div class="kpi-label">Total Repairs</div><div class="kpi-value">${fmt(tRep)}</div><div class="kpi-sub">${sy}–${ey}</div></div>
+    <div class="kpi-card red"><div class="kpi-label">Repair Rate</div><div class="kpi-value">${oRate!=null?fmtP(oRate):'N/A'}</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">Repair Cost</div><div class="kpi-value">${fmtD(tCost)}</div><div class="kpi-sub">Est: ${fmtD(tEst)}</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Accidental %</div><div class="kpi-value">${fmtP(accP)}</div></div>
+    <div class="kpi-card green"><div class="kpi-label">In Warranty %</div><div class="kpi-value">${fmtP(inWP)}</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">Warranty Revenue</div><div class="kpi-value">${fmtD(tWRev)}</div></div>
+    <div class="kpi-card ${nPL>=0?'green':'red'}"><div class="kpi-label">Net P/L</div><div class="kpi-value" style="color:${nPL>=0?'var(--positive)':'var(--negative)'}">${fmtD(nPL)}</div></div>`;
+
+  // Chart 1: Sold by Year
+  charts.push(new Chart(document.getElementById('chartSoldByYear'),{type:'bar',data:{labels:salesYrs,datasets:[{label:'Units Sold',data:salesYrs.map(y=>ytS[y]||0),backgroundColor:salesYrs.map((_,i)=>CC[i%CC.length]),borderRadius:6,barPercentage:.6}]},options:{responsive:true,onClick:(e,el)=>{if(el.length)showYrDet(salesYrs[el[0].index],'sold');},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)+' units'}}},scales:{y:{ticks:{color:'#8899b0',callback:v=>fmt(v)},grid:{color:'#1e3050'}},x:{ticks:{color:'#8899b0'},grid:{display:false}}}}}));
+
+  // Chart 2: Revenue by Year
+  charts.push(new Chart(document.getElementById('chartRevByYear'),{type:'bar',data:{labels:salesYrs,datasets:[{label:'Revenue',data:salesYrs.map(y=>ytWR[y]||0),backgroundColor:salesYrs.map((_,i)=>CC[(i+3)%CC.length]),borderRadius:6,barPercentage:.6}]},options:{responsive:true,onClick:(e,el)=>{if(el.length)showYrDet(salesYrs[el[0].index],'rev');},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtD(c.raw)}}},scales:{y:{ticks:{color:'#8899b0',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#1e3050'}},x:{ticks:{color:'#8899b0'},grid:{display:false}}}}}));
+
+  // Chart 3: Claim Freq
+  _codeAgg={};allMD.forEach(m=>{Object.entries(m.warrantyCodeRepairs).forEach(([c,d])=>{if(!_codeAgg[c])_codeAgg[c]={cnt:0,cost:0,qS:0,wR:0,models:[]};_codeAgg[c].cnt+=d.cnt||0;_codeAgg[c].cost+=d.cost||0;_codeAgg[c].qS+=d.qS||0;_codeAgg[c].wR+=d.wR||0;if(d.cnt>0)_codeAgg[c].models.push({n:m.shortName,cnt:d.cnt,cost:d.cost});});});
+  const tCodes=Object.entries(_codeAgg).filter(([c])=>c).sort((a,b)=>b[1].cnt-a[1].cnt).slice(0,15);
+  charts.push(new Chart(document.getElementById('chartClaimFreq'),{type:'bar',data:{labels:tCodes.map(([c])=>c),datasets:[{label:'Claims',data:tCodes.map(([,d])=>d.cnt),backgroundColor:tCodes.map((_,i)=>CC[i%CC.length]),borderRadius:4}]},options:{indexAxis:'y',responsive:true,onClick:(e,el)=>{if(el.length)showCodeDet(tCodes[el[0].index][0]);},plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},y:{ticks:{color:'#8899b0',font:{size:10,family:'Space Mono'}},grid:{display:false}}}}}));
+
+  // Chart 4: Severity
+  let tMaj=0,tMin=0,tNPU=0;allMD.forEach(m=>{tMaj+=m.major;tMin+=m.minor;tNPU+=m.npu;});
+  charts.push(new Chart(document.getElementById('chartSeverity'),{type:'doughnut',data:{labels:['Major','Minor','NPU/NPF'],datasets:[{data:[tMaj,tMin,tNPU],backgroundColor:['#ef4444','#fbbf24','#4aa3df'],borderWidth:0}]},options:{responsive:true,cutout:'55%',onClick:(e,el)=>{if(el.length)showSevDet(['Major','Minor','NPU/NPF'][el[0].index]);},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:16}},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)+' ('+((c.raw/tRep)*100).toFixed(1)+'%)'}}}}}));
+
+  // Chart 5: Breakage Trends (COUNTS, not rates)
+  const topR=allMD.filter(m=>m.sold>0).sort((a,b)=>b.total-a.total).slice(0,10);
+  const aQ=new Set();topR.forEach(m=>Object.keys(m.quarterlyData).forEach(q=>aQ.add(q)));
+  for(let yr=sy;yr<=ey;yr++)for(let q=1;q<=4;q++)aQ.add(`${yr} Q${q}`);
+  const sQ=[...aQ].sort();
+  const tDS=topR.map((m,i)=>({label:m.shortName,data:sQ.map(q=>m.quarterlyData[q]?.rep||0),borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'20',tension:.3,pointRadius:3,pointHoverRadius:6,borderWidth:2.5,fill:false}));
+  charts.push(new Chart(document.getElementById('chartBreakageTrends'),{type:'line',data:{labels:sQ,datasets:tDS},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length){const m=topR[el[0].datasetIndex];if(m)openDM(m.model,modelHTML(m));}},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,font:{size:11,family:'Space Mono'},usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+' repairs'}}},scales:{y:{title:{display:true,text:'Repairs per Quarter',color:'#8899b0'},ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{color:'#1e305030'}}}}}));
+
+  // Chart 6: Cost Distribution
+  _codeCosts=[];Object.entries(_codeAgg).forEach(([c,d])=>{if(d.cnt>0)_codeCosts.push({code:c,avgC:d.cost/d.cnt,avgR:d.qS>0?d.wR/d.qS:0,cnt:d.cnt,qS:d.qS,wR:d.wR});});
+  _codeCosts.sort((a,b)=>a.avgC-b.avgC);
+  const cVals=_codeCosts.map(c=>c.avgC),mnC=Math.min(...cVals,0),mxC=Math.max(...cVals,200),bs=20;
+  _bins=[];for(let b=Math.floor(mnC/bs)*bs;b<=mxC+bs;b+=bs)_bins.push({min:b,max:b+bs,label:`$${b}-${b+bs}`,codes:[],n:0});
+  _codeCosts.forEach(c=>{const bin=_bins.find(b=>c.avgC>=b.min&&c.avgC<b.max);if(bin){bin.codes.push(c);bin.n++;}});
+  const oAvgR=Object.values(_codeAgg).reduce((s,d)=>s+(d.wR||0),0)/Math.max(Object.values(_codeAgg).reduce((s,d)=>s+(d.qS||0),0),1);
+  charts.push(new Chart(document.getElementById('chartCostDistribution'),{type:'bar',data:{labels:_bins.map(b=>b.label),datasets:[{type:'bar',label:'Warranty Codes',data:_bins.map(b=>b.n),backgroundColor:'rgba(167,139,250,.5)',borderColor:'#a78bfa',borderWidth:1,borderRadius:4,yAxisID:'y'},{type:'line',label:`Avg Rev/Warranty: ${fmtD(oAvgR)}`,data:_bins.map(()=>oAvgR),borderColor:'#34d399',borderWidth:2.5,borderDash:[8,4],pointRadius:0,fill:false,yAxisID:'y1'}]},options:{responsive:true,onClick:(e,el)=>{if(el.length&&el[0].datasetIndex===0){const b=_bins[el[0].index];if(b)showBinDet(b);}},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:16}},tooltip:{callbacks:{label:c=>{if(c.datasetIndex===0)return c.raw+' warranty codes';return'Avg Revenue: '+fmtD(c.raw);}}}},scales:{y:{title:{display:true,text:'# Warranty Codes',color:'#8899b0'},ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},y1:{position:'right',title:{display:true,text:'Revenue ($)',color:'#34d399'},ticks:{color:'#34d399',callback:v=>'$'+v.toFixed(0)},grid:{display:false},min:0},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{display:false}}}}}));
+
+  // Charts 7&8: Parts & Labor
+  _qAgg={};allMD.forEach(m=>{Object.entries(m.quarterlyData).forEach(([q,d])=>{if(!_qAgg[q])_qAgg[q]={pC:0,lC:0,tC:0,pR:0,lR:0,tR:0};const a=_qAgg[q];a.pC+=d.pC;a.lC+=d.lC;a.tC+=d.tC;a.pR+=d.pR;a.lR+=d.lR;a.tR+=d.rep;});});
+  for(let yr=sy;yr<=ey;yr++)for(let q=1;q<=4;q++){const k=`${yr} Q${q}`;if(!_qAgg[k])_qAgg[k]={pC:0,lC:0,tC:0,pR:0,lR:0,tR:0};}
+  const sQA=Object.keys(_qAgg).sort();
+  charts.push(new Chart(document.getElementById('chartPartsTrend'),{type:'line',data:{labels:sQA,datasets:[{label:'Total Parts Cost',data:sQA.map(q=>_qAgg[q].pC),borderColor:'#f97316',backgroundColor:'#f9731620',fill:true,tension:.3,borderWidth:2.5,pointRadius:4,yAxisID:'y'},{label:'Avg/Parts Repair',data:sQA.map(q=>{const d=_qAgg[q];return d.pR>0?Math.round(d.pC/d.pR):null;}),borderColor:'#fbbf24',backgroundColor:'transparent',borderDash:[6,3],tension:.3,borderWidth:2,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length)showQDet(sQA[el[0].index],'parts');},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtD(c.raw)}}},scales:{y:{title:{display:true,text:'Total Cost',color:'#f97316'},ticks:{color:'#f97316',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#1e3050'}},y1:{position:'right',title:{display:true,text:'Avg/Repair',color:'#fbbf24'},ticks:{color:'#fbbf24',callback:v=>'$'+v},grid:{display:false}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{display:false}}}}}));
+
+  charts.push(new Chart(document.getElementById('chartLaborTrend'),{type:'line',data:{labels:sQA,datasets:[{label:'Total Labor Cost',data:sQA.map(q=>_qAgg[q].lC),borderColor:'#a78bfa',backgroundColor:'#a78bfa20',fill:true,tension:.3,borderWidth:2.5,pointRadius:4,yAxisID:'y'},{label:'Avg/Labor Repair',data:sQA.map(q=>{const d=_qAgg[q];return d.lR>0?Math.round(d.lC/d.lR):null;}),borderColor:'#f472b6',backgroundColor:'transparent',borderDash:[6,3],tension:.3,borderWidth:2,pointRadius:3,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},onClick:(e,el)=>{if(el.length)showQDet(sQA[el[0].index],'labor');},plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtD(c.raw)}}},scales:{y:{title:{display:true,text:'Total Cost',color:'#a78bfa'},ticks:{color:'#a78bfa',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#1e3050'}},y1:{position:'right',title:{display:true,text:'Avg/Repair',color:'#f472b6'},ticks:{color:'#f472b6',callback:v=>'$'+v},grid:{display:false}},x:{ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{display:false}}}}}));
+
+  // Chart 9: Product in Field with HIGHLIGHT
+  const topS=allMD.filter(m=>m.sold>100&&m.earliestSaleYear).sort((a,b)=>b.sold-a.sold).slice(0,10);
+  let mxMo=0;topS.forEach(m=>Object.keys(m.monthlyRepairs).forEach(mo=>{mxMo=Math.max(mxMo,parseInt(mo));}));
+  const bSz=3,bLbls=[];for(let i=0;i<=mxMo;i+=bSz)bLbls.push(`${i}-${i+bSz} mo`);
+  const fDS=topS.map((m,i)=>({label:m.shortName,data:bLbls.map((_,idx)=>{let s=0;for(let mo=idx*bSz;mo<(idx+1)*bSz;mo++)s+=m.monthlyRepairs[mo]||0;return s||null;}),borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'30',tension:.35,pointRadius:3,pointHoverRadius:7,borderWidth:2.5,fill:false,spanGaps:true}));
+
+  const fieldChart=new Chart(document.getElementById('chartProductInField'),{type:'line',data:{labels:bLbls,datasets:fDS},options:{
+    responsive:true,interaction:{mode:'index',intersect:false},
+    onClick:(e,el)=>{if(el.length){const m=topS[el[0].datasetIndex];if(m)openDM(m.model,modelHTML(m));}},
+    onHover:(evt,activeEls,chart)=>{
+      if(activeEls.length>0){
+        const hi=activeEls[0].datasetIndex;
+        chart.data.datasets.forEach((ds,i)=>{ds.borderWidth=i===hi?5:1.5;ds.pointRadius=i===hi?6:1;ds.borderColor=CC[i%CC.length]+(i===hi?'':'44');});
+      }else{chart.data.datasets.forEach((ds,i)=>{ds.borderWidth=2.5;ds.pointRadius=3;ds.borderColor=CC[i%CC.length];});}
+      chart.update('none');
+    },
+    plugins:{legend:{position:'bottom',labels:{color:'#8899b0',padding:12,font:{size:11,family:'Space Mono'},usePointStyle:true,pointStyle:'circle'}},
+      tooltip:{
+        backgroundColor:'rgba(17,26,46,.95)',borderColor:'#2a5a8f',borderWidth:1,padding:12,
+        titleFont:{size:13,weight:'bold'},bodyFont:{size:12,family:'Space Mono'},
+        itemSort:(a,b)=>(b.raw||0)-(a.raw||0),
+        callbacks:{
+          label:c=>c.dataset.label+': '+(c.raw||0)+' claims',
+          labelTextColor:c=>{const ae=c.chart.getActiveElements();if(ae.length>0){return c.datasetIndex===ae[0].datasetIndex?'#ffffff':'#555566';}return'#8899b0';}
         }
-      });
-      Object.entries(itemSales).forEach(([code, saleData]) => {
-        if (code === '_soldByYear') return;
-        Object.entries(saleData.byYear || {}).forEach(([yr, yrData]) => {
-          if (parseInt(yr) >= startYear && parseInt(yr) <= endYear) {
-            warrantyRevenue += yrData.revenue;
-            yearlyWarrantyRevenue[yr] = (yearlyWarrantyRevenue[yr] || 0) + yrData.revenue;
-          }
-        });
-        // Merge into warrantyCodeRepairs
-        if (!warrantyCodeRepairs[code]) warrantyCodeRepairs[code] = { count: 0, cost: 0, estimatedCost: 0 };
-        let filteredQty = 0, filteredRev = 0;
-        Object.entries(saleData.byYear || {}).forEach(([yr, yrData]) => {
-          if (parseInt(yr) >= startYear && parseInt(yr) <= endYear) {
-            filteredQty += yrData.qty;
-            filteredRev += yrData.revenue;
-          }
-        });
-        warrantyCodeRepairs[code].qtySold = filteredQty;
-        warrantyCodeRepairs[code].warrantyRev = filteredRev;
-        warrantyCodeRepairs[code].unitPrice = saleData.price;
-      });
-    }
-
-    const repairRate = sold > 0 ? (total / sold * 100) : null;
-    const netPL = warrantyRevenue + repairRevenue - actualCost;
-    const shortName = model.replace(/^CTL Chromebook /i, '').replace(/^CTL /i, '').substring(0, 25);
-
-    // Find earliest sale year for "product in field" calculation
-    let earliestSaleYear = null;
-    Object.keys(yearlySold).forEach(yr => {
-      const y = parseInt(yr);
-      if (!earliestSaleYear || y < earliestSaleYear) earliestSaleYear = y;
-    });
-
-    // Build monthly repair counts for "product in field" chart
-    const monthlyRepairs = {};
-    rows.forEach(row => {
-      const d = parseDate(row['Order Received Date']);
-      if (!d || !earliestSaleYear) return;
-      // Months since start of earliest sale year
-      const monthsSinceSale = (d.getFullYear() - earliestSaleYear) * 12 + d.getMonth();
-      if (monthsSinceSale >= 0) {
-        monthlyRepairs[monthsSinceSale] = (monthlyRepairs[monthsSinceSale] || 0) + 1;
       }
-    });
-
-    allModelData.push({
-      model, itemNumber, shortName, total, major, minor, npu, accidental,
-      actualCost, estimatedCost, repairRevenue, inWarranty, outWarranty,
-      sold, warrantyRevenue, repairRate, netPL,
-      yearlyRepairs, yearlySold, yearlyWarrantyRevenue, quarterlyData,
-      repairTypeCounts, warrantyCodeRepairs, monthlyRepairs, earliestSaleYear
-    });
-  });
-
-  // Sort by total repairs desc
-  allModelData.sort((a, b) => b.total - a.total);
-
-  document.getElementById('dateLabel').textContent = `Showing: ${document.getElementById('startDate').value} — ${document.getElementById('endDate').value}`;
-  renderDashboard();
-  document.getElementById('loadingOverlay').classList.add('hidden');
-  document.getElementById('dashboard').classList.remove('hidden');
-}
-
-// ========== RENDERING ==========
-function destroyCharts() {
-  chartInstances.forEach(c => { try { c.destroy(); } catch(e){} });
-  chartInstances = [];
-}
-
-function fmt(n) {
-  if (n === null || n === undefined) return 'N/A';
-  return n.toLocaleString('en-US');
-}
-function fmtDollar(n) {
-  if (n === null || n === undefined) return 'N/A';
-  return '$' + Math.round(n).toLocaleString('en-US');
-}
-function fmtPct(n) {
-  if (n === null || n === undefined) return 'N/A';
-  return n.toFixed(2) + '%';
-}
-
-function trendLabel(values) {
-  if (values.length < 2) return { text: 'N/A', cls: 'flat' };
-  const first = values[0], last = values[values.length - 1];
-  if (first === 0 && last === 0) return { text: 'FLAT', cls: 'flat' };
-  if (first === 0) return { text: '↑ UP', cls: 'up' };
-  const pct = ((last - first) / Math.abs(first)) * 100;
-  if (pct > 10) return { text: `↑ +${pct.toFixed(0)}%`, cls: 'up' };
-  if (pct < -10) return { text: `↓ ${pct.toFixed(0)}%`, cls: 'down' };
-  return { text: '→ FLAT', cls: 'flat' };
-}
-
-const CHART_COLORS = ['#22d3ee','#4aa3df','#a78bfa','#f472b6','#fbbf24','#34d399','#f97316','#ef4444','#818cf8','#2dd4bf'];
-
-function renderDashboard() {
-  destroyCharts();
-  const { startYear, endYear } = getDateRange();
-  const years = [];
-  for (let y = startYear; y <= endYear; y++) years.push(y.toString());
-
-  // Aggregate totals
-  let totalSold = 0, totalRepairs = 0, totalCost = 0, totalEstCost = 0;
-  let totalAccidental = 0, totalInWarranty = 0, totalOutWarranty = 0;
-  let totalWarrantyRev = 0, totalRepairRev = 0;
-  const yearlyTotalSold = {}, yearlyTotalRepairs = {}, yearlyTotalCost = {};
-  const yearlyTotalWarrantyRev = {};
-
-  allModelData.forEach(m => {
-    totalSold += m.sold; totalRepairs += m.total;
-    totalCost += m.actualCost; totalEstCost += m.estimatedCost;
-    totalAccidental += m.accidental;
-    totalInWarranty += m.inWarranty; totalOutWarranty += m.outWarranty;
-    totalWarrantyRev += m.warrantyRevenue; totalRepairRev += m.repairRevenue;
-
-    Object.entries(m.yearlySold).forEach(([yr, qty]) => { yearlyTotalSold[yr] = (yearlyTotalSold[yr] || 0) + qty; });
-    Object.entries(m.yearlyRepairs).forEach(([yr, d]) => {
-      yearlyTotalRepairs[yr] = (yearlyTotalRepairs[yr] || 0) + d.repairs;
-      yearlyTotalCost[yr] = (yearlyTotalCost[yr] || 0) + d.cost;
-    });
-    Object.entries(m.yearlyWarrantyRevenue).forEach(([yr, rev]) => { yearlyTotalWarrantyRev[yr] = (yearlyTotalWarrantyRev[yr] || 0) + rev; });
-  });
-
-  const overallRate = totalSold > 0 ? (totalRepairs / totalSold * 100) : null;
-  const accidentalPct = totalRepairs > 0 ? (totalAccidental / totalRepairs * 100) : 0;
-  const inWarrantyPct = (totalInWarranty + totalOutWarranty) > 0 ? (totalInWarranty / (totalInWarranty + totalOutWarranty) * 100) : 0;
-  const netPL = totalWarrantyRev + totalRepairRev - totalCost;
-
-  // ===== KPI CARDS =====
-  const kpiRow = document.getElementById('kpiRow');
-  kpiRow.innerHTML = `
-    <div class="kpi-card cyan"><div class="kpi-label">Units Sold</div><div class="kpi-value">${fmt(totalSold)}</div></div>
-    <div class="kpi-card yellow"><div class="kpi-label">Total Repairs</div><div class="kpi-value">${fmt(totalRepairs)}</div></div>
-    <div class="kpi-card red"><div class="kpi-label">Repair Rate</div><div class="kpi-value">${overallRate !== null ? fmtPct(overallRate) : 'N/A'}</div></div>
-    <div class="kpi-card orange"><div class="kpi-label">Total Repair Cost</div><div class="kpi-value">${fmtDollar(totalCost)}</div><div class="kpi-sub">Est: ${fmtDollar(totalEstCost)}</div></div>
-    <div class="kpi-card purple"><div class="kpi-label">Accidental %</div><div class="kpi-value">${fmtPct(accidentalPct)}</div></div>
-    <div class="kpi-card green"><div class="kpi-label">In Warranty %</div><div class="kpi-value">${fmtPct(inWarrantyPct)}</div></div>
-    <div class="kpi-card blue"><div class="kpi-label">Warranty Revenue</div><div class="kpi-value">${fmtDollar(totalWarrantyRev)}</div></div>
-    <div class="kpi-card ${netPL >= 0 ? 'green' : 'red'}"><div class="kpi-label">Net P/L</div><div class="kpi-value" style="color:${netPL >= 0 ? 'var(--positive)' : 'var(--negative)'}">${fmtDollar(netPL)}</div></div>
-  `;
-
-  // ===== CHART 1: Units Sold by Year =====
-  const soldByYearData = years.map(y => yearlyTotalSold[y] || 0);
-  chartInstances.push(new Chart(document.getElementById('chartSoldByYear'), {
-    type: 'bar',
-    data: {
-      labels: years,
-      datasets: [{
-        label: 'Units Sold',
-        data: soldByYearData,
-        backgroundColor: ['#22d3ee','#4aa3df','#a78bfa','#f472b6'],
-        borderRadius: 6, barPercentage: 0.6
-      }]
     },
-    options: {
-      responsive: true, plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => fmt(ctx.raw) + ' units' } }
-      },
-      scales: {
-        y: { ticks: { color: '#8899b0', callback: v => fmt(v) }, grid: { color: '#1e3050' } },
-        x: { ticks: { color: '#8899b0' }, grid: { display: false } }
-      }
-    }
-  }));
+    scales:{y:{title:{display:true,text:'# Warranty Claims',color:'#8899b0'},ticks:{color:'#8899b0'},grid:{color:'#1e3050'}},x:{title:{display:true,text:'Months Since First Sale Year',color:'#8899b0'},ticks:{color:'#8899b0',font:{size:10},maxRotation:45},grid:{color:'#1e305030'}}}
+  }});charts.push(fieldChart);
 
-  // ===== CHART 2: Revenue by Year =====
-  const revByYearData = years.map(y => yearlyTotalWarrantyRev[y] || 0);
-  chartInstances.push(new Chart(document.getElementById('chartRevByYear'), {
-    type: 'bar',
-    data: {
-      labels: years,
-      datasets: [{
-        label: 'Warranty Revenue',
-        data: revByYearData,
-        backgroundColor: ['#34d399','#22d3ee','#a78bfa','#fbbf24'],
-        borderRadius: 6, barPercentage: 0.6
-      }]
-    },
-    options: {
-      responsive: true, plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => fmtDollar(ctx.raw) } }
-      },
-      scales: {
-        y: { ticks: { color: '#8899b0', callback: v => '$' + (v/1000).toFixed(0) + 'k' }, grid: { color: '#1e3050' } },
-        x: { ticks: { color: '#8899b0' }, grid: { display: false } }
-      }
-    }
-  }));
-
-  // ===== CHART 3: Claim Frequency by Warranty Code =====
-  const codeAgg = {};
-  allModelData.forEach(m => {
-    Object.entries(m.warrantyCodeRepairs).forEach(([code, d]) => {
-      if (!codeAgg[code]) codeAgg[code] = { count: 0, cost: 0, qtySold: 0, warrantyRev: 0 };
-      codeAgg[code].count += d.count || 0;
-      codeAgg[code].cost += d.cost || 0;
-      codeAgg[code].qtySold += d.qtySold || 0;
-      codeAgg[code].warrantyRev += d.warrantyRev || 0;
-    });
-  });
-  const topCodes = Object.entries(codeAgg).filter(([c]) => c).sort((a, b) => b[1].count - a[1].count).slice(0, 12);
-  chartInstances.push(new Chart(document.getElementById('chartClaimFreq'), {
-    type: 'bar',
-    data: {
-      labels: topCodes.map(([c]) => c),
-      datasets: [{
-        label: 'Claims',
-        data: topCodes.map(([, d]) => d.count),
-        backgroundColor: CHART_COLORS.concat(CHART_COLORS).slice(0, topCodes.length),
-        borderRadius: 4
-      }]
-    },
-    options: {
-      indexAxis: 'y', responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#8899b0' }, grid: { color: '#1e3050' } },
-        y: { ticks: { color: '#8899b0', font: { size: 10, family: 'Space Mono' } }, grid: { display: false } }
-      }
-    }
-  }));
-
-  // ===== CHART 4: Severity Breakdown =====
-  let totalMajor = 0, totalMinor = 0, totalNPU = 0;
-  allModelData.forEach(m => { totalMajor += m.major; totalMinor += m.minor; totalNPU += m.npu; });
-  chartInstances.push(new Chart(document.getElementById('chartSeverity'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Major', 'Minor', 'NPU/NPF'],
-      datasets: [{ data: [totalMajor, totalMinor, totalNPU], backgroundColor: ['#ef4444','#fbbf24','#4aa3df'], borderWidth: 0 }]
-    },
-    options: {
-      responsive: true, cutout: '55%',
-      plugins: {
-        legend: { position: 'bottom', labels: { color: '#8899b0', padding: 16, font: { size: 12 } } },
-        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmt(ctx.raw) + ' (' + ((ctx.raw / totalRepairs) * 100).toFixed(1) + '%)' } }
-      }
-    }
-  }));
-
-  // ===== CHART 5: Breakage Rate Trends (Multi-Line — Chart A style) =====
-  const topByRepairs = allModelData.filter(m => m.sold > 0).sort((a, b) => b.total - a.total).slice(0, 10);
-  // Build quarterly labels from all data
-  const allQuarters = new Set();
-  topByRepairs.forEach(m => Object.keys(m.quarterlyData).forEach(q => allQuarters.add(q)));
-  const sortedQuarters = [...allQuarters].sort();
-
-  // For each model, compute cumulative repair rate per quarter
-  // We need quarterly sold data too; approximate: distribute yearly sold evenly across 4 quarters
-  const trendDatasets = topByRepairs.map((m, i) => {
-    const data = sortedQuarters.map(q => {
-      const qRepairs = m.quarterlyData[q]?.repairs || 0;
-      // Get year from quarter label
-      const yr = q.split(' ')[0];
-      const yearlySoldForModel = m.yearlySold[yr] || 0;
-      const qtrlySold = yearlySoldForModel / 4; // approximate
-      if (qtrlySold <= 0) return null;
-      return parseFloat(((qRepairs / qtrlySold) * 100).toFixed(2));
-    });
-    return {
-      label: m.shortName,
-      data,
-      borderColor: CHART_COLORS[i % CHART_COLORS.length],
-      backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + '20',
-      tension: 0.3, pointRadius: 3, pointHoverRadius: 6, borderWidth: 2.5,
-      fill: false, spanGaps: true
-    };
-  });
-
-  chartInstances.push(new Chart(document.getElementById('chartBreakageTrends'), {
-    type: 'line',
-    data: { labels: sortedQuarters, datasets: trendDatasets },
-    options: {
-      responsive: true, interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'bottom', labels: { color: '#8899b0', padding: 12, font: { size: 11, family: 'Space Mono' }, usePointStyle: true, pointStyle: 'circle' } },
-        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + (ctx.raw !== null ? ctx.raw + '%' : 'N/A') } }
-      },
-      scales: {
-        y: { title: { display: true, text: 'Repair Rate %', color: '#8899b0' }, ticks: { color: '#8899b0', callback: v => v + '%' }, grid: { color: '#1e3050' } },
-        x: { ticks: { color: '#8899b0', font: { size: 10 }, maxRotation: 45 }, grid: { color: '#1e305030' } }
-      }
-    }
-  }));
-
-  // ===== CHART 6: Cost Distribution (Chart B style — histogram + revenue line) =====
-  // Calculate avg cost per repair for each warranty code
-  const codeCostAvgs = [];
-  Object.entries(codeAgg).forEach(([code, d]) => {
-    if (d.count > 0) {
-      codeCostAvgs.push({ code, avgCost: d.cost / d.count, avgRev: d.qtySold > 0 ? d.warrantyRev / d.qtySold : 0, count: d.count });
-    }
-  });
-  codeCostAvgs.sort((a, b) => a.avgCost - b.avgCost);
-
-  // Create histogram bins
-  const costValues = codeCostAvgs.map(c => c.avgCost);
-  const minCost = Math.min(...costValues, 0);
-  const maxCost = Math.max(...costValues, 200);
-  const binSize = 20;
-  const bins = [];
-  for (let b = Math.floor(minCost / binSize) * binSize; b <= maxCost + binSize; b += binSize) {
-    bins.push({ min: b, max: b + binSize, label: `$${b}-${b + binSize}`, count: 0, totalRev: 0, codesInBin: 0 });
-  }
-  codeCostAvgs.forEach(c => {
-    const bin = bins.find(b => c.avgCost >= b.min && c.avgCost < b.max);
-    if (bin) { bin.count += c.count; bin.totalRev += c.avgRev; bin.codesInBin++; }
-  });
-
-  const overallAvgRevPerWarranty = Object.values(codeAgg).reduce((s, d) => s + (d.warrantyRev || 0), 0) /
-    Math.max(Object.values(codeAgg).reduce((s, d) => s + (d.qtySold || 0), 0), 1);
-
-  chartInstances.push(new Chart(document.getElementById('chartCostDistribution'), {
-    type: 'bar',
-    data: {
-      labels: bins.map(b => b.label),
-      datasets: [
-        {
-          type: 'bar', label: 'Warranty Codes in Range',
-          data: bins.map(b => b.codesInBin),
-          backgroundColor: 'rgba(167,139,250,0.5)', borderColor: '#a78bfa', borderWidth: 1,
-          borderRadius: 4, yAxisID: 'y'
-        },
-        {
-          type: 'line', label: `Avg Revenue/Warranty: ${fmtDollar(overallAvgRevPerWarranty)}`,
-          data: bins.map(() => overallAvgRevPerWarranty),
-          borderColor: '#34d399', borderWidth: 2.5, borderDash: [8, 4],
-          pointRadius: 0, fill: false, yAxisID: 'y1'
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'bottom', labels: { color: '#8899b0', padding: 16, font: { size: 11 } } },
-        tooltip: { callbacks: { label: ctx => {
-          if (ctx.datasetIndex === 0) return ctx.raw + ' warranty codes';
-          return 'Avg Revenue: ' + fmtDollar(ctx.raw);
-        }}}
-      },
-      scales: {
-        y: { title: { display: true, text: '# Warranty Codes', color: '#8899b0' }, ticks: { color: '#8899b0' }, grid: { color: '#1e3050' } },
-        y1: { position: 'right', title: { display: true, text: 'Revenue ($)', color: '#34d399' }, ticks: { color: '#34d399', callback: v => '$' + v.toFixed(0) }, grid: { display: false }, min: 0 },
-        x: { ticks: { color: '#8899b0', font: { size: 10 }, maxRotation: 45 }, grid: { display: false } }
-      }
-    }
-  }));
-
-  // ===== CHART 7 & 8: Parts & Labor Cost Trends =====
-  const quarterlyAgg = {};
-  allModelData.forEach(m => {
-    Object.entries(m.quarterlyData).forEach(([q, d]) => {
-      if (!quarterlyAgg[q]) quarterlyAgg[q] = { partsCost: 0, laborCost: 0, partsRepairs: 0, laborRepairs: 0, totalCost: 0, totalRepairs: 0 };
-      quarterlyAgg[q].partsCost += d.partsCost;
-      quarterlyAgg[q].laborCost += d.laborCost;
-      quarterlyAgg[q].totalCost += d.totalCost;
-      quarterlyAgg[q].totalRepairs += d.repairs;
-    });
-  });
-  // Also count parts vs labor repairs
-  allModelData.forEach(m => {
-    m.total; // just referencing
-    Object.entries(m.repairTypeCounts).forEach(([repair]) => {
-      // This is per-model aggregated; we need per-row quarterly. Re-scan raw data
-    });
-  });
-  // Recount from raw for quarterly parts/labor repair counts
-  const { start: fStart, end: fEnd } = getDateRange();
-  rawRepairData.forEach(row => {
-    const dateStr = (row['Order Received Date'] || '').trim();
-    const model = (row['Model Name'] || '').trim();
-    const item = (row['Item Number'] || '').trim();
-    if (!dateStr || !model || model === 'No Match' || !item || item === 'No Match') return;
-    const d = parseDate(dateStr);
-    if (!d || d < fStart || d > fEnd) return;
-    const q = getQuarterLabel(d);
-    const repair = (row['Repair'] || '').trim();
-    if (!quarterlyAgg[q]) return;
-    if (PARTS_REPAIRS.has(repair)) quarterlyAgg[q].partsRepairs++;
-    else quarterlyAgg[q].laborRepairs++;
-  });
-
-  const sortedQAll = Object.keys(quarterlyAgg).sort();
-
-  // Parts trend
-  const partsAvgCost = sortedQAll.map(q => {
-    const d = quarterlyAgg[q];
-    return d.partsRepairs > 0 ? Math.round(d.partsCost / d.partsRepairs) : null;
-  });
-  const partsTotalCost = sortedQAll.map(q => quarterlyAgg[q].partsCost);
-
-  chartInstances.push(new Chart(document.getElementById('chartPartsTrend'), {
-    type: 'line',
-    data: {
-      labels: sortedQAll,
-      datasets: [
-        {
-          label: 'Total Parts Cost',
-          data: partsTotalCost,
-          borderColor: '#f97316', backgroundColor: '#f9731620',
-          fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 4, yAxisID: 'y'
-        },
-        {
-          label: 'Avg Cost per Parts Repair',
-          data: partsAvgCost,
-          borderColor: '#fbbf24', backgroundColor: 'transparent',
-          borderDash: [6, 3], tension: 0.3, borderWidth: 2, pointRadius: 3, yAxisID: 'y1'
-        }
-      ]
-    },
-    options: {
-      responsive: true, interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'bottom', labels: { color: '#8899b0', padding: 12, font: { size: 11 }, usePointStyle: true } },
-        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtDollar(ctx.raw) } }
-      },
-      scales: {
-        y: { title: { display: true, text: 'Total Cost', color: '#f97316' }, ticks: { color: '#f97316', callback: v => '$' + (v/1000).toFixed(0) + 'k' }, grid: { color: '#1e3050' } },
-        y1: { position: 'right', title: { display: true, text: 'Avg/Repair', color: '#fbbf24' }, ticks: { color: '#fbbf24', callback: v => '$' + v }, grid: { display: false } },
-        x: { ticks: { color: '#8899b0', font: { size: 10 }, maxRotation: 45 }, grid: { display: false } }
-      }
-    }
-  }));
-
-  // Labor trend
-  const laborAvgCost = sortedQAll.map(q => {
-    const d = quarterlyAgg[q];
-    return d.laborRepairs > 0 ? Math.round(d.laborCost / d.laborRepairs) : null;
-  });
-  const laborTotalCost = sortedQAll.map(q => quarterlyAgg[q].laborCost);
-
-  chartInstances.push(new Chart(document.getElementById('chartLaborTrend'), {
-    type: 'line',
-    data: {
-      labels: sortedQAll,
-      datasets: [
-        {
-          label: 'Total Labor Cost',
-          data: laborTotalCost,
-          borderColor: '#a78bfa', backgroundColor: '#a78bfa20',
-          fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 4, yAxisID: 'y'
-        },
-        {
-          label: 'Avg Cost per Labor Repair',
-          data: laborAvgCost,
-          borderColor: '#f472b6', backgroundColor: 'transparent',
-          borderDash: [6, 3], tension: 0.3, borderWidth: 2, pointRadius: 3, yAxisID: 'y1'
-        }
-      ]
-    },
-    options: {
-      responsive: true, interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'bottom', labels: { color: '#8899b0', padding: 12, font: { size: 11 }, usePointStyle: true } },
-        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtDollar(ctx.raw) } }
-      },
-      scales: {
-        y: { title: { display: true, text: 'Total Cost', color: '#a78bfa' }, ticks: { color: '#a78bfa', callback: v => '$' + (v/1000).toFixed(0) + 'k' }, grid: { color: '#1e3050' } },
-        y1: { position: 'right', title: { display: true, text: 'Avg/Repair', color: '#f472b6' }, ticks: { color: '#f472b6', callback: v => '$' + v }, grid: { display: false } },
-        x: { ticks: { color: '#8899b0', font: { size: 10 }, maxRotation: 45 }, grid: { display: false } }
-      }
-    }
-  }));
-
-  // ===== CHART 9: Product in Field (Nicholas's request) =====
-  const topBySold = allModelData.filter(m => m.sold > 100 && m.earliestSaleYear).sort((a, b) => b.sold - a.sold).slice(0, 10);
-  // Find max months across all
-  let maxMonths = 0;
-  topBySold.forEach(m => {
-    Object.keys(m.monthlyRepairs).forEach(mo => { maxMonths = Math.max(maxMonths, parseInt(mo)); });
-  });
-  // Create monthly labels (bucket into 3-month intervals for readability)
-  const bucketSize = 3;
-  const bucketLabels = [];
-  for (let i = 0; i <= maxMonths; i += bucketSize) {
-    bucketLabels.push(`${i}-${i + bucketSize} mo`);
-  }
-
-  const fieldDatasets = topBySold.map((m, i) => {
-    const bucketedData = bucketLabels.map((_, idx) => {
-      let sum = 0;
-      for (let mo = idx * bucketSize; mo < (idx + 1) * bucketSize; mo++) {
-        sum += m.monthlyRepairs[mo] || 0;
-      }
-      return sum || null;
-    });
-    return {
-      label: m.shortName,
-      data: bucketedData,
-      borderColor: CHART_COLORS[i % CHART_COLORS.length],
-      backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + '30',
-      tension: 0.35, pointRadius: 3, pointHoverRadius: 6, borderWidth: 2.5,
-      fill: false, spanGaps: true
-    };
-  });
-
-  chartInstances.push(new Chart(document.getElementById('chartProductInField'), {
-    type: 'line',
-    data: { labels: bucketLabels, datasets: fieldDatasets },
-    options: {
-      responsive: true, interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'bottom', labels: { color: '#8899b0', padding: 12, font: { size: 11, family: 'Space Mono' }, usePointStyle: true, pointStyle: 'circle' } },
-        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + (ctx.raw || 0) + ' claims' } }
-      },
-      scales: {
-        y: { title: { display: true, text: '# of Warranty Claims', color: '#8899b0' }, ticks: { color: '#8899b0' }, grid: { color: '#1e3050' } },
-        x: { title: { display: true, text: 'Length of Product in Field (months since first sale year)', color: '#8899b0' }, ticks: { color: '#8899b0', font: { size: 10 }, maxRotation: 45 }, grid: { color: '#1e305030' } }
-      }
-    }
-  }));
-
-  // ===== INSIGHTS =====
-  renderInsights(years, sortedQAll);
-
-  // ===== SUMMARY TABLE =====
-  renderSummaryTable();
+  renderInsights(rYrs);renderSummary();
 }
 
-function renderInsights(years, quarters) {
-  const grid = document.getElementById('insightGrid');
-  const { startYear, endYear } = getDateRange();
-
-  // Trend: overall repair rate by year
-  const rateByYear = years.map(y => {
-    let repY = 0, soldY = 0;
-    allModelData.forEach(m => {
-      repY += m.yearlyRepairs[y]?.repairs || 0;
-      soldY += m.yearlySold[y] || 0;
-    });
-    return soldY > 0 ? (repY / soldY * 100) : null;
-  }).filter(v => v !== null);
-  const rateTrend = trendLabel(rateByYear);
-
-  // Trend: total cost by year
-  const costByYear = years.map(y => {
-    let c = 0;
-    allModelData.forEach(m => { c += m.yearlyRepairs[y]?.cost || 0; });
-    return c;
-  });
-  const costTrend = trendLabel(costByYear);
-
-  // Highest repair rate model
-  const highestRate = allModelData.filter(m => m.repairRate !== null).sort((a, b) => b.repairRate - a.repairRate)[0];
-  const lowestRate = allModelData.filter(m => m.repairRate !== null && m.sold > 50).sort((a, b) => a.repairRate - b.repairRate)[0];
-
-  // Highest cost model
-  const highestCost = allModelData.sort((a, b) => b.actualCost - a.actualCost)[0];
-
-  let html = '';
-
-  html += `<div class="insight-card">
-    <div class="insight-title">Breakage Rate Trend</div>
-    Overall repair rate is <span class="trend-indicator trend-${rateTrend.cls}">${rateTrend.text}</span> over the period.
-    ${rateByYear.length >= 2 ? `Went from <strong>${rateByYear[0].toFixed(1)}%</strong> to <strong>${rateByYear[rateByYear.length-1].toFixed(1)}%</strong>.` : ''}
-  </div>`;
-
-  html += `<div class="insight-card">
-    <div class="insight-title">Total Cost Trend</div>
-    Total repair cost is <span class="trend-indicator trend-${costTrend.cls}">${costTrend.text}</span>.
-    ${years.map(y => `${y}: <strong>${fmtDollar(costByYear[years.indexOf(y)])}</strong>`).join(' → ')}
-  </div>`;
-
-  if (highestRate) html += `<div class="insight-card">
-    <div class="insight-title">Highest Repair Rate</div>
-    <strong>${highestRate.shortName}</strong> has the highest repair rate at <strong>${fmtPct(highestRate.repairRate)}</strong> (${fmt(highestRate.total)} repairs / ${fmt(highestRate.sold)} sold).
-  </div>`;
-
-  if (lowestRate) html += `<div class="insight-card">
-    <div class="insight-title">Most Reliable Model</div>
-    <strong>${lowestRate.shortName}</strong> is the most reliable with a repair rate of <strong>${fmtPct(lowestRate.repairRate)}</strong> (${fmt(lowestRate.total)} repairs / ${fmt(lowestRate.sold)} sold, min 50 sold).
-  </div>`;
-
-  if (highestCost) html += `<div class="insight-card">
-    <div class="insight-title">Highest Cost Model</div>
-    <strong>${highestCost.shortName}</strong> accounts for <strong>${fmtDollar(highestCost.actualCost)}</strong> in total repair cost across ${fmt(highestCost.total)} repairs.
-  </div>`;
-
-  const totalWR = allModelData.reduce((s, m) => s + m.warrantyRevenue, 0);
-  const totalTC = allModelData.reduce((s, m) => s + m.actualCost, 0);
-  const totalRR = allModelData.reduce((s, m) => s + m.repairRevenue, 0);
-  const net = totalWR + totalRR - totalTC;
-  html += `<div class="insight-card">
-    <div class="insight-title">Net Warranty P/L</div>
-    Warranty revenue of <strong>${fmtDollar(totalWR)}</strong> + repair revenue of <strong>${fmtDollar(totalRR)}</strong> minus costs of <strong>${fmtDollar(totalTC)}</strong> = <strong style="color:${net >= 0 ? 'var(--positive)' : 'var(--negative)'}">${fmtDollar(net)}</strong> net.
-  </div>`;
-
-  grid.innerHTML = html;
+// Detail modal builders
+function showYrDet(yr,type){
+  const ms=allMD.filter(m=>(type==='sold'?m.yearlySold[yr]:m.yearlyWarrantyRevenue[yr])).sort((a,b)=>(type==='sold'?(b.yearlySold[yr]||0)-(a.yearlySold[yr]||0):(b.yearlyWarrantyRevenue[yr]||0)-(a.yearlyWarrantyRevenue[yr]||0))).slice(0,25);
+  const tot=type==='sold'?ms.reduce((s,m)=>s+(m.yearlySold[yr]||0),0):ms.reduce((s,m)=>s+(m.yearlyWarrantyRevenue[yr]||0),0);
+  let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Year</div><div class="value">${yr}</div></div><div class="detail-stat"><div class="label">${type==='sold'?'Total Sold':'Total Revenue'}</div><div class="value">${type==='sold'?fmt(tot):fmtD(tot)}</div></div></div>`;
+  h+=`<div class="section-label">Top Models</div><table id="dtY"><thead><tr><th>Model</th><th>${type==='sold'?'Units Sold':'Revenue'}</th><th>%</th></tr></thead><tbody>`;
+  ms.forEach(m=>{const v=type==='sold'?(m.yearlySold[yr]||0):(m.yearlyWarrantyRevenue[yr]||0);h+=`<tr><td>${m.shortName}</td><td class="mono">${type==='sold'?fmt(v):fmtD(v)}</td><td class="mono">${tot>0?fmtP(v/tot*100):'—'}</td></tr>`;});
+  h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtY')">📥 Export</button>`;
+  openDM(`${yr} — ${type==='sold'?'Units Sold':'Revenue'}`,h);
+}
+function showCodeDet(code){
+  const d=_codeAgg[code];if(!d)return;const ms=(d.models||[]).sort((a,b)=>b.cnt-a.cnt);
+  let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Code</div><div class="value" style="font-size:16px">${code}</div></div><div class="detail-stat"><div class="label">Claims</div><div class="value">${fmt(d.cnt)}</div></div><div class="detail-stat"><div class="label">Cost</div><div class="value">${fmtD(d.cost)}</div></div><div class="detail-stat"><div class="label">Sold</div><div class="value">${fmt(d.qS)}</div></div><div class="detail-stat"><div class="label">Revenue</div><div class="value">${fmtD(d.wR)}</div></div><div class="detail-stat"><div class="label">Avg/Claim</div><div class="value">${d.cnt>0?fmtD(d.cost/d.cnt):'—'}</div></div></div>`;
+  if(ms.length){h+=`<div class="section-label">Model Breakdown</div><table id="dtC"><thead><tr><th>Model</th><th>Claims</th><th>Cost</th><th>%</th></tr></thead><tbody>`;ms.forEach(m=>{h+=`<tr><td>${m.n}</td><td class="mono">${fmt(m.cnt)}</td><td class="mono">${fmtD(m.cost)}</td><td class="mono">${d.cnt>0?fmtP(m.cnt/d.cnt*100):'—'}</td></tr>`;});h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtC')">📥 Export</button>`;}
+  openDM(`${code} — Detail`,h);
+}
+function showSevDet(type){
+  let ms;if(type==='Major')ms=allMD.filter(m=>m.major>0).sort((a,b)=>b.major-a.major).slice(0,25);else if(type==='Minor')ms=allMD.filter(m=>m.minor>0).sort((a,b)=>b.minor-a.minor).slice(0,25);else ms=allMD.filter(m=>m.npu>0).sort((a,b)=>b.npu-a.npu).slice(0,25);
+  const tot=type==='Major'?ms.reduce((s,m)=>s+m.major,0):type==='Minor'?ms.reduce((s,m)=>s+m.minor,0):ms.reduce((s,m)=>s+m.npu,0);
+  let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">${type} Repairs</div><div class="value">${fmt(tot)}</div></div><div class="detail-stat"><div class="label">Models</div><div class="value">${ms.length}</div></div></div>`;
+  h+=`<div class="section-label">Top Models</div><table id="dtS"><thead><tr><th>Model</th><th>${type}</th><th>Total</th><th>%</th></tr></thead><tbody>`;
+  ms.forEach(m=>{const c=type==='Major'?m.major:type==='Minor'?m.minor:m.npu;h+=`<tr><td>${m.shortName}</td><td class="mono">${fmt(c)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${fmtP(c/m.total*100)}</td></tr>`;});
+  h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtS')">📥 Export</button>`;openDM(`${type} Repairs — Detail`,h);
+}
+function showBinDet(bin){
+  let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Cost Range</div><div class="value" style="font-size:16px">${bin.label}</div></div><div class="detail-stat"><div class="label">Codes</div><div class="value">${bin.n}</div></div></div>`;
+  if(bin.codes.length){h+=`<div class="section-label">Codes in Range</div><table id="dtB"><thead><tr><th>Code</th><th>Claims</th><th>Avg Cost</th><th>Sold</th><th>Revenue</th></tr></thead><tbody>`;
+    bin.codes.sort((a,b)=>b.cnt-a.cnt).forEach(c=>{h+=`<tr><td>${c.code}</td><td class="mono">${fmt(c.cnt)}</td><td class="mono">${fmtD(c.avgC)}</td><td class="mono">${fmt(c.qS)}</td><td class="mono">${fmtD(c.wR)}</td></tr>`;});
+    h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtB')">📥 Export</button>`;}
+  openDM(`Cost Distribution: ${bin.label}`,h);
+}
+function showQDet(q,type){
+  const d=_qAgg[q];if(!d)return;const lb=type==='parts'?'Parts':'Labor',tc=type==='parts'?d.pC:d.lC,tr=type==='parts'?d.pR:d.lR;
+  const mb=[];allMD.forEach(m=>{const qd=m.quarterlyData[q];if(qd){const c=type==='parts'?qd.pC:qd.lC,r=type==='parts'?qd.pR:qd.lR;if(r>0)mb.push({n:m.shortName,c,r});}});mb.sort((a,b)=>b.c-a.c);
+  let h=`<div class="detail-stats"><div class="detail-stat"><div class="label">Quarter</div><div class="value">${q}</div></div><div class="detail-stat"><div class="label">${lb} Cost</div><div class="value">${fmtD(tc)}</div></div><div class="detail-stat"><div class="label">${lb} Repairs</div><div class="value">${fmt(tr)}</div></div><div class="detail-stat"><div class="label">Avg</div><div class="value">${tr>0?fmtD(tc/tr):'—'}</div></div></div>`;
+  h+=`<div class="section-label">Top Models</div><table id="dtQ"><thead><tr><th>Model</th><th>Repairs</th><th>Cost</th><th>Avg</th></tr></thead><tbody>`;
+  mb.slice(0,20).forEach(m=>{h+=`<tr><td>${m.n}</td><td class="mono">${fmt(m.r)}</td><td class="mono">${fmtD(m.c)}</td><td class="mono">${fmtD(m.c/m.r)}</td></tr>`;});
+  h+=`</tbody></table><button class="export-btn" onclick="exportCSV('dtQ')">📥 Export</button>`;openDM(`${q} — ${lb} Cost`,h);
 }
 
-function renderSummaryTable() {
-  const body = document.getElementById('summaryBody');
-  const top = allModelData.filter(m => m.sold > 0).sort((a, b) => b.sold - a.sold).slice(0, 20);
-  const { startYear, endYear } = getDateRange();
-  const years = [];
-  for (let y = startYear; y <= endYear; y++) years.push(y.toString());
-
-  body.innerHTML = top.map(m => {
-    const rateVals = years.map(y => {
-      const rep = m.yearlyRepairs[y]?.repairs || 0;
-      const sol = m.yearlySold[y] || 0;
-      return sol > 0 ? (rep / sol * 100) : null;
-    }).filter(v => v !== null);
-    const trend = trendLabel(rateVals);
-    const rateStr = m.repairRate !== null ? fmtPct(m.repairRate) : 'N/A';
-    const plClass = m.netPL >= 0 ? 'positive' : 'negative';
-    return `<tr>
-      <td>${m.shortName}</td>
-      <td class="mono">${fmt(m.sold)}</td>
-      <td class="mono">${fmt(m.total)}</td>
-      <td class="mono">${rateStr}</td>
-      <td class="mono">${fmtDollar(m.warrantyRevenue)}</td>
-      <td class="mono">${fmtDollar(m.actualCost)}</td>
-      <td class="mono ${plClass}">${fmtDollar(m.netPL)}</td>
-      <td><span class="trend-indicator trend-${trend.cls}">${trend.text}</span></td>
-    </tr>`;
-  }).join('');
+function renderInsights(yrs){
+  const g=document.getElementById('insightGrid');
+  const rByY=yrs.map(y=>{let r=0;allMD.forEach(m=>{r+=m.yearlyRepairs[y]?.rep||0;});return r;});
+  const rT=trend(rByY);const cByY=yrs.map(y=>{let c=0;allMD.forEach(m=>{c+=m.yearlyRepairs[y]?.cost||0;});return c;});const cT=trend(cByY);
+  const hR=allMD.filter(m=>m.repairRate!=null).sort((a,b)=>b.repairRate-a.repairRate)[0];
+  const lR=allMD.filter(m=>m.repairRate!=null&&m.sold>50).sort((a,b)=>a.repairRate-b.repairRate)[0];
+  const hC=[...allMD].sort((a,b)=>b.actualCost-a.actualCost)[0];
+  const tw=allMD.reduce((s,m)=>s+m.warrantyRevenue,0),tc=allMD.reduce((s,m)=>s+m.actualCost,0),tr=allMD.reduce((s,m)=>s+m.repairRevenue,0),n=tw+tr-tc;
+  let h=`<div class="insight-card"><div class="insight-title">Repair Volume Trend</div>Repair count is <span class="trend-indicator trend-${rT.c}">${rT.t}</span>. ${yrs.map((y,i)=>`${y}: <strong>${fmt(rByY[i])}</strong>`).join(' → ')}</div>`;
+  h+=`<div class="insight-card"><div class="insight-title">Cost Trend</div>Total cost is <span class="trend-indicator trend-${cT.c}">${cT.t}</span>. ${yrs.map((y,i)=>`${y}: <strong>${fmtD(cByY[i])}</strong>`).join(' → ')}</div>`;
+  if(hR)h+=`<div class="insight-card"><div class="insight-title">Highest Repair Rate</div><strong>${hR.shortName}</strong> at <strong>${fmtP(hR.repairRate)}</strong> (${fmt(hR.total)} / ${fmt(hR.sold)} sold)</div>`;
+  if(lR)h+=`<div class="insight-card"><div class="insight-title">Most Reliable (50+ sold)</div><strong>${lR.shortName}</strong> at <strong>${fmtP(lR.repairRate)}</strong> (${fmt(lR.total)} / ${fmt(lR.sold)} sold)</div>`;
+  if(hC)h+=`<div class="insight-card"><div class="insight-title">Highest Cost Model</div><strong>${hC.shortName}</strong>: <strong>${fmtD(hC.actualCost)}</strong> across ${fmt(hC.total)} repairs</div>`;
+  h+=`<div class="insight-card"><div class="insight-title">Net P/L</div>Rev <strong>${fmtD(tw)}</strong> + Repair Rev <strong>${fmtD(tr)}</strong> − Cost <strong>${fmtD(tc)}</strong> = <strong style="color:${n>=0?'var(--positive)':'var(--negative)'}">${fmtD(n)}</strong></div>`;
+  g.innerHTML=h;
+}
+function renderSummary(){
+  const b=document.getElementById('summaryBody');const{sy,ey}=getDR();const yrs=[];for(let y=sy;y<=ey;y++)yrs.push(y.toString());
+  const top=allMD.filter(m=>m.sold>0).sort((a,b)=>b.sold-a.sold).slice(0,20);
+  b.innerHTML=top.map(m=>{const rv=yrs.map(y=>m.yearlyRepairs[y]?.rep||0);const t=trend(rv);
+    return`<tr style="cursor:pointer" onclick='openDM("${m.model.replace(/'/g,"\\'")}",modelHTML(allMD.find(x=>x.itemNumber==="${m.itemNumber}")))'>
+      <td>${m.shortName}</td><td class="mono">${fmt(m.sold)}</td><td class="mono">${fmt(m.total)}</td><td class="mono">${m.repairRate!=null?fmtP(m.repairRate):'N/A'}</td><td class="mono">${fmtD(m.warrantyRevenue)}</td><td class="mono">${fmtD(m.actualCost)}</td><td class="mono ${m.netPL>=0?'positive':'negative'}">${fmtD(m.netPL)}</td><td><span class="trend-indicator trend-${t.c}">${t.t}</span></td></tr>`;}).join('');
 }
 
-// Init
 document.getElementById('pwInput').focus();
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetailModal();});
 </script>
 </body>
 </html>
