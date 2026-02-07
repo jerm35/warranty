@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTL Warranty — Presentation Charts</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+:root{--bg:#f5f7fa;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;--accent:#0ea5e9;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--purple:#8b5cf6;--orange:#f97316;--pink:#ec4899}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.password-overlay{position:fixed;inset:0;z-index:1000;background:#0c1220;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px}
+.password-overlay.hidden{display:none}
+.password-overlay h1{font-size:28px;font-weight:600;color:#22d3ee}
+.password-overlay p{color:#8899b0;font-size:14px}
+.password-overlay input{background:#111a2e;border:1px solid #1e3050;color:#e8edf5;padding:12px 20px;border-radius:8px;font-size:16px;width:280px;text-align:center;font-family:'Space Mono',monospace}
+.password-overlay input:focus{outline:none;border-color:#22d3ee}
+.password-overlay button{background:linear-gradient(135deg,#4aa3df,#22d3ee);border:none;color:#fff;padding:10px 32px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600}
+.pw-error{color:#ef4444;font-size:13px;min-height:18px}
+.loading-overlay{position:fixed;inset:0;z-index:999;background:rgba(245,247,250,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.loading-overlay.hidden{display:none}
+.spinner{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.container{max-width:1200px;margin:0 auto;padding:32px 24px}
+.container.hidden{display:none}
+.page-header{text-align:center;margin-bottom:40px}
+.page-header h1{font-size:28px;font-weight:700;color:var(--text)}
+.page-header p{color:var(--muted);font-size:14px;margin-top:6px}
+.page-header .date-info{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-top:12px;padding:6px 16px;background:#eef2f7;border-radius:6px;display:inline-block}
+.section-title{font-size:20px;font-weight:700;color:var(--text);margin:48px 0 8px;padding-bottom:8px;border-bottom:2px solid var(--accent)}
+.section-subtitle{font-size:13px;color:var(--muted);margin-bottom:24px}
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:28px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.chart-wrap h3{font-size:16px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.chart-wrap .subtitle{font-size:12px;color:var(--muted);margin-bottom:20px}
+.chart-wrap canvas{max-height:420px}
+.chart-wrap.tall canvas{max-height:520px}
+.dl-btn{position:absolute;top:16px;right:16px;background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .15s;z-index:5}
+.dl-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.dl-all-btn{display:block;margin:0 auto 40px;background:var(--accent);color:#fff;border:none;padding:12px 32px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif}
+.dl-all-btn:hover{filter:brightness(1.1)}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr}}
+.note-box{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px 18px;font-size:12px;color:#92400e;margin-bottom:20px;line-height:1.6}
+.legend-note{font-size:11px;color:var(--muted);margin-top:8px;font-style:italic}
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:32px}
+.kpi-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 16px;text-align:center;border-top:3px solid var(--accent)}
+.kpi-item .kpi-label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.kpi-item .kpi-value{font-size:22px;font-weight:700;margin-top:4px;font-family:'Space Mono',monospace}
+.kpi-item.green{border-top-color:var(--green)}.kpi-item.red{border-top-color:var(--red)}.kpi-item.yellow{border-top-color:var(--yellow)}.kpi-item.purple{border-top-color:var(--purple)}.kpi-item.orange{border-top-color:var(--orange)}
+.trend-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;font-family:'Space Mono',monospace}
+.trend-up{background:rgba(16,185,129,.12);color:var(--green)}
+.trend-down{background:rgba(239,68,68,.12);color:var(--red)}
+.trend-flat{background:rgba(245,158,11,.12);color:var(--yellow)}
+.footer{text-align:center;color:var(--muted);font-size:12px;padding:40px 0 24px;border-top:1px solid var(--border);margin-top:48px}
+</style>
+</head>
+<body>
+
+<div class="password-overlay" id="pwOverlay">
+  <h1>CTL Warranty — Slide Graphics</h1>
+  <p>Enter password to access data</p>
+  <input type="password" id="pwInput" placeholder="Password" onkeydown="if(event.key==='Enter')checkPw()">
+  <div class="pw-error" id="pwError"></div>
+  <button onclick="checkPw()">Access</button>
+</div>
+
+<div class="loading-overlay hidden" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p id="loadingMsg">Loading data…</p>
+</div>
+
+<div class="container hidden" id="app">
+  <div class="page-header">
+    <h1>CTL Warranty Analysis — Presentation Charts</h1>
+    <p>Device group analytics with downloadable slide-ready graphics</p>
+    <div class="date-info" id="dateLabel"></div>
+  </div>
+
+  <button class="dl-all-btn" onclick="downloadAll()">⬇ Download All Charts as PNG</button>
+
+  <div id="kpiArea"></div>
+
+  <!-- Chart 1: Warranties Sold by Group & Year -->
+  <div class="section-title">Warranties Sold & Revenue</div>
+  <div class="section-subtitle">Full sales history across all device groups (2018–2030)</div>
+  <div class="chart-grid">
+    <div class="chart-wrap" id="wrap_sold">
+      <button class="dl-btn" onclick="dlChart('chSold','Warranty_Units_Sold')">⬇ PNG</button>
+      <h3>Warranty Units Sold by Device Group</h3>
+      <div class="subtitle">Total units sold per group — all years combined</div>
+      <canvas id="chSold"></canvas>
+    </div>
+    <div class="chart-wrap" id="wrap_rev">
+      <button class="dl-btn" onclick="dlChart('chRev','Warranty_Revenue')">⬇ PNG</button>
+      <h3>Warranty Revenue by Device Group</h3>
+      <div class="subtitle">Total warranty revenue per group — all years combined</div>
+      <canvas id="chRev"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 1b: Sold & Revenue by Year (stacked) -->
+  <div class="chart-grid">
+    <div class="chart-wrap" id="wrap_soldYr">
+      <button class="dl-btn" onclick="dlChart('chSoldYr','Units_Sold_By_Year')">⬇ PNG</button>
+      <h3>Warranty Units Sold by Year</h3>
+      <div class="subtitle">Year-over-year warranty unit sales per device group</div>
+      <canvas id="chSoldYr"></canvas>
+    </div>
+    <div class="chart-wrap" id="wrap_revYr">
+      <button class="dl-btn" onclick="dlChart('chRevYr','Revenue_By_Year')">⬇ PNG</button>
+      <h3>Warranty Revenue by Year</h3>
+      <div class="subtitle">Year-over-year revenue per device group</div>
+      <canvas id="chRevYr"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 2: Frequency & Severity -->
+  <div class="section-title">Claim Frequency & Severity</div>
+  <div class="section-subtitle">Repair claims analysis across device groups (filtered date range)</div>
+  <div class="chart-grid">
+    <div class="chart-wrap" id="wrap_freq">
+      <button class="dl-btn" onclick="dlChart('chFreq','Claim_Frequency')">⬇ PNG</button>
+      <h3>Claim Frequency by Device Group</h3>
+      <div class="subtitle">Total warranty claims per group with repair rate overlay</div>
+      <canvas id="chFreq"></canvas>
+    </div>
+    <div class="chart-wrap" id="wrap_sev">
+      <button class="dl-btn" onclick="dlChart('chSev','Claim_Severity')">⬇ PNG</button>
+      <h3>Claim Severity Breakdown</h3>
+      <div class="subtitle">Major / Minor / NPU / NPF across all groups</div>
+      <canvas id="chSev"></canvas>
+    </div>
+  </div>
+  <div class="chart-wrap" id="wrap_sevGrp">
+    <button class="dl-btn" onclick="dlChart('chSevGrp','Severity_By_Group')">⬇ PNG</button>
+    <h3>Claim Severity by Device Group</h3>
+    <div class="subtitle">Stacked breakdown: Major, Minor, NPU, NPF per group</div>
+    <canvas id="chSevGrp"></canvas>
+  </div>
+
+  <!-- Chart 3: Breakage Rate Trends -->
+  <div class="section-title">Breakage Rate Trends — 3 Year</div>
+  <div class="section-subtitle">Quarterly repair trends per device group (colorful multi-line)</div>
+  <div class="chart-wrap tall" id="wrap_trend">
+    <button class="dl-btn" onclick="dlChart('chTrend','Breakage_Rate_Trends')">⬇ PNG</button>
+    <h3>Quarterly Repairs by Device Group</h3>
+    <div class="subtitle">Repair count per quarter — each line is a device group</div>
+    <canvas id="chTrend"></canvas>
+  </div>
+  <div class="chart-wrap tall" id="wrap_trendPct">
+    <button class="dl-btn" onclick="dlChart('chTrendPct','Breakage_Rate_Pct_Trends')">⬇ PNG</button>
+    <h3>Quarterly Repair Rate (% of Sold) by Device Group</h3>
+    <div class="subtitle">Repairs as percentage of units sold — normalized comparison</div>
+    <canvas id="chTrendPct"></canvas>
+  </div>
+
+  <!-- Chart 4: Cost Distribution -->
+  <div class="section-title">Warranty Cost Distribution</div>
+  <div class="section-subtitle">Average repair cost per device group vs. average warranty revenue</div>
+  <div class="chart-wrap" id="wrap_dist">
+    <button class="dl-btn" onclick="dlChart('chDist','Cost_Distribution')">⬇ PNG</button>
+    <h3>Avg Repair Cost vs. Avg Warranty Revenue per Unit</h3>
+    <div class="subtitle">Bar = avg repair cost per group · Dashed line = avg warranty revenue per unit sold (break-even)</div>
+    <canvas id="chDist"></canvas>
+  </div>
+
+  <!-- Chart 5 & 6: Parts & Labor Trends -->
+  <div class="section-title">Parts & Labor Cost Trends</div>
+  <div class="section-subtitle">Quarterly cost trends — actual labor codes where available, assumed rates otherwise</div>
+  <div class="note-box">
+    <strong>Methodology:</strong> Labor costs use actual labor charges (LABOR15/30/60 codes) when available. If no labor code is present, assumed rates apply: Major = $30, Minor = $15, NPU/NPF/OS = $7.50. Parts cost = Total repair cost − labor cost (min $0).
+  </div>
+  <div class="chart-grid">
+    <div class="chart-wrap" id="wrap_parts">
+      <button class="dl-btn" onclick="dlChart('chParts','Parts_Cost_Trend')">⬇ PNG</button>
+      <h3>Parts Cost by Quarter</h3>
+      <div class="subtitle">Total parts cost (area) + avg per repair (dashed)</div>
+      <canvas id="chParts"></canvas>
+    </div>
+    <div class="chart-wrap" id="wrap_labor">
+      <button class="dl-btn" onclick="dlChart('chLabor','Labor_Cost_Trend')">⬇ PNG</button>
+      <h3>Labor Cost by Quarter</h3>
+      <div class="subtitle">Total labor cost (area) + avg per repair (dashed)</div>
+      <canvas id="chLabor"></canvas>
+    </div>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-wrap" id="wrap_partsGrp">
+      <button class="dl-btn" onclick="dlChart('chPartsGrp','Parts_Cost_By_Group')">⬇ PNG</button>
+      <h3>Total Parts Cost by Device Group</h3>
+      <div class="subtitle">Cumulative parts cost per group</div>
+      <canvas id="chPartsGrp"></canvas>
+    </div>
+    <div class="chart-wrap" id="wrap_laborGrp">
+      <button class="dl-btn" onclick="dlChart('chLaborGrp','Labor_Cost_By_Group')">⬇ PNG</button>
+      <h3>Total Labor Cost by Device Group</h3>
+      <div class="subtitle">Cumulative labor cost per group</div>
+      <canvas id="chLaborGrp"></canvas>
+    </div>
+  </div>
+
+  <div class="footer">CTL Warranty Board Report — Presentation Charts · Live from Google Sheets</div>
+</div>
+
+<script>
+const PW='CTLdata2026',SHIP=10,MIN_YR=2018,MAX_YR=2030;
+const RU='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=986703446&single=true&output=csv';
+const SU='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=235319241&single=true&output=csv';
+const CU='https://docs.google.com/spreadsheets/d/e/2PACX-1vS9yLbvcLU16R73aNEIqwAVzJwz82UghVY5buEK5uuX9LHojAE9JoQoJ00-uuR2KzXTL-e6AwepOlFq/pub?gid=151668355&single=true&output=csv';
+
+// ===== DEVICE GROUPS =====
+const GROUPS = {
+  'NL72': ['CBUS1100015','CBUS1100016'],
+  'NL72T': ['CBUS1100011','CBUS1100017','CBUS1100023'],
+  'NL72-L / CT-L': ['CBUS1100013','CBUS1100019','CBUS1100020','CBUS1100021'],
+  'NL73': ['CBUS1100024','CBUS1100026','CBUS1100028'],
+  'NL73T': ['CBUS1100025','CBUS1100027','CBUS1100030'],
+  'PX111E': ['CBUS1100033','CBUS1100034'],
+  'PX14E': ['CBUS1400003','CBUS1400004','CBUS1400005','CBUS1400006','CBUS1400007','CBUS1400008','CBUS1400009','CBUS1400010'],
+  'PX141E': ['CBUS1400011','CBUS1400012','CBUS1400013','CBUS1400015','ZPX141GXT'],
+  'Chromebox': ['CBXEU190010','CBXEU190011','CBXUS190003','CBXUS190004','CBXUS190010','CBXUS190011','CBXUS190022'],
+  'NL73TW Gen2': ['CBUS1100035'],
+  'NL73 Gen2': ['CBUS1100037'],
+  'PX121E': ['CBUS1200001'],
+  'Meet Systems': ['CBXUS190005','CBXUS190020']
+};
+const GROUP_NAMES = Object.keys(GROUPS);
+const ALL_ITEMS = new Set(Object.values(GROUPS).flat());
+
+// Color palette — distinct and presentation-friendly
+const GC = ['#0ea5e9','#8b5cf6','#f59e0b','#ef4444','#10b981','#ec4899','#f97316','#6366f1','#14b8a6','#e11d48','#84cc16','#0891b2','#d946ef'];
+
+let rawR=null,rawS=null,rawC=null,costsLU={},charts=[];
+const fmt=n=>n==null?'N/A':n.toLocaleString('en-US');
+const fD=n=>n==null?'N/A':'$'+Math.round(n).toLocaleString('en-US');
+const fP=n=>n==null?'N/A':n.toFixed(2)+'%';
+function vY(y){const n=parseInt(y);return!isNaN(n)&&n>=MIN_YR&&n<=MAX_YR;}
+function pD(s){if(!s)return null;const d=new Date(s);return isNaN(d)?null:new Date(d.getFullYear(),d.getMonth(),d.getDate());}
+function qL(d){return`${d.getFullYear()} Q${Math.floor(d.getMonth()/3)+1}`;}
+function itemToGroup(itemN){for(const[g,items]of Object.entries(GROUPS)){if(items.includes(itemN))return g;}return null;}
+function trd(vals){const f=vals.filter(x=>x!=null&&x!==0);if(f.length<2)return{t:'—',c:'flat'};const a=f[0],b=f[f.length-1];if(!a)return{t:'↑',c:'up'};const p=((b-a)/Math.abs(a))*100;if(p>10)return{t:`↑ +${p.toFixed(0)}%`,c:'up'};if(p<-10)return{t:`↓ ${p.toFixed(0)}%`,c:'down'};return{t:'→ Flat',c:'flat'};}
+
+function checkPw(){
+  if(document.getElementById('pwInput').value===PW){
+    document.getElementById('pwOverlay').classList.add('hidden');
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+    fetchAll();
+  } else document.getElementById('pwError').textContent='Incorrect password';
+}
+
+function fetchAll(){
+  document.getElementById('loadingMsg').textContent='Fetching repair data…';
+  let rd=false,sd=false,cd=false;
+  function tryGo(){if(rd&&sd&&cd)processAndRender();}
+  Papa.parse(RU,{download:true,header:true,skipEmptyLines:true,complete:r=>{rawR=r.data;rd=true;document.getElementById('loadingMsg').textContent='Fetching sales…';tryGo();}});
+  Papa.parse(SU,{download:true,header:true,skipEmptyLines:true,complete:r=>{rawS=r.data;sd=true;document.getElementById('loadingMsg').textContent='Fetching costs…';tryGo();}});
+  Papa.parse(CU,{download:true,header:true,skipEmptyLines:true,complete:r=>{rawC=r.data;cd=true;buildCostsLU();tryGo();}});
+}
+function buildCostsLU(){
+  costsLU={};if(!rawC)return;
+  rawC.forEach(r=>{
+    const oid=(r['Order Id']||'').trim(),prod=(r['Product']||'').trim().toUpperCase();
+    if(oid)costsLU[oid]={product:prod,isLabor:/^LABOR\d+/.test(prod),laborRate:prod==='LABOR15'?7.5:prod==='LABOR30'?15:prod==='LABOR60'?30:0};
+  });
+}
+
+function processAndRender(){
+  document.getElementById('loadingMsg').textContent='Processing…';
+  const startDate=new Date(2023,0,1), endDate=new Date(2025,11,31,23,59,59);
+
+  // Build sales lookup (full history, no date filter)
+  const sL={};
+  rawS.forEach(r=>{
+    const it=(r['Item No']||'').trim(),co=(r['Warranty Code']||'').trim(),yr=(r['Year']||'').trim();
+    if(!it||!co||(!vY(yr)&&yr))return;
+    if(!ALL_ITEMS.has(it))return;
+    const qt=parseFloat(r['Total Sales Qty'])||0,pr=parseFloat((r['Price']||'').replace(/[$,]/g,''))||0;
+    let rv=parseFloat((r['Total Sales']||'').replace(/[$,]/g,''))||0;if(!rv&&qt&&pr)rv=qt*pr;
+    if(!sL[it])sL[it]={_byYr:{},_total:0,_totalRev:0};
+    sL[it]._total+=qt;sL[it]._totalRev+=rv;
+    if(yr&&vY(yr)){sL[it]._byYr[yr]=sL[it]._byYr[yr]||{qty:0,rev:0};sL[it]._byYr[yr].qty+=qt;sL[it]._byYr[yr].rev+=rv;}
+  });
+
+  // Filter repairs to date range & our items
+  const filt=rawR.filter(r=>{
+    const it=(r['Item Number']||'').trim(),m=(r['Model Name']||'').trim(),ds=(r['Order Received Date']||'').trim();
+    if(!ds||!m||m==='No Match'||!it||!ALL_ITEMS.has(it))return false;
+    const d=pD(ds);return d&&d>=startDate&&d<=endDate;
+  });
+
+  // Build group-level aggregates
+  const gData={};
+  GROUP_NAMES.forEach(g=>{gData[g]={sold:0,rev:0,repairs:0,cost:0,major:0,minor:0,npu:0,npf:0,accidental:0,inW:0,outW:0,repairRev:0,
+    quarterlyData:{},yearlyRepairs:{},yearlySold:{},yearlyRev:{},
+    partsCost:0,laborCost:0,quarterlyParts:{},quarterlyLabor:{}};});
+
+  // Add sales data per group
+  for(const[g,items]of Object.entries(GROUPS)){
+    items.forEach(it=>{
+      const s=sL[it];if(!s)return;
+      gData[g].sold+=s._total;gData[g].rev+=s._totalRev;
+      Object.entries(s._byYr).forEach(([yr,d])=>{
+        if(!gData[g].yearlySold[yr])gData[g].yearlySold[yr]=0;
+        if(!gData[g].yearlyRev[yr])gData[g].yearlyRev[yr]=0;
+        gData[g].yearlySold[yr]+=d.qty;gData[g].yearlyRev[yr]+=d.rev;
+      });
+    });
+  }
+
+  // Process repairs
+  filt.forEach(r=>{
+    const it=(r['Item Number']||'').trim(),g=itemToGroup(it);if(!g)return;
+    const rep=(r['Repair']||'').trim(),isMaj=(r['Major Repairs']||'').trim().toLowerCase()==='yes';
+    const isNPU=/^npu$/i.test(rep),isNPF=/^npf$/i.test(rep),isNPX=isNPU||isNPF;
+    const isAcc=['yes','liquid'].includes((r['Accidental Damage']||'').trim().toLowerCase());
+    const cost=(parseFloat(r['Costs'])||0)+SHIP,rRev=parseFloat(r['Repair Revenue'])||0;
+    const ws=(r['Warranty Status']||'').trim();
+    const d=pD(r['Order Received Date']),yr=d?d.getFullYear().toString():'?',qt=d?qL(d):'?';
+
+    const gd=gData[g];gd.repairs++;gd.cost+=cost;gd.repairRev+=rRev;
+    if(isNPU)gd.npu++;else if(isNPF)gd.npf++;else if(isMaj)gd.major++;else gd.minor++;
+    if(isAcc)gd.accidental++;
+    if(ws==='In Warranty')gd.inW++;else if(ws==='Out of Warranty')gd.outW++;
+
+    // Yearly
+    if(vY(yr)){
+      if(!gd.yearlyRepairs[yr])gd.yearlyRepairs[yr]={rep:0,cost:0};
+      gd.yearlyRepairs[yr].rep++;gd.yearlyRepairs[yr].cost+=cost;
+    }
+
+    // Quarterly
+    if(qt!=='?'){
+      if(!gd.quarterlyData[qt])gd.quarterlyData[qt]={rep:0,cost:0,pC:0,lC:0};
+      const qd=gd.quarterlyData[qt];qd.rep++;qd.cost+=cost;
+      // Labor split
+      const oid=(r['Order Id']||'').trim(),cEntry=costsLU[oid];
+      let labC;
+      if(cEntry&&cEntry.isLabor)labC=cEntry.laborRate;
+      else{const isOS=/os issue/i.test(rep);labC=isNPX||isOS?7.5:isMaj?30:15;}
+      qd.lC+=labC;qd.pC+=Math.max(0,cost-labC);
+      gd.partsCost+=Math.max(0,cost-labC);gd.laborCost+=labC;
+    }
+  });
+
+  // Build all quarter labels (2023-2025)
+  const allQ=new Set();
+  for(let yr=2023;yr<=2025;yr++)for(let q=1;q<=4;q++)allQ.add(`${yr} Q${q}`);
+  const sQA=[...allQ].sort();
+
+  // Build all year labels from sales
+  const allYrs=new Set();
+  GROUP_NAMES.forEach(g=>{Object.keys(gData[g].yearlySold).forEach(y=>allYrs.add(y));Object.keys(gData[g].yearlyRev).forEach(y=>allYrs.add(y));});
+  const salesYrs=[...allYrs].filter(vY).sort();
+
+  // ======== RENDER ========
+  document.getElementById('dateLabel').textContent=`Repairs: 2023-01-01 — 2025-12-31 | Sales: All (${MIN_YR}–${MAX_YR})`;
+
+  // KPIs
+  let tSold=0,tRep=0,tCost=0,tRev=0,tRepRev=0;
+  GROUP_NAMES.forEach(g=>{tSold+=gData[g].sold;tRep+=gData[g].repairs;tCost+=gData[g].cost;tRev+=gData[g].rev;tRepRev+=gData[g].repairRev;});
+  const nPL=tRev+tRepRev-tCost;
+  document.getElementById('kpiArea').innerHTML=`<div class="kpi-strip">
+    <div class="kpi-item"><div class="kpi-label">Units Sold</div><div class="kpi-value">${fmt(tSold)}</div></div>
+    <div class="kpi-item yellow"><div class="kpi-label">Total Repairs</div><div class="kpi-value">${fmt(tRep)}</div></div>
+    <div class="kpi-item red"><div class="kpi-label">Repair Rate</div><div class="kpi-value">${tSold>0?fP(tRep/tSold*100):'N/A'}</div></div>
+    <div class="kpi-item orange"><div class="kpi-label">Repair Cost</div><div class="kpi-value">${fD(tCost)}</div></div>
+    <div class="kpi-item purple"><div class="kpi-label">Warranty Revenue</div><div class="kpi-value">${fD(tRev)}</div></div>
+    <div class="kpi-item ${nPL>=0?'green':'red'}"><div class="kpi-label">Net P/L</div><div class="kpi-value" style="color:${nPL>=0?'var(--green)':'var(--red)'}">${fD(nPL)}</div></div>
+  </div>`;
+
+  // Destroy old charts
+  charts.forEach(c=>{try{c.destroy();}catch(e){}});charts=[];
+
+  const chartOpts=(extra={})=>({responsive:true,animation:{duration:600},plugins:{legend:{labels:{color:'#64748b',font:{family:'DM Sans',size:11},padding:14,usePointStyle:true},...(extra.legendOpts||{})},...(extra.pluginOpts||{})},scales:{...(extra.scales||{})}});
+
+  // ===== CHART 1: Units Sold by Group =====
+  charts.push(new Chart(document.getElementById('chSold'),{type:'bar',data:{labels:GROUP_NAMES,datasets:[{label:'Units Sold',data:GROUP_NAMES.map(g=>gData[g].sold),backgroundColor:GC.slice(0,GROUP_NAMES.length),borderRadius:6,barPercentage:.7}]},options:{...chartOpts({scales:{y:{ticks:{color:'#64748b',callback:v=>fmt(v)},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)+' units'}}}}}));
+
+  // ===== CHART 2: Revenue by Group =====
+  charts.push(new Chart(document.getElementById('chRev'),{type:'bar',data:{labels:GROUP_NAMES,datasets:[{label:'Revenue',data:GROUP_NAMES.map(g=>gData[g].rev),backgroundColor:GC.slice(0,GROUP_NAMES.length),borderRadius:6,barPercentage:.7}]},options:{...chartOpts({scales:{y:{ticks:{color:'#64748b',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fD(c.raw)}}}}}));
+
+  // ===== CHART 1b: Units Sold by Year (stacked) =====
+  const soldYrDS=GROUP_NAMES.map((g,i)=>({label:g,data:salesYrs.map(yr=>gData[g].yearlySold[yr]||0),backgroundColor:GC[i%GC.length],borderRadius:3,barPercentage:.75}));
+  charts.push(new Chart(document.getElementById('chSoldYr'),{type:'bar',data:{labels:salesYrs,datasets:soldYrDS},options:{...chartOpts({scales:{y:{stacked:true,ticks:{color:'#64748b',callback:v=>fmt(v)},grid:{color:'#e2e8f0'}},x:{stacked:true,ticks:{color:'#64748b'},grid:{display:false}}}}),plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},usePointStyle:true,padding:10}},tooltip:{mode:'index'}}}}));
+
+  // Revenue by Year (stacked)
+  const revYrDS=GROUP_NAMES.map((g,i)=>({label:g,data:salesYrs.map(yr=>gData[g].yearlyRev[yr]||0),backgroundColor:GC[i%GC.length],borderRadius:3,barPercentage:.75}));
+  charts.push(new Chart(document.getElementById('chRevYr'),{type:'bar',data:{labels:salesYrs,datasets:revYrDS},options:{...chartOpts({scales:{y:{stacked:true,ticks:{color:'#64748b',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#e2e8f0'}},x:{stacked:true,ticks:{color:'#64748b'},grid:{display:false}}}}),plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},usePointStyle:true,padding:10}},tooltip:{mode:'index',callbacks:{label:c=>c.dataset.label+': '+fD(c.raw)}}}}}));
+
+  // ===== CHART 3: Claim Frequency + Repair Rate =====
+  charts.push(new Chart(document.getElementById('chFreq'),{type:'bar',data:{labels:GROUP_NAMES,datasets:[{label:'Repairs',data:GROUP_NAMES.map(g=>gData[g].repairs),backgroundColor:GC.map(c=>c+'cc'),borderColor:GC,borderWidth:1,borderRadius:6,barPercentage:.65,yAxisID:'y'},{label:'Repair Rate %',data:GROUP_NAMES.map(g=>gData[g].sold>0?(gData[g].repairs/gData[g].sold*100):0),type:'line',borderColor:'#ef4444',backgroundColor:'transparent',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#ef4444',tension:.3,yAxisID:'y1'}]},options:{...chartOpts({scales:{y:{title:{display:true,text:'Repairs',color:'#64748b'},ticks:{color:'#64748b'},grid:{color:'#e2e8f0'}},y1:{position:'right',title:{display:true,text:'Repair Rate %',color:'#ef4444'},ticks:{color:'#ef4444',callback:v=>v.toFixed(1)+'%'},grid:{display:false}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.datasetIndex===0?fmt(c.raw)+' repairs':c.raw.toFixed(2)+'%'}}}}}));
+
+  // ===== CHART 4: Severity Doughnut =====
+  let tMaj=0,tMin=0,tNPU=0,tNPF=0;
+  GROUP_NAMES.forEach(g=>{tMaj+=gData[g].major;tMin+=gData[g].minor;tNPU+=gData[g].npu;tNPF+=gData[g].npf;});
+  charts.push(new Chart(document.getElementById('chSev'),{type:'doughnut',data:{labels:['Major','Minor','NPU','NPF'],datasets:[{data:[tMaj,tMin,tNPU,tNPF],backgroundColor:['#ef4444','#f59e0b','#0ea5e9','#8b5cf6'],borderWidth:2,borderColor:'#ffffff'}]},options:{responsive:true,cutout:'52%',plugins:{legend:{position:'bottom',labels:{color:'#64748b',padding:16,font:{size:12}}},tooltip:{callbacks:{label:c=>{const total=tMaj+tMin+tNPU+tNPF;return c.label+': '+fmt(c.raw)+' ('+((c.raw/total)*100).toFixed(1)+'%)';}}}}}}));
+
+  // ===== Severity by Group (stacked bar) =====
+  charts.push(new Chart(document.getElementById('chSevGrp'),{type:'bar',data:{labels:GROUP_NAMES,datasets:[
+    {label:'Major',data:GROUP_NAMES.map(g=>gData[g].major),backgroundColor:'#ef4444',borderRadius:2},
+    {label:'Minor',data:GROUP_NAMES.map(g=>gData[g].minor),backgroundColor:'#f59e0b',borderRadius:2},
+    {label:'NPU',data:GROUP_NAMES.map(g=>gData[g].npu),backgroundColor:'#0ea5e9',borderRadius:2},
+    {label:'NPF',data:GROUP_NAMES.map(g=>gData[g].npf),backgroundColor:'#8b5cf6',borderRadius:2}
+  ]},options:{...chartOpts({scales:{y:{stacked:true,ticks:{color:'#64748b'},grid:{color:'#e2e8f0'}},x:{stacked:true,ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),plugins:{legend:{position:'bottom',labels:{color:'#64748b',padding:14,usePointStyle:true}},tooltip:{mode:'index'}}}}));
+
+  // ===== CHART 5: Quarterly Trend (count) =====
+  const trendDS=GROUP_NAMES.map((g,i)=>{
+    const d=gData[g];
+    return{label:g,data:sQA.map(q=>d.quarterlyData[q]?.rep||0),borderColor:GC[i%GC.length],backgroundColor:'transparent',borderWidth:2.5,pointRadius:3,pointBackgroundColor:GC[i%GC.length],tension:.35};
+  });
+  charts.push(new Chart(document.getElementById('chTrend'),{type:'line',data:{labels:sQA,datasets:trendDS},options:{...chartOpts({scales:{y:{ticks:{color:'#64748b'},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},usePointStyle:true,padding:10}},tooltip:{mode:'index'}}}}));
+
+  // ===== CHART 5b: Quarterly Trend (% of sold) =====
+  const trendPctDS=GROUP_NAMES.map((g,i)=>{
+    const d=gData[g];
+    return{label:g,data:sQA.map(q=>{const r=d.quarterlyData[q]?.rep||0;return d.sold>0?parseFloat(((r/d.sold)*100).toFixed(3)):null;}),borderColor:GC[i%GC.length],backgroundColor:'transparent',borderWidth:2.5,pointRadius:3,pointBackgroundColor:GC[i%GC.length],tension:.35};
+  });
+  charts.push(new Chart(document.getElementById('chTrendPct'),{type:'line',data:{labels:sQA,datasets:trendPctDS},options:{...chartOpts({scales:{y:{ticks:{color:'#64748b',callback:v=>v.toFixed(2)+'%'},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},usePointStyle:true,padding:10}},tooltip:{mode:'index',callbacks:{label:c=>c.dataset.label+': '+(c.raw!=null?c.raw.toFixed(3)+'%':'N/A')}}}}}));
+
+  // ===== CHART 6: Cost Distribution (avg repair cost per group vs avg warranty rev) =====
+  const avgRepCost=GROUP_NAMES.map(g=>gData[g].repairs>0?(gData[g].cost/gData[g].repairs):0);
+  const avgWarrantyRevPerUnit=tSold>0?(tRev/tSold):0;
+  charts.push(new Chart(document.getElementById('chDist'),{type:'bar',data:{labels:GROUP_NAMES,datasets:[
+    {label:'Avg Repair Cost',data:avgRepCost,backgroundColor:GC.map(c=>c+'aa'),borderColor:GC,borderWidth:1,borderRadius:6,barPercentage:.65,yAxisID:'y'},
+    {label:`Avg Warranty Rev/Unit: ${fD(avgWarrantyRevPerUnit)}`,data:GROUP_NAMES.map(()=>avgWarrantyRevPerUnit),type:'line',borderColor:'#10b981',borderWidth:2.5,borderDash:[8,4],pointRadius:0,fill:false,yAxisID:'y'}
+  ]},options:{...chartOpts({scales:{y:{title:{display:true,text:'Cost ($)',color:'#64748b'},ticks:{color:'#64748b',callback:v=>'$'+v.toFixed(0)},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),plugins:{legend:{position:'bottom',labels:{color:'#64748b',padding:14,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label.split(':')[0]+': '+fD(c.raw)}}}}}));
+
+  // ===== CHART 7a: Parts Cost by Quarter =====
+  const qParts=sQA.map(q=>{let t=0,r=0;GROUP_NAMES.forEach(g=>{const d=gData[g].quarterlyData[q];if(d){t+=d.pC;r+=d.rep;}});return{t,r};});
+  charts.push(new Chart(document.getElementById('chParts'),{type:'line',data:{labels:sQA,datasets:[
+    {label:'Total Parts Cost',data:qParts.map(d=>d.t),borderColor:'#f97316',backgroundColor:'#f9731618',fill:true,tension:.3,borderWidth:2.5,pointRadius:4,yAxisID:'y'},
+    {label:'Avg/Repair',data:qParts.map(d=>d.r>0?Math.round(d.t/d.r):null),borderColor:'#fbbf24',backgroundColor:'transparent',borderDash:[6,3],tension:.3,borderWidth:2,pointRadius:3,yAxisID:'y1'}
+  ]},options:{...chartOpts({scales:{y:{title:{display:true,text:'Total Cost',color:'#f97316'},ticks:{color:'#f97316',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#e2e8f0'}},y1:{position:'right',title:{display:true,text:'Avg/Repair',color:'#fbbf24'},ticks:{color:'#fbbf24',callback:v=>'$'+v},grid:{display:false}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#64748b',padding:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fD(c.raw)}}}}}));
+
+  // ===== CHART 7b: Labor Cost by Quarter =====
+  const qLabor=sQA.map(q=>{let t=0,r=0;GROUP_NAMES.forEach(g=>{const d=gData[g].quarterlyData[q];if(d){t+=d.lC;r+=d.rep;}});return{t,r};});
+  charts.push(new Chart(document.getElementById('chLabor'),{type:'line',data:{labels:sQA,datasets:[
+    {label:'Total Labor Cost',data:qLabor.map(d=>d.t),borderColor:'#8b5cf6',backgroundColor:'#8b5cf618',fill:true,tension:.3,borderWidth:2.5,pointRadius:4,yAxisID:'y'},
+    {label:'Avg/Repair',data:qLabor.map(d=>d.r>0?Math.round(d.t/d.r):null),borderColor:'#ec4899',backgroundColor:'transparent',borderDash:[6,3],tension:.3,borderWidth:2,pointRadius:3,yAxisID:'y1'}
+  ]},options:{...chartOpts({scales:{y:{title:{display:true,text:'Total Cost',color:'#8b5cf6'},ticks:{color:'#8b5cf6',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#e2e8f0'}},y1:{position:'right',title:{display:true,text:'Avg/Repair',color:'#ec4899'},ticks:{color:'#ec4899',callback:v=>'$'+v},grid:{display:false}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#64748b',padding:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fD(c.raw)}}}}}));
+
+  // ===== Parts cost by group bar =====
+  charts.push(new Chart(document.getElementById('chPartsGrp'),{type:'bar',data:{labels:GROUP_NAMES,datasets:[{label:'Parts Cost',data:GROUP_NAMES.map(g=>gData[g].partsCost),backgroundColor:'#f97316aa',borderColor:'#f97316',borderWidth:1,borderRadius:6,barPercentage:.65}]},options:{...chartOpts({scales:{y:{ticks:{color:'#64748b',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fD(c.raw)}}}}}));
+
+  // ===== Labor cost by group bar =====
+  charts.push(new Chart(document.getElementById('chLaborGrp'),{type:'bar',data:{labels:GROUP_NAMES,datasets:[{label:'Labor Cost',data:GROUP_NAMES.map(g=>gData[g].laborCost),backgroundColor:'#8b5cf6aa',borderColor:'#8b5cf6',borderWidth:1,borderRadius:6,barPercentage:.65}]},options:{...chartOpts({scales:{y:{ticks:{color:'#64748b',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fD(c.raw)}}}}}));
+
+  // Done
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+}
+
+// ===== DOWNLOAD FUNCTIONS =====
+function dlChart(canvasId, filename){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas)return;
+  // Create high-res version
+  const scale=2;
+  const tmpCanvas=document.createElement('canvas');
+  tmpCanvas.width=canvas.width*scale;
+  tmpCanvas.height=canvas.height*scale;
+  const ctx=tmpCanvas.getContext('2d');
+  ctx.scale(scale,scale);
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(canvas,0,0,canvas.width,canvas.height);
+  const link=document.createElement('a');
+  link.download=filename+'.png';
+  link.href=tmpCanvas.toDataURL('image/png',1.0);
+  link.click();
+}
+
+function downloadAll(){
+  const ids=[
+    ['chSold','Warranty_Units_Sold_By_Group'],
+    ['chRev','Warranty_Revenue_By_Group'],
+    ['chSoldYr','Units_Sold_By_Year_Stacked'],
+    ['chRevYr','Revenue_By_Year_Stacked'],
+    ['chFreq','Claim_Frequency_By_Group'],
+    ['chSev','Claim_Severity_Doughnut'],
+    ['chSevGrp','Severity_By_Group_Stacked'],
+    ['chTrend','Breakage_Rate_Quarterly_Count'],
+    ['chTrendPct','Breakage_Rate_Quarterly_Pct'],
+    ['chDist','Cost_Distribution_vs_Revenue'],
+    ['chParts','Parts_Cost_Quarterly'],
+    ['chLabor','Labor_Cost_Quarterly'],
+    ['chPartsGrp','Parts_Cost_By_Group'],
+    ['chLaborGrp','Labor_Cost_By_Group']
+  ];
+  let delay=0;
+  ids.forEach(([id,name])=>{
+    setTimeout(()=>dlChart(id,name),delay);
+    delay+=300;
+  });
+}
+</script>
+</body>
+</html>
