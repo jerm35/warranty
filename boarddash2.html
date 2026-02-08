@@ -35,8 +35,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:28px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .chart-wrap h3{font-size:16px;font-weight:600;margin-bottom:4px;color:var(--text)}
 .chart-wrap .subtitle{font-size:12px;color:var(--muted);margin-bottom:20px}
-.chart-wrap canvas{max-height:420px}
+.chart-wrap canvas{max-height:420px;cursor:pointer}
 .chart-wrap.tall canvas{max-height:520px}
+.chart-wrap::after{content:'Click data for details';position:absolute;bottom:8px;left:14px;font-size:10px;color:var(--muted);font-style:italic;opacity:.5}
 .dl-btn{position:absolute;top:16px;right:16px;background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .15s;z-index:5}
 .dl-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
 .dl-all-btn{display:block;margin:0 auto 40px;background:var(--accent);color:#fff;border:none;padding:12px 32px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif}
@@ -60,6 +61,45 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .chart-controls .ctrl-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .chart-controls .ctrl-label{font-size:11px;color:var(--muted);font-weight:500;margin-right:4px}
 .chart-controls .nav-btn{min-width:120px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.active{opacity:1;pointer-events:all}
+.modal{background:#fff;border:1px solid var(--border);border-radius:12px;max-width:960px;width:95%;max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:2;border-radius:12px 12px 0 0}
+.modal-header h3{font-size:17px;font-weight:700;color:var(--text)}
+.modal-close{background:none;border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:#f1f5f9;color:var(--text)}
+.modal-body{padding:20px 24px 28px}
+.modal-body .detail-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px}
+.modal-body .detail-stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;text-align:center}
+.modal-body .detail-stat .label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.modal-body .detail-stat .value{font-size:18px;font-weight:700;margin-top:3px;font-family:'Space Mono',monospace;color:var(--text)}
+.modal-body .section-label{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
+.modal-body table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
+.modal-body th{text-align:left;padding:8px 12px;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e2e8f0;background:#f8fafc}
+.modal-body td{padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#475569}
+.modal-body td.mono{font-family:'Space Mono',monospace;font-size:11px}
+.modal-body td.positive{color:var(--green)}.modal-body td.negative{color:var(--red)}
+.modal-body tr:hover td{background:#f8fafc}
+.modal-body .assumption-note{background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:12px 16px;font-size:11px;color:#0c4a6e;margin-top:20px;line-height:1.7}
+.modal-body .assumption-note strong{color:#0369a1}
+/* Assumptions section */
+.assumptions{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-top:48px;overflow:hidden}
+.assumptions-toggle{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;cursor:pointer;user-select:none;transition:background .15s}
+.assumptions-toggle:hover{background:#f8fafc}
+.assumptions-toggle h3{font-size:15px;font-weight:700;color:var(--text)}
+.assumptions-toggle .arrow{font-size:18px;color:var(--muted);transition:transform .2s}
+.assumptions.open .arrow{transform:rotate(180deg)}
+.assumptions-body{display:none;padding:0 24px 24px;font-size:13px;color:#475569;line-height:1.7}
+.assumptions.open .assumptions-body{display:block}
+.assumptions-body h4{font-size:13px;font-weight:700;color:var(--text);margin:20px 0 8px}
+.assumptions-body ul{margin:0 0 8px 20px}
+.assumptions-body li{margin-bottom:4px}
+.assumptions-body .group-table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0 16px}
+.assumptions-body .group-table th{text-align:left;padding:8px 12px;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+.assumptions-body .group-table td{padding:6px 12px;border-bottom:1px solid #f1f5f9;color:#475569;font-size:11px}
+.assumptions-body .group-table td:first-child{font-weight:600;color:var(--text);white-space:nowrap}
+.assumptions-body .group-table td.mono{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted)}
 .footer{text-align:center;color:var(--muted);font-size:12px;padding:40px 0 24px;border-top:1px solid var(--border);margin-top:48px}
 </style>
 </head>
@@ -230,7 +270,81 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
 
-  <div class="footer">CTL Warranty Board Report — Presentation Charts · Live from Google Sheets</div>
+  <!-- Assumptions Section -->
+  <div class="assumptions" id="assumSection">
+    <div class="assumptions-toggle" onclick="document.getElementById('assumSection').classList.toggle('open')">
+      <h3>📋 Data Assumptions & Methodology</h3>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="assumptions-body">
+      <h4>Device Groups</h4>
+      <p>Devices are grouped by product family for aggregate analysis. Each group combines related SKUs/configurations:</p>
+      <table class="group-table" id="groupTable"></table>
+
+      <h4>Data Sources</h4>
+      <ul>
+        <li><strong>Repair Data:</strong> Google Sheets CSV (NetSuite export). One row per repair order. Filtered by <code>Order Received Date</code> within 2023-01-01 to 2025-12-31.</li>
+        <li><strong>Sales Data:</strong> Google Sheets CSV. Not date-filtered — full history (2018–2030) used for accurate repair rate denominators.</li>
+        <li><strong>Costs Data:</strong> Google Sheets CSV. Per-order product/labor codes used for parts vs. labor cost split.</li>
+      </ul>
+
+      <h4>Key Calculations</h4>
+      <ul>
+        <li><strong>Units Sold:</strong> Sum of <code>Total Sales Qty</code> across all warranty codes per item, all valid years (2018–2030).</li>
+        <li><strong>Repair Rate:</strong> <code>Total Repairs ÷ Units Sold × 100</code>. Full sales history used as denominator for accurate rates.</li>
+        <li><strong>Repair Cost:</strong> <code>Costs</code> column value + $10 flat shipping per repair.</li>
+        <li><strong>Warranty Revenue:</strong> <code>Total Sales</code> from sales CSV, summed across all warranty codes per item.</li>
+        <li><strong>Net P/L:</strong> <code>Warranty Revenue + Repair Revenue (OOW) − Total Repair Cost</code>.</li>
+      </ul>
+
+      <h4>Severity Classification</h4>
+      <ul>
+        <li><strong>NPU</strong> — Repair field matches "NPU" exactly</li>
+        <li><strong>NPF</strong> — Repair field matches "NPF" exactly</li>
+        <li><strong>Major</strong> — Major Repairs column = "Yes" (and not NPU/NPF)</li>
+        <li><strong>Minor</strong> — Everything else</li>
+        <li>Priority: NPU → NPF → Major → Minor (each repair classified into exactly one category)</li>
+      </ul>
+
+      <h4>Parts vs. Labor Cost Split</h4>
+      <ul>
+        <li>The <strong>Costs CSV</strong> provides per-order Product codes which may include explicit labor codes.</li>
+        <li><strong>If LABOR15, LABOR30, or LABOR60</strong> code found: labor = $7.50, $15, or $30 respectively (actual data).</li>
+        <li><strong>If no LABOR code</strong> present: assumed rates — Major = $30, Minor = $15, NPU/NPF/OS = $7.50.</li>
+        <li><strong>Parts cost</strong> = Total repair cost − labor cost (minimum $0).</li>
+        <li>Every repair contributes to both parts and labor totals.</li>
+      </ul>
+
+      <h4>Cost Distribution Chart</h4>
+      <ul>
+        <li>Bars show average repair cost per device group (total cost ÷ total repairs).</li>
+        <li>Dashed green line shows average warranty revenue per unit sold across all groups (break-even reference).</li>
+        <li>Groups above the line cost more to repair on average than the warranty revenue generated per unit.</li>
+      </ul>
+
+      <h4>Caveats</h4>
+      <ul>
+        <li>Models with "No Match" in Model Name or Item Number are excluded.</li>
+        <li>Rows missing Order Received Date are excluded from repair data.</li>
+        <li>$10/repair shipping cost is a flat estimate added to every repair.</li>
+        <li>Accidental Damage includes both "Yes" and "Liquid" values.</li>
+        <li>Year filtering restricts to 2018–2030 to exclude erroneous dates.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">CTL Warranty Board Report — Presentation Charts · Live from Google Sheets<br><span style="font-size:11px">Sales: full history (2018–2030) · Repairs: 2023-01-01 — 2025-12-31</span></div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle"></h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
 </div>
 
 <script>
@@ -263,6 +377,7 @@ const GC = ['#0ea5e9','#8b5cf6','#f59e0b','#ef4444','#10b981','#ec4899','#f97316
 
 let rawR=null,rawS=null,rawC=null,costsLU={},charts=[];
 let chTrendRef=null, chTrendPctRef=null, trendCycleIdx=-1, pctCycleIdx=-1;
+let gData={}, sL_global={};
 const fmt=n=>n==null?'N/A':n.toLocaleString('en-US');
 const fD=n=>n==null?'N/A':'$'+Math.round(n).toLocaleString('en-US');
 const fP=n=>n==null?'N/A':n.toFixed(2)+'%';
@@ -321,20 +436,23 @@ function processAndRender(){
   });
 
   // Build group-level aggregates
-  const gData={};
-  GROUP_NAMES.forEach(g=>{gData[g]={sold:0,rev:0,repairs:0,cost:0,major:0,minor:0,npu:0,npf:0,accidental:0,inW:0,outW:0,repairRev:0,
+  const _gData={};
+  GROUP_NAMES.forEach(g=>{_gData[g]={sold:0,rev:0,repairs:0,cost:0,major:0,minor:0,npu:0,npf:0,accidental:0,inW:0,outW:0,repairRev:0,
     quarterlyData:{},yearlyRepairs:{},yearlySold:{},yearlyRev:{},
-    partsCost:0,laborCost:0,quarterlyParts:{},quarterlyLabor:{}};});
+    partsCost:0,laborCost:0,quarterlyParts:{},quarterlyLabor:{},
+    repairTypes:{},itemData:{},labActual:0,labAssumed:0};});
 
-  // Add sales data per group
+  // Add sales data per group (also track per-item)
   for(const[g,items]of Object.entries(GROUPS)){
     items.forEach(it=>{
       const s=sL[it];if(!s)return;
-      gData[g].sold+=s._total;gData[g].rev+=s._totalRev;
+      if(!_gData[g].itemData[it])_gData[g].itemData[it]={name:'',sold:0,rev:0,repairs:0,cost:0,major:0,minor:0,npu:0,npf:0};
+      _gData[g].itemData[it].sold+=s._total;_gData[g].itemData[it].rev+=s._totalRev;
+      _gData[g].sold+=s._total;_gData[g].rev+=s._totalRev;
       Object.entries(s._byYr).forEach(([yr,d])=>{
-        if(!gData[g].yearlySold[yr])gData[g].yearlySold[yr]=0;
-        if(!gData[g].yearlyRev[yr])gData[g].yearlyRev[yr]=0;
-        gData[g].yearlySold[yr]+=d.qty;gData[g].yearlyRev[yr]+=d.rev;
+        if(!_gData[g].yearlySold[yr])_gData[g].yearlySold[yr]=0;
+        if(!_gData[g].yearlyRev[yr])_gData[g].yearlyRev[yr]=0;
+        _gData[g].yearlySold[yr]+=d.qty;_gData[g].yearlyRev[yr]+=d.rev;
       });
     });
   }
@@ -342,6 +460,7 @@ function processAndRender(){
   // Process repairs
   filt.forEach(r=>{
     const it=(r['Item Number']||'').trim(),g=itemToGroup(it);if(!g)return;
+    const mn=(r['Model Name']||'').trim();
     const rep=(r['Repair']||'').trim(),isMaj=(r['Major Repairs']||'').trim().toLowerCase()==='yes';
     const isNPU=/^npu$/i.test(rep),isNPF=/^npf$/i.test(rep),isNPX=isNPU||isNPF;
     const isAcc=['yes','liquid'].includes((r['Accidental Damage']||'').trim().toLowerCase());
@@ -349,15 +468,24 @@ function processAndRender(){
     const ws=(r['Warranty Status']||'').trim();
     const d=pD(r['Order Received Date']),yr=d?d.getFullYear().toString():'?',qt=d?qL(d):'?';
 
-    const gd=gData[g];gd.repairs++;gd.cost+=cost;gd.repairRev+=rRev;
+    const gd=_gData[g];gd.repairs++;gd.cost+=cost;gd.repairRev+=rRev;
     if(isNPU)gd.npu++;else if(isNPF)gd.npf++;else if(isMaj)gd.major++;else gd.minor++;
     if(isAcc)gd.accidental++;
     if(ws==='In Warranty')gd.inW++;else if(ws==='Out of Warranty')gd.outW++;
 
+    // Repair type tracking
+    if(rep){gd.repairTypes[rep]=(gd.repairTypes[rep]||0)+1;}
+
+    // Per-item tracking
+    if(!gd.itemData[it])gd.itemData[it]={name:mn,sold:0,rev:0,repairs:0,cost:0,major:0,minor:0,npu:0,npf:0};
+    const id=gd.itemData[it];id.name=mn;id.repairs++;id.cost+=cost;
+    if(isNPU)id.npu++;else if(isNPF)id.npf++;else if(isMaj)id.major++;else id.minor++;
+
     // Yearly
     if(vY(yr)){
-      if(!gd.yearlyRepairs[yr])gd.yearlyRepairs[yr]={rep:0,cost:0};
-      gd.yearlyRepairs[yr].rep++;gd.yearlyRepairs[yr].cost+=cost;
+      if(!gd.yearlyRepairs[yr])gd.yearlyRepairs[yr]={rep:0,cost:0,maj:0,min:0,npu:0,npf:0};
+      const yd=gd.yearlyRepairs[yr];yd.rep++;yd.cost+=cost;
+      if(isNPU)yd.npu++;else if(isNPF)yd.npf++;else if(isMaj)yd.maj++;else yd.min++;
     }
 
     // Quarterly
@@ -367,12 +495,16 @@ function processAndRender(){
       // Labor split
       const oid=(r['Order Id']||'').trim(),cEntry=costsLU[oid];
       let labC;
-      if(cEntry&&cEntry.isLabor)labC=cEntry.laborRate;
-      else{const isOS=/os issue/i.test(rep);labC=isNPX||isOS?7.5:isMaj?30:15;}
+      if(cEntry&&cEntry.isLabor){labC=cEntry.laborRate;gd.labActual++;}
+      else{const isOS=/os issue/i.test(rep);labC=isNPX||isOS?7.5:isMaj?30:15;gd.labAssumed++;}
       qd.lC+=labC;qd.pC+=Math.max(0,cost-labC);
       gd.partsCost+=Math.max(0,cost-labC);gd.laborCost+=labC;
     }
   });
+
+  // Assign to global
+  gData=_gData;
+  sL_global=sL;
 
   // Build all quarter labels (2023-2025)
   const allQ=new Set();
@@ -494,7 +626,9 @@ function processAndRender(){
   // ===== Labor cost by group bar =====
   charts.push(new Chart(document.getElementById('chLaborGrp'),{type:'bar',data:{labels:GROUP_NAMES,datasets:[{label:'Labor Cost',data:GROUP_NAMES.map(g=>gData[g].laborCost),backgroundColor:'#8b5cf6aa',borderColor:'#8b5cf6',borderWidth:1,borderRadius:6,barPercentage:.65}]},options:{...chartOpts({scales:{y:{ticks:{color:'#64748b',callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fD(c.raw)}}}}}));
 
-  // Done
+  // Done — build assumptions group table & wire click handlers
+  buildGroupTable();
+  wireChartClicks();
   document.getElementById('loadingOverlay').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
 }
@@ -540,6 +674,256 @@ function pctAllOn(){pctCycleIdx=-1;setChartVisibility(chTrendPctRef,GROUP_NAMES.
 function pctAllOff(){pctCycleIdx=-1;setChartVisibility(chTrendPctRef,GROUP_NAMES.map(()=>false),pctCycleIdx,'pctPrevBtn','pctNextBtn');}
 function pctNext(){pctCycleIdx=(pctCycleIdx+1)%GROUP_NAMES.length;setChartVisibility(chTrendPctRef,GROUP_NAMES.map((_,i)=>i===pctCycleIdx),pctCycleIdx,'pctPrevBtn','pctNextBtn');}
 function pctPrev(){const n=GROUP_NAMES.length;pctCycleIdx=pctCycleIdx<=0?(n-1):(pctCycleIdx-1);setChartVisibility(chTrendPctRef,GROUP_NAMES.map((_,i)=>i===pctCycleIdx),pctCycleIdx,'pctPrevBtn','pctNextBtn');}
+
+// ===== MODAL FUNCTIONS =====
+function openModal(title,html){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=html;document.getElementById('modalOverlay').classList.add('active');}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('active');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// ===== BUILD GROUP TABLE =====
+function buildGroupTable(){
+  const MODEL_NAMES={
+    'CBUS1100015':'NL72 N5100 8/64','CBUS1100016':'NL72 4/64',
+    'CBUS1100011':'NL72TW 8/64','CBUS1100017':'NL72T N4500 4/64','CBUS1100023':'NL72T N5100 4/64',
+    'CBUS1100013':'NL72-L 4/64 LTE','CBUS1100019':'NL72-L 4/64 LTE','CBUS1100020':'NL72CT-L 4/64 LTE','CBUS1100021':'NL72CT',
+    'CBUS1100024':'NL73 N100 8/64','CBUS1100026':'NL73CT N100 8/64','CBUS1100028':'NL73 N100 4/64',
+    'CBUS1100025':'NL73TW N100 360','CBUS1100027':'NL73T N100 360','CBUS1100030':'NL73TWB N200 8/64',
+    'CBUS1100033':'PX111E 4/64','CBUS1100034':'PX111E 8/64',
+    'CBUS1400003':'PX14E 14" HD','CBUS1400004':'PX14EX 14" FHD','CBUS1400005':'PX14EXT 14" Touch',
+    'CBUS1400006':'PX14EX 8/64 N6000','CBUS1400007':'PX14EXT 8/64 N6000','CBUS1400008':'PX14EX 8/128 N6000',
+    'CBUS1400009':'PX14EXT 8/128 N6000','CBUS1400010':'PX14E 4/64 N6000',
+    'CBUS1400011':'PX141E N100 8/64','CBUS1400012':'PX141EXT','CBUS1400013':'PX141GX','CBUS1400015':'PX141GXT','ZPX141GXT':'PX141GXT',
+    'CBXEU190010':'CBx3 Celeron 7305','CBXEU190011':'CBx3-7 i7 1355U','CBXUS190003':'CBx2 4/64 5205U',
+    'CBXUS190004':'CBx2-7 8/128','CBXUS190010':'CBx3 Cel 7305','CBXUS190011':'CBx3-7 i7-1355U','CBXUS190022':'OPS OPx1-3',
+    'CBUS1100035':'NL73TW Gen2','CBUS1100037':'NL73 Gen2','CBUS1200001':'PX121E',
+    'CBXUS190005':'Meet GQE15C','CBXUS190020':'Meet GQE20C'
+  };
+  let h='<thead><tr><th>Group</th><th>SKUs</th><th>Models Included</th><th>Units Sold</th><th>Repairs</th></tr></thead><tbody>';
+  GROUP_NAMES.forEach(g=>{
+    const items=GROUPS[g];const d=gData[g];
+    const models=items.map(it=>{const n=MODEL_NAMES[it]||it;return n;}).join(', ');
+    h+=`<tr><td>${g}</td><td class="mono">${items.length}</td><td>${models}</td><td class="mono">${fmt(d.sold)}</td><td class="mono">${fmt(d.repairs)}</td></tr>`;
+  });
+  h+='</tbody>';
+  document.getElementById('groupTable').innerHTML=h;
+}
+
+// ===== GROUP DETAIL MODAL =====
+function showGroupDetail(groupName){
+  const d=gData[groupName];if(!d)return;
+  const rr=d.sold>0?(d.repairs/d.sold*100):null;
+  const nPL=d.rev+d.repairRev-d.cost;
+  const accP=d.repairs>0?(d.accidental/d.repairs*100):0;
+  const inWP=(d.inW+d.outW)>0?(d.inW/(d.inW+d.outW)*100):0;
+  const avgC=d.repairs>0?(d.cost/d.repairs):0;
+
+  let h=`<div class="detail-stats">
+    <div class="detail-stat"><div class="label">Units Sold</div><div class="value">${fmt(d.sold)}</div></div>
+    <div class="detail-stat"><div class="label">Repairs</div><div class="value">${fmt(d.repairs)}</div></div>
+    <div class="detail-stat"><div class="label">Repair Rate</div><div class="value">${rr!=null?fP(rr):'N/A'}</div></div>
+    <div class="detail-stat"><div class="label">Avg Cost/Repair</div><div class="value">${fD(avgC)}</div></div>
+    <div class="detail-stat"><div class="label">Total Cost</div><div class="value">${fD(d.cost)}</div></div>
+    <div class="detail-stat"><div class="label">Warranty Rev</div><div class="value">${fD(d.rev)}</div></div>
+    <div class="detail-stat"><div class="label">Repair Rev (OOW)</div><div class="value">${fD(d.repairRev)}</div></div>
+    <div class="detail-stat"><div class="label">Net P/L</div><div class="value" style="color:${nPL>=0?'var(--green)':'var(--red)'}">${fD(nPL)}</div></div>
+  </div>`;
+
+  h+=`<div class="detail-stats" style="grid-template-columns:repeat(auto-fit,minmax(100px,1fr))">
+    <div class="detail-stat"><div class="label">Major</div><div class="value">${fmt(d.major)}</div></div>
+    <div class="detail-stat"><div class="label">Minor</div><div class="value">${fmt(d.minor)}</div></div>
+    <div class="detail-stat"><div class="label">NPU</div><div class="value">${fmt(d.npu)}</div></div>
+    <div class="detail-stat"><div class="label">NPF</div><div class="value">${fmt(d.npf)}</div></div>
+    <div class="detail-stat"><div class="label">Accidental %</div><div class="value">${fP(accP)}</div></div>
+    <div class="detail-stat"><div class="label">In Warranty %</div><div class="value">${fP(inWP)}</div></div>
+    <div class="detail-stat"><div class="label">Parts Cost</div><div class="value">${fD(d.partsCost)}</div></div>
+    <div class="detail-stat"><div class="label">Labor Cost</div><div class="value">${fD(d.laborCost)}</div></div>
+  </div>`;
+
+  // Item breakdown
+  const items=Object.entries(d.itemData).sort((a,b)=>b[1].sold-a[1].sold);
+  if(items.length){
+    h+=`<div class="section-label">Models in This Group</div><table><thead><tr><th>Item #</th><th>Model</th><th>Sold</th><th>Repairs</th><th>Rate</th><th>Cost</th><th>Maj</th><th>Min</th><th>NPU</th><th>NPF</th></tr></thead><tbody>`;
+    items.forEach(([it,id])=>{
+      const r=id.sold>0?(id.repairs/id.sold*100):null;
+      h+=`<tr><td class="mono">${it}</td><td>${id.name||it}</td><td class="mono">${fmt(id.sold)}</td><td class="mono">${fmt(id.repairs)}</td><td class="mono">${r!=null?fP(r):'—'}</td><td class="mono">${fD(id.cost)}</td><td class="mono">${fmt(id.major)}</td><td class="mono">${fmt(id.minor)}</td><td class="mono">${fmt(id.npu)}</td><td class="mono">${fmt(id.npf)}</td></tr>`;
+    });
+    h+='</tbody></table>';
+  }
+
+  // Repair types
+  const rTypes=Object.entries(d.repairTypes).sort((a,b)=>b[1]-a[1]);
+  if(rTypes.length){
+    h+=`<div class="section-label">Top Repair Types</div><table><thead><tr><th>Repair Type</th><th>Count</th><th>% of Group Repairs</th></tr></thead><tbody>`;
+    rTypes.slice(0,15).forEach(([rep,cnt])=>{
+      h+=`<tr><td>${rep}</td><td class="mono">${fmt(cnt)}</td><td class="mono">${fP(cnt/d.repairs*100)}</td></tr>`;
+    });
+    h+='</tbody></table>';
+  }
+
+  // Year-by-year
+  const yrs=Object.keys(d.yearlyRepairs).filter(vY).sort();
+  if(yrs.length){
+    h+=`<div class="section-label">Year-by-Year Repairs</div><table><thead><tr><th>Year</th><th>Repairs</th><th>Cost</th><th>Major</th><th>Minor</th><th>NPU</th><th>NPF</th><th>Units Sold</th></tr></thead><tbody>`;
+    yrs.forEach(yr=>{
+      const yd=d.yearlyRepairs[yr];
+      h+=`<tr><td>${yr}</td><td class="mono">${fmt(yd.rep)}</td><td class="mono">${fD(yd.cost)}</td><td class="mono">${fmt(yd.maj||0)}</td><td class="mono">${fmt(yd.min||0)}</td><td class="mono">${fmt(yd.npu||0)}</td><td class="mono">${fmt(yd.npf||0)}</td><td class="mono">${fmt(d.yearlySold[yr]||0)}</td></tr>`;
+    });
+    h+='</tbody></table>';
+  }
+
+  // Quarterly data
+  const qtrs=Object.keys(d.quarterlyData).sort();
+  if(qtrs.length){
+    h+=`<div class="section-label">Quarterly Breakdown</div><table><thead><tr><th>Quarter</th><th>Repairs</th><th>Total Cost</th><th>Parts</th><th>Labor</th><th>Avg/Repair</th></tr></thead><tbody>`;
+    qtrs.forEach(q=>{
+      const qd=d.quarterlyData[q];
+      h+=`<tr><td>${q}</td><td class="mono">${fmt(qd.rep)}</td><td class="mono">${fD(qd.cost)}</td><td class="mono">${fD(qd.pC)}</td><td class="mono">${fD(qd.lC)}</td><td class="mono">${qd.rep>0?fD(qd.cost/qd.rep):'—'}</td></tr>`;
+    });
+    h+='</tbody></table>';
+  }
+
+  openModal(groupName+' — Detail',h);
+}
+
+// ===== SEVERITY DETAIL MODAL =====
+function showSeverityDetail(category){
+  let h=`<div class="detail-stats">`;
+  let total=0;GROUP_NAMES.forEach(g=>{const d=gData[g];total+=category==='Major'?d.major:category==='Minor'?d.minor:category==='NPU'?d.npu:d.npf;});
+  let tRep=0;GROUP_NAMES.forEach(g=>tRep+=gData[g].repairs);
+  h+=`<div class="detail-stat"><div class="label">Total ${category}</div><div class="value">${fmt(total)}</div></div>`;
+  h+=`<div class="detail-stat"><div class="label">% of All Repairs</div><div class="value">${tRep>0?fP(total/tRep*100):'N/A'}</div></div></div>`;
+  h+=`<div class="section-label">${category} Repairs by Device Group</div><table><thead><tr><th>Group</th><th>Count</th><th>% of Group</th><th>Units Sold</th><th>% of Sold</th></tr></thead><tbody>`;
+  GROUP_NAMES.forEach(g=>{
+    const d=gData[g];const cnt=category==='Major'?d.major:category==='Minor'?d.minor:category==='NPU'?d.npu:d.npf;
+    if(cnt===0)return;
+    h+=`<tr style="cursor:pointer" onclick="showGroupDetail('${g}')"><td>${g}</td><td class="mono">${fmt(cnt)}</td><td class="mono">${d.repairs>0?fP(cnt/d.repairs*100):'—'}</td><td class="mono">${fmt(d.sold)}</td><td class="mono">${d.sold>0?fP(cnt/d.sold*100):'—'}</td></tr>`;
+  });
+  h+='</tbody></table>';
+  h+=`<div class="assumption-note"><strong>Severity classification:</strong> NPU → NPF → Major (Major Repairs="Yes") → Minor (everything else). Each repair classified into exactly one category. Priority order prevents double-counting.</div>`;
+  openModal(category+' Repairs — Detail',h);
+}
+
+// ===== QUARTER DETAIL MODAL =====
+function showQuarterDetail(quarter,type){
+  const label=type==='parts'?'Parts':'Labor';
+  let tCost=0,tRep=0;
+  const rows=[];
+  GROUP_NAMES.forEach(g=>{
+    const qd=gData[g].quarterlyData[quarter];if(!qd||qd.rep===0)return;
+    const val=type==='parts'?qd.pC:qd.lC;
+    rows.push({g,rep:qd.rep,cost:val,avg:val/qd.rep,totalCost:qd.cost});
+    tCost+=val;tRep+=qd.rep;
+  });
+  rows.sort((a,b)=>b.cost-a.cost);
+  let h=`<div class="detail-stats">
+    <div class="detail-stat"><div class="label">Quarter</div><div class="value">${quarter}</div></div>
+    <div class="detail-stat"><div class="label">Total ${label} Cost</div><div class="value">${fD(tCost)}</div></div>
+    <div class="detail-stat"><div class="label">Total Repairs</div><div class="value">${fmt(tRep)}</div></div>
+    <div class="detail-stat"><div class="label">Avg ${label}/Repair</div><div class="value">${tRep>0?fD(tCost/tRep):'—'}</div></div>
+  </div>`;
+  h+=`<div class="section-label">${label} Cost by Device Group</div><table><thead><tr><th>Group</th><th>Repairs</th><th>${label} Cost</th><th>Avg/Repair</th><th>Total Repair Cost</th></tr></thead><tbody>`;
+  rows.forEach(r=>{
+    h+=`<tr style="cursor:pointer" onclick="showGroupDetail('${r.g}')"><td>${r.g}</td><td class="mono">${fmt(r.rep)}</td><td class="mono">${fD(r.cost)}</td><td class="mono">${fD(r.avg)}</td><td class="mono">${fD(r.totalCost)}</td></tr>`;
+  });
+  h+='</tbody></table>';
+  h+=`<div class="assumption-note"><strong>${label} cost note:</strong> ${type==='parts'?'Parts cost = Total repair cost (incl. $10 shipping) − labor cost (min $0).':'Labor uses actual LABOR15/30/60 codes ($7.50/$15/$30) when available. Otherwise assumed: Major=$30, Minor=$15, NPU/NPF/OS=$7.50.'}</div>`;
+  openModal(quarter+' — '+label+' Cost Detail',h);
+}
+
+// ===== COST DISTRIBUTION DETAIL =====
+function showCostDistDetail(groupName){
+  const d=gData[groupName];if(!d)return;
+  const avgC=d.repairs>0?(d.cost/d.repairs):0;
+  const avgRev=d.sold>0?(d.rev/d.sold):0;
+  const gap=avgRev-avgC;
+  let h=`<div class="detail-stats">
+    <div class="detail-stat"><div class="label">Avg Repair Cost</div><div class="value">${fD(avgC)}</div></div>
+    <div class="detail-stat"><div class="label">Avg Warranty Rev/Unit</div><div class="value">${fD(avgRev)}</div></div>
+    <div class="detail-stat"><div class="label">Gap (Rev − Cost)</div><div class="value" style="color:${gap>=0?'var(--green)':'var(--red)'}">${fD(gap)}</div></div>
+    <div class="detail-stat"><div class="label">Total Repairs</div><div class="value">${fmt(d.repairs)}</div></div>
+    <div class="detail-stat"><div class="label">Total Cost</div><div class="value">${fD(d.cost)}</div></div>
+    <div class="detail-stat"><div class="label">Total Revenue</div><div class="value">${fD(d.rev)}</div></div>
+  </div>`;
+  h+=`<div class="assumption-note"><strong>Cost distribution:</strong> Avg Repair Cost = Total repair cost (incl. $10 shipping) ÷ total repairs. Avg Warranty Rev/Unit = Total warranty revenue ÷ units sold. Groups where avg repair cost exceeds avg revenue per unit indicate warranty programs that cost more per repair event than the revenue generated per unit sold.</div>`;
+  openModal(groupName+' — Cost Analysis',h);
+}
+
+// ===== WIRE CHART CLICK HANDLERS =====
+function wireChartClicks(){
+  // For bar charts indexed by GROUP_NAMES — click opens group detail
+  const groupBarIds=['chSold','chRev','chFreq','chSevGrp','chSevPct','chPartsGrp','chLaborGrp'];
+  groupBarIds.forEach(id=>{
+    const canvas=document.getElementById(id);
+    if(!canvas)return;
+    canvas.onclick=function(evt){
+      const ch=Chart.getChart(canvas);if(!ch)return;
+      const pts=ch.getElementsAtEventForMode(evt,'nearest',{intersect:true},false);
+      if(pts.length){
+        const idx=pts[0].index;
+        if(id==='chDist') showCostDistDetail(GROUP_NAMES[idx]);
+        else showGroupDetail(GROUP_NAMES[idx]);
+      }
+    };
+  });
+
+  // Cost distribution bar
+  const distCanvas=document.getElementById('chDist');
+  if(distCanvas){
+    distCanvas.onclick=function(evt){
+      const ch=Chart.getChart(distCanvas);if(!ch)return;
+      const pts=ch.getElementsAtEventForMode(evt,'nearest',{intersect:true},false);
+      if(pts.length) showCostDistDetail(GROUP_NAMES[pts[0].index]);
+    };
+  }
+
+  // Severity doughnut
+  const sevCanvas=document.getElementById('chSev');
+  if(sevCanvas){
+    sevCanvas.onclick=function(evt){
+      const ch=Chart.getChart(sevCanvas);if(!ch)return;
+      const pts=ch.getElementsAtEventForMode(evt,'nearest',{intersect:true},false);
+      if(pts.length) showSeverityDetail(['Major','Minor','NPU','NPF'][pts[0].index]);
+    };
+  }
+
+  // Stacked year charts — click a segment to show that group
+  ['chSoldYr','chRevYr'].forEach(id=>{
+    const canvas=document.getElementById(id);if(!canvas)return;
+    canvas.onclick=function(evt){
+      const ch=Chart.getChart(canvas);if(!ch)return;
+      const pts=ch.getElementsAtEventForMode(evt,'nearest',{intersect:true},false);
+      if(pts.length) showGroupDetail(GROUP_NAMES[pts[0].datasetIndex]);
+    };
+  });
+
+  // Trend line charts — click shows group detail
+  ['chTrend','chTrendPct'].forEach(id=>{
+    const canvas=document.getElementById(id);if(!canvas)return;
+    canvas.onclick=function(evt){
+      const ch=Chart.getChart(canvas);if(!ch)return;
+      const pts=ch.getElementsAtEventForMode(evt,'nearest',{intersect:true},false);
+      if(pts.length) showGroupDetail(GROUP_NAMES[pts[0].datasetIndex]);
+    };
+  });
+
+  // Parts & labor quarterly — click shows quarter detail
+  const partsCanvas=document.getElementById('chParts');
+  if(partsCanvas){
+    partsCanvas.onclick=function(evt){
+      const ch=Chart.getChart(partsCanvas);if(!ch)return;
+      const pts=ch.getElementsAtEventForMode(evt,'nearest',{intersect:true},false);
+      if(pts.length){const lbl=ch.data.labels[pts[0].index];showQuarterDetail(lbl,'parts');}
+    };
+  }
+  const laborCanvas=document.getElementById('chLabor');
+  if(laborCanvas){
+    laborCanvas.onclick=function(evt){
+      const ch=Chart.getChart(laborCanvas);if(!ch)return;
+      const pts=ch.getElementsAtEventForMode(evt,'nearest',{intersect:true},false);
+      if(pts.length){const lbl=ch.data.labels[pts[0].index];showQuarterDetail(lbl,'labor');}
+    };
+  }
+}
 
 // ===== DOWNLOAD FUNCTIONS =====
 function dlChart(canvasId, filename){
