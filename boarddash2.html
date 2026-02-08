@@ -6,6 +6,7 @@
 <title>CTL Warranty — Presentation Charts</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 :root{--bg:#f5f7fa;--card:#ffffff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b;--accent:#0ea5e9;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--purple:#8b5cf6;--orange:#f97316;--pink:#ec4899}
@@ -84,7 +85,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="date-info" id="dateLabel"></div>
   </div>
 
-  <button class="dl-all-btn" onclick="downloadAll()">⬇ Download All Charts as PNG</button>
+  <button class="dl-all-btn" id="dlAllBtn" onclick="downloadAll()">⬇ Download All Charts as ZIP</button>
 
   <div id="kpiArea"></div>
 
@@ -561,6 +562,8 @@ function dlChart(canvasId, filename){
 }
 
 function downloadAll(){
+  const btn=document.getElementById('dlAllBtn');
+  btn.disabled=true;btn.textContent='⏳ Building ZIP…';
   const ids=[
     ['chSold','Warranty_Units_Sold_By_Group'],
     ['chRev','Warranty_Revenue_By_Group'],
@@ -578,10 +581,29 @@ function downloadAll(){
     ['chPartsGrp','Parts_Cost_By_Group'],
     ['chLaborGrp','Labor_Cost_By_Group']
   ];
-  let delay=0;
-  ids.forEach(([id,name])=>{
-    setTimeout(()=>dlChart(id,name),delay);
-    delay+=300;
+  const zip=new JSZip();
+  ids.forEach(([canvasId,filename])=>{
+    const canvas=document.getElementById(canvasId);
+    if(!canvas)return;
+    const scale=2;
+    const tmp=document.createElement('canvas');
+    tmp.width=canvas.width*scale;tmp.height=canvas.height*scale;
+    const ctx=tmp.getContext('2d');
+    ctx.scale(scale,scale);
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(canvas,0,0,canvas.width,canvas.height);
+    const dataUrl=tmp.toDataURL('image/png',1.0);
+    const base64=dataUrl.split(',')[1];
+    zip.file(filename+'.png',base64,{base64:true});
+  });
+  zip.generateAsync({type:'blob'}).then(blob=>{
+    const link=document.createElement('a');
+    link.href=URL.createObjectURL(blob);
+    link.download='CTL_Warranty_Charts.zip';
+    link.click();
+    URL.revokeObjectURL(link.href);
+    btn.disabled=false;btn.textContent='⬇ Download All Charts as ZIP';
   });
 }
 </script>
