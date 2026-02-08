@@ -61,6 +61,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .chart-controls .ctrl-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .chart-controls .ctrl-label{font-size:11px;color:var(--muted);font-weight:500;margin-right:4px}
 .chart-controls .nav-btn{min-width:120px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.active-group-label{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;min-height:28px;font-family:'DM Sans',sans-serif}
 /* Modal */
 .modal-overlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
 .modal-overlay.active{opacity:1;pointer-events:all}
@@ -200,6 +201,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="dl-btn" onclick="dlChart('chTrend','Breakage_Rate_Trends')">⬇ PNG</button>
     <h3>Quarterly Repairs by Device Group</h3>
     <div class="subtitle">Repair count per quarter — each line is a device group</div>
+    <div class="active-group-label" id="trendActiveLabel"></div>
     <div class="chart-controls" id="trendCtrls">
       <span class="ctrl-label">Show:</span>
       <button class="ctrl-btn" onclick="trendAllOn()">All On</button>
@@ -214,6 +216,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="dl-btn" onclick="dlChart('chTrendPct','Breakage_Rate_Pct_Trends')">⬇ PNG</button>
     <h3>Quarterly Repair Rate (% of Sold) by Device Group</h3>
     <div class="subtitle">Repairs as percentage of units sold — normalized comparison</div>
+    <div class="active-group-label" id="pctActiveLabel"></div>
     <div class="chart-controls" id="trendPctCtrls">
       <span class="ctrl-label">Show:</span>
       <button class="ctrl-btn" onclick="pctAllOn()">All On</button>
@@ -634,12 +637,11 @@ function processAndRender(){
 }
 
 // ===== TREND CHART CONTROLS =====
-function setChartVisibility(chart, showArr, cycleIdx, prevBtnId, nextBtnId){
+function setChartVisibility(chart, showArr, cycleIdx, prevBtnId, nextBtnId, labelId){
   const n=GROUP_NAMES.length;
   chart.data.datasets.forEach((ds,i)=>{
     const visible=showArr[i];
     ds.hidden=!visible;
-    // Highlight solo mode: thicker line for active, faded for others
     if(cycleIdx>=0){
       ds.borderWidth=i===cycleIdx?4:1.5;
       ds.borderColor=i===cycleIdx?GC[i%GC.length]:(GC[i%GC.length]+'44');
@@ -651,6 +653,12 @@ function setChartVisibility(chart, showArr, cycleIdx, prevBtnId, nextBtnId){
     }
   });
   chart.update();
+  // Active group label
+  const lbl=document.getElementById(labelId);
+  if(lbl){
+    if(cycleIdx>=0){lbl.textContent=GROUP_NAMES[cycleIdx];lbl.style.color=GC[cycleIdx%GC.length];}
+    else{lbl.textContent='';}
+  }
   // Update button labels
   if(cycleIdx>=0){
     const prev=(cycleIdx-1+n)%n;
@@ -664,16 +672,16 @@ function setChartVisibility(chart, showArr, cycleIdx, prevBtnId, nextBtnId){
 }
 
 // -- Count trend controls --
-function trendAllOn(){trendCycleIdx=-1;setChartVisibility(chTrendRef,GROUP_NAMES.map(()=>true),trendCycleIdx,'trendPrevBtn','trendNextBtn');}
-function trendAllOff(){trendCycleIdx=-1;setChartVisibility(chTrendRef,GROUP_NAMES.map(()=>false),trendCycleIdx,'trendPrevBtn','trendNextBtn');}
-function trendNext(){trendCycleIdx=(trendCycleIdx+1)%GROUP_NAMES.length;setChartVisibility(chTrendRef,GROUP_NAMES.map((_,i)=>i===trendCycleIdx),trendCycleIdx,'trendPrevBtn','trendNextBtn');}
-function trendPrev(){const n=GROUP_NAMES.length;trendCycleIdx=trendCycleIdx<=0?(n-1):(trendCycleIdx-1);setChartVisibility(chTrendRef,GROUP_NAMES.map((_,i)=>i===trendCycleIdx),trendCycleIdx,'trendPrevBtn','trendNextBtn');}
+function trendAllOn(){trendCycleIdx=-1;setChartVisibility(chTrendRef,GROUP_NAMES.map(()=>true),trendCycleIdx,'trendPrevBtn','trendNextBtn','trendActiveLabel');}
+function trendAllOff(){trendCycleIdx=-1;setChartVisibility(chTrendRef,GROUP_NAMES.map(()=>false),trendCycleIdx,'trendPrevBtn','trendNextBtn','trendActiveLabel');}
+function trendNext(){trendCycleIdx=(trendCycleIdx+1)%GROUP_NAMES.length;setChartVisibility(chTrendRef,GROUP_NAMES.map((_,i)=>i===trendCycleIdx),trendCycleIdx,'trendPrevBtn','trendNextBtn','trendActiveLabel');}
+function trendPrev(){const n=GROUP_NAMES.length;trendCycleIdx=trendCycleIdx<=0?(n-1):(trendCycleIdx-1);setChartVisibility(chTrendRef,GROUP_NAMES.map((_,i)=>i===trendCycleIdx),trendCycleIdx,'trendPrevBtn','trendNextBtn','trendActiveLabel');}
 
 // -- Pct trend controls --
-function pctAllOn(){pctCycleIdx=-1;setChartVisibility(chTrendPctRef,GROUP_NAMES.map(()=>true),pctCycleIdx,'pctPrevBtn','pctNextBtn');}
-function pctAllOff(){pctCycleIdx=-1;setChartVisibility(chTrendPctRef,GROUP_NAMES.map(()=>false),pctCycleIdx,'pctPrevBtn','pctNextBtn');}
-function pctNext(){pctCycleIdx=(pctCycleIdx+1)%GROUP_NAMES.length;setChartVisibility(chTrendPctRef,GROUP_NAMES.map((_,i)=>i===pctCycleIdx),pctCycleIdx,'pctPrevBtn','pctNextBtn');}
-function pctPrev(){const n=GROUP_NAMES.length;pctCycleIdx=pctCycleIdx<=0?(n-1):(pctCycleIdx-1);setChartVisibility(chTrendPctRef,GROUP_NAMES.map((_,i)=>i===pctCycleIdx),pctCycleIdx,'pctPrevBtn','pctNextBtn');}
+function pctAllOn(){pctCycleIdx=-1;setChartVisibility(chTrendPctRef,GROUP_NAMES.map(()=>true),pctCycleIdx,'pctPrevBtn','pctNextBtn','pctActiveLabel');}
+function pctAllOff(){pctCycleIdx=-1;setChartVisibility(chTrendPctRef,GROUP_NAMES.map(()=>false),pctCycleIdx,'pctPrevBtn','pctNextBtn','pctActiveLabel');}
+function pctNext(){pctCycleIdx=(pctCycleIdx+1)%GROUP_NAMES.length;setChartVisibility(chTrendPctRef,GROUP_NAMES.map((_,i)=>i===pctCycleIdx),pctCycleIdx,'pctPrevBtn','pctNextBtn','pctActiveLabel');}
+function pctPrev(){const n=GROUP_NAMES.length;pctCycleIdx=pctCycleIdx<=0?(n-1):(pctCycleIdx-1);setChartVisibility(chTrendPctRef,GROUP_NAMES.map((_,i)=>i===pctCycleIdx),pctCycleIdx,'pctPrevBtn','pctNextBtn','pctActiveLabel');}
 
 // ===== MODAL FUNCTIONS =====
 function openModal(title,html){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=html;document.getElementById('modalOverlay').classList.add('active');}
