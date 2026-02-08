@@ -53,6 +53,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .trend-up{background:rgba(16,185,129,.12);color:var(--green)}
 .trend-down{background:rgba(239,68,68,.12);color:var(--red)}
 .trend-flat{background:rgba(245,158,11,.12);color:var(--yellow)}
+.chart-controls{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.chart-controls .ctrl-btn{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;font-size:11px;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .15s}
+.chart-controls .ctrl-btn:hover{border-color:var(--accent);color:var(--accent);background:#f0f9ff}
+.chart-controls .ctrl-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chart-controls .ctrl-label{font-size:11px;color:var(--muted);font-weight:500;margin-right:4px}
+.chart-controls .nav-btn{min-width:120px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .footer{text-align:center;color:var(--muted);font-size:12px;padding:40px 0 24px;border-top:1px solid var(--border);margin-top:48px}
 </style>
 </head>
@@ -147,12 +153,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="dl-btn" onclick="dlChart('chTrend','Breakage_Rate_Trends')">⬇ PNG</button>
     <h3>Quarterly Repairs by Device Group</h3>
     <div class="subtitle">Repair count per quarter — each line is a device group</div>
+    <div class="chart-controls" id="trendCtrls">
+      <span class="ctrl-label">Show:</span>
+      <button class="ctrl-btn" onclick="trendAllOn()">All On</button>
+      <button class="ctrl-btn" onclick="trendAllOff()">All Off</button>
+      <span class="ctrl-label" style="margin-left:12px">Cycle:</span>
+      <button class="ctrl-btn nav-btn" onclick="trendPrev()" id="trendPrevBtn">◂ Prev</button>
+      <button class="ctrl-btn nav-btn" onclick="trendNext()" id="trendNextBtn">Next ▸</button>
+    </div>
     <canvas id="chTrend"></canvas>
   </div>
   <div class="chart-wrap tall" id="wrap_trendPct">
     <button class="dl-btn" onclick="dlChart('chTrendPct','Breakage_Rate_Pct_Trends')">⬇ PNG</button>
     <h3>Quarterly Repair Rate (% of Sold) by Device Group</h3>
     <div class="subtitle">Repairs as percentage of units sold — normalized comparison</div>
+    <div class="chart-controls" id="trendPctCtrls">
+      <span class="ctrl-label">Show:</span>
+      <button class="ctrl-btn" onclick="pctAllOn()">All On</button>
+      <button class="ctrl-btn" onclick="pctAllOff()">All Off</button>
+      <span class="ctrl-label" style="margin-left:12px">Cycle:</span>
+      <button class="ctrl-btn nav-btn" onclick="pctPrev()" id="pctPrevBtn">◂ Prev</button>
+      <button class="ctrl-btn nav-btn" onclick="pctNext()" id="pctNextBtn">Next ▸</button>
+    </div>
     <canvas id="chTrendPct"></canvas>
   </div>
 
@@ -233,6 +255,7 @@ const ALL_ITEMS = new Set(Object.values(GROUPS).flat());
 const GC = ['#0ea5e9','#8b5cf6','#f59e0b','#ef4444','#10b981','#ec4899','#f97316','#6366f1','#14b8a6','#e11d48','#84cc16','#0891b2','#d946ef'];
 
 let rawR=null,rawS=null,rawC=null,costsLU={},charts=[];
+let chTrendRef=null, chTrendPctRef=null, trendCycleIdx=-1, pctCycleIdx=-1;
 const fmt=n=>n==null?'N/A':n.toLocaleString('en-US');
 const fD=n=>n==null?'N/A':'$'+Math.round(n).toLocaleString('en-US');
 const fP=n=>n==null?'N/A':n.toFixed(2)+'%';
@@ -406,18 +429,26 @@ function processAndRender(){
   ]},options:{...chartOpts({scales:{y:{stacked:true,ticks:{color:'#64748b'},grid:{color:'#e2e8f0'}},x:{stacked:true,ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),plugins:{legend:{position:'bottom',labels:{color:'#64748b',padding:14,usePointStyle:true}},tooltip:{mode:'index'}}}}));
 
   // ===== CHART 5: Quarterly Trend (count) =====
+  trendCycleIdx=-1;
   const trendDS=GROUP_NAMES.map((g,i)=>{
     const d=gData[g];
     return{label:g,data:sQA.map(q=>d.quarterlyData[q]?.rep||0),borderColor:GC[i%GC.length],backgroundColor:'transparent',borderWidth:2.5,pointRadius:3,pointBackgroundColor:GC[i%GC.length],tension:.35};
   });
-  charts.push(new Chart(document.getElementById('chTrend'),{type:'line',data:{labels:sQA,datasets:trendDS},options:{...chartOpts({scales:{y:{ticks:{color:'#64748b'},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},usePointStyle:true,padding:10}},tooltip:{mode:'index'}}}}));
+  chTrendRef=new Chart(document.getElementById('chTrend'),{type:'line',data:{labels:sQA,datasets:trendDS},options:{...chartOpts({scales:{y:{ticks:{color:'#64748b'},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},usePointStyle:true,padding:10}},tooltip:{mode:'index'}}}});
+  charts.push(chTrendRef);
+  document.getElementById('trendPrevBtn').textContent='◂ Prev';
+  document.getElementById('trendNextBtn').textContent='Next ▸';
 
   // ===== CHART 5b: Quarterly Trend (% of sold) =====
+  pctCycleIdx=-1;
   const trendPctDS=GROUP_NAMES.map((g,i)=>{
     const d=gData[g];
     return{label:g,data:sQA.map(q=>{const r=d.quarterlyData[q]?.rep||0;return d.sold>0?parseFloat(((r/d.sold)*100).toFixed(3)):null;}),borderColor:GC[i%GC.length],backgroundColor:'transparent',borderWidth:2.5,pointRadius:3,pointBackgroundColor:GC[i%GC.length],tension:.35};
   });
-  charts.push(new Chart(document.getElementById('chTrendPct'),{type:'line',data:{labels:sQA,datasets:trendPctDS},options:{...chartOpts({scales:{y:{ticks:{color:'#64748b',callback:v=>v.toFixed(2)+'%'},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},usePointStyle:true,padding:10}},tooltip:{mode:'index',callbacks:{label:c=>c.dataset.label+': '+(c.raw!=null?c.raw.toFixed(3)+'%':'N/A')}}}}}));
+  chTrendPctRef=new Chart(document.getElementById('chTrendPct'),{type:'line',data:{labels:sQA,datasets:trendPctDS},options:{...chartOpts({scales:{y:{ticks:{color:'#64748b',callback:v=>v.toFixed(2)+'%'},grid:{color:'#e2e8f0'}},x:{ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#64748b',font:{size:10},usePointStyle:true,padding:10}},tooltip:{mode:'index',callbacks:{label:c=>c.dataset.label+': '+(c.raw!=null?c.raw.toFixed(3)+'%':'N/A')}}}}});
+  charts.push(chTrendPctRef);
+  document.getElementById('pctPrevBtn').textContent='◂ Prev';
+  document.getElementById('pctNextBtn').textContent='Next ▸';
 
   // ===== CHART 6: Cost Distribution (avg repair cost per group vs avg warranty rev) =====
   const avgRepCost=GROUP_NAMES.map(g=>gData[g].repairs>0?(gData[g].cost/gData[g].repairs):0);
@@ -451,6 +482,48 @@ function processAndRender(){
   document.getElementById('loadingOverlay').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
 }
+
+// ===== TREND CHART CONTROLS =====
+function setChartVisibility(chart, showArr, cycleIdx, prevBtnId, nextBtnId){
+  const n=GROUP_NAMES.length;
+  chart.data.datasets.forEach((ds,i)=>{
+    const visible=showArr[i];
+    ds.hidden=!visible;
+    // Highlight solo mode: thicker line for active, faded for others
+    if(cycleIdx>=0){
+      ds.borderWidth=i===cycleIdx?4:1.5;
+      ds.borderColor=i===cycleIdx?GC[i%GC.length]:(GC[i%GC.length]+'44');
+      ds.pointRadius=i===cycleIdx?5:0;
+    } else {
+      ds.borderWidth=2.5;
+      ds.borderColor=GC[i%GC.length];
+      ds.pointRadius=3;
+    }
+  });
+  chart.update();
+  // Update button labels
+  if(cycleIdx>=0){
+    const prev=(cycleIdx-1+n)%n;
+    const next=(cycleIdx+1)%n;
+    document.getElementById(prevBtnId).textContent='◂ '+GROUP_NAMES[prev];
+    document.getElementById(nextBtnId).textContent=GROUP_NAMES[next]+' ▸';
+  } else {
+    document.getElementById(prevBtnId).textContent='◂ Prev';
+    document.getElementById(nextBtnId).textContent='Next ▸';
+  }
+}
+
+// -- Count trend controls --
+function trendAllOn(){trendCycleIdx=-1;setChartVisibility(chTrendRef,GROUP_NAMES.map(()=>true),trendCycleIdx,'trendPrevBtn','trendNextBtn');}
+function trendAllOff(){trendCycleIdx=-1;setChartVisibility(chTrendRef,GROUP_NAMES.map(()=>false),trendCycleIdx,'trendPrevBtn','trendNextBtn');}
+function trendNext(){trendCycleIdx=(trendCycleIdx+1)%GROUP_NAMES.length;setChartVisibility(chTrendRef,GROUP_NAMES.map((_,i)=>i===trendCycleIdx),trendCycleIdx,'trendPrevBtn','trendNextBtn');}
+function trendPrev(){const n=GROUP_NAMES.length;trendCycleIdx=trendCycleIdx<=0?(n-1):(trendCycleIdx-1);setChartVisibility(chTrendRef,GROUP_NAMES.map((_,i)=>i===trendCycleIdx),trendCycleIdx,'trendPrevBtn','trendNextBtn');}
+
+// -- Pct trend controls --
+function pctAllOn(){pctCycleIdx=-1;setChartVisibility(chTrendPctRef,GROUP_NAMES.map(()=>true),pctCycleIdx,'pctPrevBtn','pctNextBtn');}
+function pctAllOff(){pctCycleIdx=-1;setChartVisibility(chTrendPctRef,GROUP_NAMES.map(()=>false),pctCycleIdx,'pctPrevBtn','pctNextBtn');}
+function pctNext(){pctCycleIdx=(pctCycleIdx+1)%GROUP_NAMES.length;setChartVisibility(chTrendPctRef,GROUP_NAMES.map((_,i)=>i===pctCycleIdx),pctCycleIdx,'pctPrevBtn','pctNextBtn');}
+function pctPrev(){const n=GROUP_NAMES.length;pctCycleIdx=pctCycleIdx<=0?(n-1):(pctCycleIdx-1);setChartVisibility(chTrendPctRef,GROUP_NAMES.map((_,i)=>i===pctCycleIdx),pctCycleIdx,'pctPrevBtn','pctNextBtn');}
 
 // ===== DOWNLOAD FUNCTIONS =====
 function dlChart(canvasId, filename){
