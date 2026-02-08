@@ -145,6 +145,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="subtitle">Stacked breakdown: Major, Minor, NPU, NPF per group</div>
     <canvas id="chSevGrp"></canvas>
   </div>
+  <div class="chart-wrap" id="wrap_sevPct">
+    <button class="dl-btn" onclick="dlChart('chSevPct','Severity_By_Group_Pct')">⬇ PNG</button>
+    <h3>Claim Severity by Device Group (% of Sold)</h3>
+    <div class="subtitle">Each severity category as a percentage of units sold per group</div>
+    <canvas id="chSevPct"></canvas>
+  </div>
 
   <!-- Chart 3: Breakage Rate Trends -->
   <div class="section-title">Breakage Rate Trends — 3 Year</div>
@@ -428,6 +434,15 @@ function processAndRender(){
     {label:'NPF',data:GROUP_NAMES.map(g=>gData[g].npf),backgroundColor:'#8b5cf6',borderRadius:2}
   ]},options:{...chartOpts({scales:{y:{stacked:true,ticks:{color:'#64748b'},grid:{color:'#e2e8f0'}},x:{stacked:true,ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),plugins:{legend:{position:'bottom',labels:{color:'#64748b',padding:14,usePointStyle:true}},tooltip:{mode:'index'}}}}));
 
+  // ===== Severity by Group (% of Sold) =====
+  const pctOf=(count,g)=>gData[g].sold>0?parseFloat(((count/gData[g].sold)*100).toFixed(3)):0;
+  charts.push(new Chart(document.getElementById('chSevPct'),{type:'bar',data:{labels:GROUP_NAMES,datasets:[
+    {label:'Major %',data:GROUP_NAMES.map(g=>pctOf(gData[g].major,g)),backgroundColor:'#ef4444',borderRadius:2},
+    {label:'Minor %',data:GROUP_NAMES.map(g=>pctOf(gData[g].minor,g)),backgroundColor:'#f59e0b',borderRadius:2},
+    {label:'NPU %',data:GROUP_NAMES.map(g=>pctOf(gData[g].npu,g)),backgroundColor:'#0ea5e9',borderRadius:2},
+    {label:'NPF %',data:GROUP_NAMES.map(g=>pctOf(gData[g].npf,g)),backgroundColor:'#8b5cf6',borderRadius:2}
+  ]},options:{...chartOpts({scales:{y:{stacked:true,ticks:{color:'#64748b',callback:v=>v.toFixed(1)+'%'},grid:{color:'#e2e8f0'},title:{display:true,text:'% of Units Sold',color:'#64748b'}},x:{stacked:true,ticks:{color:'#64748b',font:{size:10},maxRotation:45},grid:{display:false}}}}),plugins:{legend:{position:'bottom',labels:{color:'#64748b',padding:14,usePointStyle:true}},tooltip:{mode:'index',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(3)+'%'}}}}}));
+
   // ===== CHART 5: Quarterly Trend (count) =====
   trendCycleIdx=-1;
   const trendDS=GROUP_NAMES.map((g,i)=>{
@@ -554,6 +569,7 @@ function downloadAll(){
     ['chFreq','Claim_Frequency_By_Group'],
     ['chSev','Claim_Severity_Doughnut'],
     ['chSevGrp','Severity_By_Group_Stacked'],
+    ['chSevPct','Severity_By_Group_Pct_Sold'],
     ['chTrend','Breakage_Rate_Quarterly_Count'],
     ['chTrendPct','Breakage_Rate_Quarterly_Pct'],
     ['chDist','Cost_Distribution_vs_Revenue'],
